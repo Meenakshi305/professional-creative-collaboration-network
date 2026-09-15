@@ -11,6 +11,8 @@ import professional_creative_collaboration_network.dto.SigninRequest;
 import professional_creative_collaboration_network.dto.SignupRequest;
 import professional_creative_collaboration_network.service.AuthService;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -41,5 +43,13 @@ public class AuthController {
                 authService.signin(request);
 
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/signout")
+    public ResponseEntity<Map<String, String>> signout() {
+
+        return ResponseEntity.ok(
+                Map.of("message", "Sign out successful")
+        );
     }
 }
