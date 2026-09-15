@@ -1,122 +1,203 @@
+// Importing "useState" -> UserScreen
 import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
 import './App.css'
+import logoWebsite from './assets/logoWebsite.png' 
 
-function App() {
-  const [count, setCount] = useState(0)
+function CreativeCollabNetwork() {
+  // User States
+  const [authnMode, setAuthnMode] = useState<'login' | 'signup'>('signup')
+  const [fullName, setFullName] = useState('')
+  const [email, setEmail] = useState('')
+  const [dofBirth, setDofBirth] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [uiMessages, setUiMessages] = useState('')
+
+  const [loginEmail, setLoginEmail] = useState('')
+  const [loginPassword, setLoginPassword] = useState('')
+  const dumEmail='Pratik123@gmail.com'
+  const dumPassword='Pratik@321'
+
+  // Guardian States
+  const [emailOfGuardian, setEmailOfGuardian] = useState('')
+  // AgeCalculator function
+  const ageCalculator = (dob: string) => {
+  const dofBirth = new Date(dob)
+  const today = new Date()
+
+  let age = today.getFullYear() - dofBirth.getFullYear()
+  const monthDiff = today.getMonth() - dofBirth.getMonth()
+  if (monthDiff < 0 ||(monthDiff === 0 && today.getDate() < dofBirth.getDate())) {age--}
+  return age
+  }
+
+  const isUnder18 = dofBirth !== '' && ageCalculator(dofBirth) < 18
+
+  const handleSignup = (e: React.SyntheticEvent<HTMLFormElement>)=>{
+    e.preventDefault()
+
+    if(!fullName||!email||!dofBirth||!password||!confirmPassword){
+      setUiMessages("Please ensure all required fields are filled")
+      return
+    }
+
+    if (isUnder18 && !emailOfGuardian) {
+    setUiMessages('Under 18 Users requires Guardian email.')
+    return
+    }
+
+    if(!email.includes('@')){
+      setUiMessages("Please enter valid email address")
+      return
+    }
+
+    if(password.length<8){
+      setUiMessages("Password must contain atleast 8 characters")
+      return
+    }
+
+    if(password!==confirmPassword){
+      setUiMessages("Password doesn't match. Kindly re-enter it again")
+      return
+    }
+
+    setUiMessages("Account created Successfully!! Welcome to out creative network")
+
+  }
+
+  const handleLoginPage=(e:React.SyntheticEvent<HTMLFormElement>)=>{
+    e.preventDefault()
+    if (!loginEmail||!loginPassword){
+      setUiMessages("Kindly enter Email and Password to Login")
+      return
+    }
+    if (loginEmail==dumEmail&&loginPassword==dumPassword){
+      setUiMessages("Login Successful !! Wecome to Creative Netowork")
+      return
+    }
+    setUiMessages('Incorrect Email and Password !!')
+  }
+
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
+    <main className='page-container'>
+      <section className='intro-section'>
+
+        <img 
+        src={logoWebsite} 
+        alt='Professional Creative Collaboration Network Logo' className='logoWebsite'/>
+
+        <span className='eyebrow'>
+            CREATE || CONNECT || COLLABORATE
+        </span>  
+        
+        <h1>Professional Creative Collaboration Network</h1>
+        <p>
+          A Creative platform for building creative professional connections, showcase portfolio,
+          discover collaboration opportunities and participate in creative events.
+        </p>
       </section>
 
-      <div className="ticks"></div>
+      <section className='auth-card'>
+          {/* Sign-Up Button */}
+        <div className='auth-tabs'> 
+          <button
+          className={authnMode === 'signup' ? 'active-tab' : ''} 
+          onClick={()=>setAuthnMode('signup')}>
+            SignUp
+          </button>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+          {/* Log-in Button */}
+          <button 
+          className={authnMode === 'login' ? 'active-tab' : ''}
+          onClick={()=> setAuthnMode('login')}>
+            Login
+          </button>
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
+          <h2>
+            {authnMode === 'signup' ? 'Be a part of Creative Network': 'Professional Creative Collaboration Network'}
+          </h2>
+          {/* SignUp Page */}
+          {authnMode === 'signup' &&(
+            <form className='auth-form' onSubmit={handleSignup}>
+              {/* Full Name */}
+              <label>
+                Full Name: <input type='text' placeholder='Kindly Enter Full Name'
+                value={fullName}
+                onChange={(e)=>setFullName(e.target.value)}/> 
+              </label>
+              {/* Email */}
+              <label>
+                Email: <input type='email' placeholder='Kindly Enter Email'
+                value={email}
+                onChange={(e)=>setEmail(e.target.value)}/> 
+              </label>
+              {/* DOB */}
+              <label>
+                Date of Birth: <input type='date'
+                value={dofBirth}
+                onChange={(e)=>setDofBirth(e.target.value)}/>
+              </label>
+
+              {isUnder18 && (
+                <div className="guardian-section">
+                  <p>Seems your age is not 18, you require guardian consent</p>
+                  <label>
+                    Guardian Email
+                    <input
+                      type="email"placeholder="Enter guardian email" value={emailOfGuardian}
+                      onChange={(e) => setEmailOfGuardian(e.target.value)}
+                    />
+                  </label>
+                </div>)
+              }
+
+              {/* Password */}
+              <label>
+                Password: <input type='password' placeholder='Create new password'
+                value={password}
+                onChange={(e)=>setPassword(e.target.value)}/>
+              </label>
+              {/* Confirm Password */}
+              <label>
+                Confirm Password: <input type='password' placeholder='Kindly Confirm your password'
+                value={confirmPassword}
+                onChange={(e)=>setConfirmPassword(e.target.value)}/>
+              </label>
+
+              {uiMessages && (<p className="form-message">{uiMessages}</p>)}
+
+              <button className='primary-button' type='submit'>Join our Creative Network</button>
+            </form>
+          )}
+          {authnMode==='login'&&(
+            <form className='auth-form' onSubmit={handleLoginPage}>
+              <label>
+                Email Address:
+                <input type='email' placeholder='Kindly enter your email address'
+                 value={loginEmail}
+                 onChange={(e)=>setLoginEmail(e.target.value)}/>
+              </label>
+
+              <label>
+                Password:
+                <input type='password' placeholder='Kindly enter your password'
+                value={loginPassword}
+                onChange={(e)=>setLoginPassword(e.target.value)}/>
+              </label>
+              
+              {uiMessages && (
+                <p className='form-message'>{uiMessages}</p>
+              )}
+
+              <button className='primary-button' type='submit'>
+                Log-In to Creative Network
+              </button>
+            </form>
+          )}
       </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+    </main>
   )
 }
 
-export default App
+export default CreativeCollabNetwork
