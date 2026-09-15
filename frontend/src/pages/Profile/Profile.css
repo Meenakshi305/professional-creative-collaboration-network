@@ -1,0 +1,248 @@
+.profile-page {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 0 24px 40px;
+  font-family: Arial, Helvetica, sans-serif;
+  color: #202124;
+}
+
+.profile-banner {
+  height: 150px;
+  border: 1px solid #d9dce1;
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      #f1f2f4 0,
+      #f1f2f4 2px,
+      #ffffff 2px,
+      #ffffff 12px
+    );
+}
+
+.profile-header {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  margin-top: -35px;
+  padding: 0 12px;
+}
+
+.profile-avatar {
+  width: 74px;
+  height: 74px;
+  flex-shrink: 0;
+  border: 3px solid white;
+  border-radius: 50%;
+  background: #e8e9ec;
+  box-shadow: 0 0 0 1px #d1d4d9;
+}
+
+.profile-info {
+  flex: 1;
+  padding-bottom: 3px;
+}
+
+.profile-name-placeholder {
+  width: 150px;
+  height: 10px;
+  margin-bottom: 8px;
+  border-radius: 5px;
+  background: #c7c9cd;
+}
+
+.profile-info p {
+  margin: 0;
+  color: #70757a;
+  font-size: 13px;
+}
+
+.follow-button {
+  padding: 8px 18px;
+  border: 1px solid #c8cbd0;
+  border-radius: 6px;
+  background: white;
+  color: #333;
+  cursor: pointer;
+}
+
+.follow-button:hover {
+  background: #f5f5f5;
+}
+
+.follow-button.following {
+  background: #222;
+  color: white;
+}
+
+.skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 20px 0;
+}
+
+.skills span {
+  padding: 6px 11px;
+  border: 1px solid #d6d8dc;
+  border-radius: 20px;
+  background: #f8f8f8;
+  font-size: 12px;
+}
+
+.profile-tabs {
+  display: flex;
+  gap: 22px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid #dedfe2;
+}
+
+.profile-tabs button {
+  padding: 10px 2px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: #777;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.profile-tabs button.active {
+  border-bottom-color: #222;
+  color: #222;
+  font-weight: 600;
+}
+
+.portfolio-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.portfolio-item {
+  display: flex;
+  height: 130px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d8dade;
+  border-radius: 7px;
+  background: #f1f2f4;
+  color: #96999e;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.portfolio-item:hover {
+  background: #e8e9eb;
+}
+
+.posts-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.post-card {
+  padding: 18px;
+  border: 1px solid #dedfe2;
+  border-radius: 8px;
+  background: white;
+}
+
+.post-line {
+  height: 8px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+  background: #d7d9dc;
+}
+
+.post-line.long {
+  width: 90%;
+}
+
+.post-line.medium {
+  width: 80%;
+}
+
+.post-line.short {
+  width: 70%;
+}
+
+.achievement-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 13px 0;
+  border-bottom: 1px solid #eeeeee;
+  font-size: 13px;
+}
+
+.achievement-row span:last-child {
+  color: #777;
+}
+
+.visibility-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 24px;
+  color: #70757a;
+  font-size: 13px;
+}
+
+.visibility-switch {
+  position: relative;
+  width: 38px;
+  height: 21px;
+  padding: 0;
+  border: 1px solid #c8cbd0;
+  border-radius: 20px;
+  background: #dedfe2;
+  cursor: pointer;
+}
+
+.visibility-switch span {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: 0.2s;
+}
+
+.visibility-switch.on {
+  border-color: #555;
+  background: #555;
+}
+
+.visibility-switch.on span {
+  left: 19px;
+}
+
+.visibility-status {
+  color: #333;
+}
+
+@media (max-width: 600px) {
+  .profile-page {
+    margin-top: 20px;
+    padding: 0 14px 30px;
+  }
+
+  .portfolio-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .profile-banner {
+    height: 110px;
+  }
+
+  .achievement-row {
+    flex-direction: column;
+    gap: 4px;
+  }
+}
