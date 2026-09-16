@@ -10,7 +10,7 @@ import professional_creative_collaboration_network.dto.AuthResponse;
 import professional_creative_collaboration_network.dto.SigninRequest;
 import professional_creative_collaboration_network.dto.SignupRequest;
 import professional_creative_collaboration_network.service.AuthService;
-
+import professional_creative_collaboration_network.dto.ChangePasswordRequest;
 import java.util.Map;
 
 @RestController
@@ -50,6 +50,36 @@ public class AuthController {
 
         return ResponseEntity.ok(
                 Map.of("message", "Sign out successful")
+        );
+    }
+
+    @PutMapping("/password")
+    public ResponseEntity<Map<String, String>> changePassword(
+            @RequestHeader("Authorization") String authorizationHeader,
+            @Valid @RequestBody ChangePasswordRequest request) {
+
+        if (!authorizationHeader.startsWith("Bearer ")) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of(
+                            "message",
+                            "Bearer token is required"
+                    ));
+        }
+
+        String token = authorizationHeader.substring(7);
+
+        authService.changePassword(
+                token,
+                request.currentPassword(),
+                request.newPassword()
+        );
+
+        return ResponseEntity.ok(
+                Map.of(
+                        "message",
+                        "Password changed successfully"
+                )
         );
     }
 }

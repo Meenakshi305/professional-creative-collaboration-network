@@ -119,4 +119,49 @@ public class AuthService {
                 "Sign in successful"
         );
     }
+
+    public void changePassword(
+            String token,
+            String currentPassword,
+            String newPassword) {
+
+        if (!jwtService.isTokenValid(token)) {
+            throw new IllegalArgumentException(
+                    "Invalid or expired token"
+            );
+        }
+
+        String email = jwtService.extractEmail(token);
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "User not found"
+                        )
+                );
+
+        if (!passwordEncoder.matches(
+                currentPassword,
+                user.getPasswordHash())) {
+
+            throw new IllegalArgumentException(
+                    "Current password is incorrect"
+            );
+        }
+
+        if (passwordEncoder.matches(
+                newPassword,
+                user.getPasswordHash())) {
+
+            throw new IllegalArgumentException(
+                    "New password must be different from current password"
+            );
+        }
+
+        user.setPasswordHash(
+                passwordEncoder.encode(newPassword)
+        );
+
+        userRepository.save(user);
+    }
 }
