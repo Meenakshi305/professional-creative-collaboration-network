@@ -170,7 +170,7 @@ public class UserController {
     }
 
 
-}
+
 // GET /api/users/{id}/following
     @GetMapping("/{id}/following")
     public ResponseEntity<
@@ -185,3 +185,4 @@ public class UserController {
                         .getFollowing(id)
         );
     }
+}
