@@ -2,9 +2,10 @@ package com.creative.collaboration.service;
 
 import com.creative.collaboration.dto.*;
 import com.creative.collaboration.entity.Opportunity;
+import com.creative.collaboration.entity.OpportunityApplication;
 import com.creative.collaboration.entity.User;
 import com.creative.collaboration.exception.ResourceNotFoundException;
-
+import com.creative.collaboration.repository.OpportunityApplicationRepository;
 import com.creative.collaboration.repository.OpportunityRepository;
 import com.creative.collaboration.repository.UserRepository;
 
@@ -43,7 +44,6 @@ public class OpportunityService {
     }
 
 
-    // DEV 1
     // POST /api/opportunities
     public OpportunityResponse createOpportunity(
             Long userId,
@@ -88,7 +88,6 @@ public class OpportunityService {
     }
 
 
-    // DEV 1
     // GET /api/opportunities
     @Transactional(readOnly = true)
     public List<OpportunityResponse>
@@ -102,7 +101,21 @@ public class OpportunityService {
     }
 
 
-    // DEV 1
+    // GET /api/opportunities/{id}
+    @Transactional(readOnly = true)
+    public OpportunityResponse getOpportunity(
+            Long id
+    ) {
+
+        Opportunity opportunity =
+                findOpportunity(id);
+
+        return convertToResponse(
+                opportunity
+        );
+    }
+
+
     // PUT /api/opportunities/{id}
     public OpportunityResponse updateOpportunity(
             Long id,
@@ -126,7 +139,6 @@ public class OpportunityService {
             );
         }
 
-
         if (request.description() != null
                 && !request.description().isBlank()) {
 
@@ -135,14 +147,12 @@ public class OpportunityService {
             );
         }
 
-
         if (request.requirements() != null) {
 
             opportunity.setRequirements(
                     request.requirements()
             );
         }
-
 
         if (request.location() != null) {
 
@@ -151,27 +161,50 @@ public class OpportunityService {
             );
         }
 
-
-        if (request.applicationDeadline() != null) {
+        if (request.applicationDeadline()
+                != null) {
 
             opportunity.setApplicationDeadline(
                     request.applicationDeadline()
             );
         }
 
-
         Opportunity updated =
                 opportunityRepository.save(
                         opportunity
                 );
 
-        return convertToResponse(
-                updated
+        return convertToResponse(updated);
+    }
+
+
+    // DELETE /api/opportunities/{id}
+    public void deleteOpportunity(
+            Long id,
+            Long userId
+    ) {
+
+        Opportunity opportunity =
+                findOpportunity(id);
+
+        verifyOwner(
+                opportunity,
+                userId
+        );
+
+        /*
+         * Delete applications first because
+         * they reference the opportunity.
+         */
+        applicationRepository
+                .deleteByOpportunity_Id(id);
+
+        opportunityRepository.delete(
+                opportunity
         );
     }
 
 
-    // DEV 1
     // POST /api/opportunities/{id}/apply
     public OpportunityApplicationResponse
     applyToOpportunity(
@@ -190,8 +223,10 @@ public class OpportunityService {
                         applicantId
                 );
 
-
-        // User cannot apply to their own opportunity
+        /*
+         * Opportunity creator should not
+         * apply to their own opportunity.
+         */
         if (opportunity
                 .getCreatedBy()
                 .getId()
@@ -203,13 +238,16 @@ public class OpportunityService {
         }
 
 
-        // Check deadline
         if (
-                opportunity.getApplicationDeadline() != null
+                opportunity
+                        .getApplicationDeadline()
+                        != null
                         &&
                         opportunity
                                 .getApplicationDeadline()
-                                .isBefore(LocalDate.now())
+                                .isBefore(
+                                        LocalDate.now()
+                                )
         ) {
 
             throw new IllegalStateException(
@@ -218,7 +256,6 @@ public class OpportunityService {
         }
 
 
-        // Prevent duplicate applications
         boolean alreadyApplied =
                 applicationRepository
                         .existsByOpportunity_IdAndApplicant_Id(
@@ -246,14 +283,11 @@ public class OpportunityService {
                 applicant
         );
 
-
         if (request != null) {
-
             application.setMessage(
                     request.message()
             );
         }
-
 
         application.setStatus(
                 "PENDING"
@@ -272,9 +306,45 @@ public class OpportunityService {
     }
 
 
-    // HELPERS
+    // GET /api/opportunities/{id}/applications
+    @Transactional(readOnly = true)
+    public List<OpportunityApplicationResponse>
+    getApplications(
+            Long opportunityId,
+            Long userId
+    ) {
 
-    private User findUser(Long id) {
+        Opportunity opportunity =
+                findOpportunity(
+                        opportunityId
+                );
+
+        /*
+         * Only opportunity owner can view
+         * its applications for now.
+         */
+        verifyOwner(
+                opportunity,
+                userId
+        );
+
+
+        return applicationRepository
+                .findByOpportunity_Id(
+                        opportunityId
+                )
+                .stream()
+                .map(
+                        this::
+                                convertApplicationResponse
+                )
+                .toList();
+    }
+
+
+    private User findUser(
+            Long id
+    ) {
 
         return userRepository
                 .findById(id)
@@ -338,7 +408,8 @@ public class OpportunityService {
 
                 opportunity.getLocation(),
 
-                opportunity.getApplicationDeadline(),
+                opportunity
+                        .getApplicationDeadline(),
 
                 opportunity
                         .getCreatedBy()
