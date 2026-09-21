@@ -15,19 +15,23 @@ import java.util.List;
 @RequestMapping("/api/opportunities")
 public class OpportunityController {
 
-    private final OpportunityService opportunityService;
+    private final OpportunityService
+            opportunityService;
+
 
     public OpportunityController(
             OpportunityService opportunityService
     ) {
-        this.opportunityService = opportunityService;
+
+        this.opportunityService =
+                opportunityService;
     }
 
 
-    // DEV 1
     // POST /api/opportunities
     @PostMapping
-    public ResponseEntity<OpportunityResponse> createOpportunity(
+    public ResponseEntity<OpportunityResponse>
+    createOpportunity(
 
             @RequestHeader("X-User-Id")
             Long userId,
@@ -38,10 +42,11 @@ public class OpportunityController {
     ) {
 
         OpportunityResponse response =
-                opportunityService.createOpportunity(
-                        userId,
-                        request
-                );
+                opportunityService
+                        .createOpportunity(
+                                userId,
+                                request
+                        );
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -49,19 +54,34 @@ public class OpportunityController {
     }
 
 
-    // DEV 1
     // GET /api/opportunities
     @GetMapping
-    public ResponseEntity<List<OpportunityResponse>>
+    public ResponseEntity<
+            List<OpportunityResponse>
+            >
     getAllOpportunities() {
 
         return ResponseEntity.ok(
-                opportunityService.getAllOpportunities()
+                opportunityService
+                        .getAllOpportunities()
         );
     }
 
 
-    // DEV 1
+    // GET /api/opportunities/{id}
+    @GetMapping("/{id}")
+    public ResponseEntity<OpportunityResponse>
+    getOpportunity(
+            @PathVariable Long id
+    ) {
+
+        return ResponseEntity.ok(
+                opportunityService
+                        .getOpportunity(id)
+        );
+    }
+
+
     // PUT /api/opportunities/{id}
     @PutMapping("/{id}")
     public ResponseEntity<OpportunityResponse>
@@ -77,20 +97,45 @@ public class OpportunityController {
     ) {
 
         return ResponseEntity.ok(
-                opportunityService.updateOpportunity(
-                        id,
-                        userId,
-                        request
-                )
+                opportunityService
+                        .updateOpportunity(
+                                id,
+                                userId,
+                                request
+                        )
         );
     }
 
 
-    // DEV 1
+    // DELETE /api/opportunities/{id}
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void>
+    deleteOpportunity(
+
+            @PathVariable Long id,
+
+            @RequestHeader("X-User-Id")
+            Long userId
+    ) {
+
+        opportunityService
+                .deleteOpportunity(
+                        id,
+                        userId
+                );
+
+        return ResponseEntity
+                .noContent()
+                .build();
+    }
+
+
     // POST /api/opportunities/{id}/apply
     @PostMapping("/{id}/apply")
-    public ResponseEntity<OpportunityApplicationResponse>
-    applyToOpportunity(
+    public ResponseEntity<
+            OpportunityApplicationResponse
+            >
+    apply(
 
             @PathVariable Long id,
 
@@ -102,14 +147,38 @@ public class OpportunityController {
     ) {
 
         OpportunityApplicationResponse response =
-                opportunityService.applyToOpportunity(
-                        id,
-                        applicantId,
-                        request
-                );
+                opportunityService
+                        .applyToOpportunity(
+                                id,
+                                applicantId,
+                                request
+                        );
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(response);
+    }
+
+
+    // GET /api/opportunities/{id}/applications
+    @GetMapping("/{id}/applications")
+    public ResponseEntity<
+            List<OpportunityApplicationResponse>
+            >
+    getApplications(
+
+            @PathVariable Long id,
+
+            @RequestHeader("X-User-Id")
+            Long userId
+    ) {
+
+        return ResponseEntity.ok(
+                opportunityService
+                        .getApplications(
+                                id,
+                                userId
+                        )
+        );
     }
 }
