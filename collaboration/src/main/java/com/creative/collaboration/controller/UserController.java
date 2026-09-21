@@ -25,4 +25,45 @@ public class UserController {
     }
 
 
-}
+    // GET /api/users/{id}
+    @GetMapping("/{id}")
+    public ResponseEntity<UserResponse>
+    getUser(
+            @PathVariable Long id
+    ) {
+
+        return ResponseEntity.ok(
+                userService
+                        .getUserById(id)
+        );
+    }
+
+
+    // PUT /api/users/{id}
+    @PutMapping("/{id}")
+    public ResponseEntity<UserResponse>
+    updateUser(
+            @PathVariable Long id,
+            @RequestBody
+            UpdateUserRequest request
+    ) {
+
+        return ResponseEntity.ok(
+                userService.updateUser(
+                        id,
+                        request
+                )
+        );
+    }
+    // GET /api/users/{id}/profile
+    @GetMapping("/{id}/profile")
+    public ResponseEntity<ProfileResponse>
+    getProfile(
+            @PathVariable Long id
+    ) {
+
+        return ResponseEntity.ok(
+                userService
+                        .getProfile(id)
+        );
+    }
