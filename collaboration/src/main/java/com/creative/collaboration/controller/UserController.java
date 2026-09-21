@@ -171,3 +171,17 @@ public class UserController {
 
 
 }
+// GET /api/users/{id}/following
+    @GetMapping("/{id}/following")
+    public ResponseEntity<
+            List<PublicUserResponse>
+            >
+    getFollowing(
+            @PathVariable Long id
+    ) {
+
+        return ResponseEntity.ok(
+                userService
+                        .getFollowing(id)
+        );
+    }
