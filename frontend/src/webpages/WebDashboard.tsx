@@ -16,6 +16,11 @@ function Dashboard(){
     const [postCreated, setPostCreated] = useState<PostCreated[]>([])
     const [selectImage, setSelectImage] = useState<string | null>(null)
     const [selectVideo, setSelectVideo] = useState<string | null>(null)
+    const [openCommentPost, setOpenCommentPost] = useState<number | null>(null)
+    const [commentTxt, setCommentTxt] = useState('')
+    const [postComments, setPostComments] = useState<Record<number, string[]>>({})
+    const [activePage, setActivePage] = useState('dashboard')
+    const [creativesFollowed, setCreativesFollowed] = useState<number[]>([])
 
     const handleImgSelect = (event: React.ChangeEvent<HTMLInputElement>) => { 
         const file = event.target.files?.[0]
@@ -36,14 +41,32 @@ function Dashboard(){
         event.target.value = ''
     }
 
-    const handleLikes=(postId:number)=>{
-        if(likePosts.includes(postId)){
-            setLikePosts(likePosts.filter(id=>id !== postId))
-        }
-        else{
-            setLikePosts([...likePosts,postId])
+    const handleLikes = (postId: number) => {
+        setLikePosts((previousLikes) => {
+            if (previousLikes.includes(postId)) {
+            return previousLikes.filter((id) => id !== postId)
+            }
+
+            return [...previousLikes, postId]
+        })
+    }
+
+    const handleComments = (postId: number) => {
+        if (openCommentPost === postId) {
+            setOpenCommentPost(null)
+        } else {
+            setOpenCommentPost(postId)
+            setCommentTxt('')
         }
     }
+    const handleCommentPost = (postId: number) => {
+        if (commentTxt.trim() === '') {
+        return
+        }
+        setPostComments((previousComments) => ({...previousComments,[postId]: [...(previousComments[postId] || []),commentTxt.trim()]}))
+        setCommentTxt('')
+    }
+
 
     const handleCreatePost = () => {
         if (postText.trim() === '' && !selectImage && !selectVideo) {
@@ -64,6 +87,34 @@ function Dashboard(){
         setPostMessage('')
     }
 
+    const handleFollow = (creativeId: number) => {
+        setCreativesFollowed((previousFollowed) => {
+            if (previousFollowed.includes(creativeId)) {
+            return previousFollowed.filter((id) => id !== creativeId)
+            }
+
+            return [...previousFollowed, creativeId]
+        })
+    }
+
+    if (activePage === 'profiles') {
+        return (
+            <div className="web-dashboard">
+            <div className="profiles-page">
+                <h1>Profiles</h1>
+                <p>Creative professional profiles will appear here.</p>
+
+                <button
+                type="button"
+                onClick={() => setActivePage('dashboard')}
+                >
+                Back to Dashboard
+                </button>
+            </div>
+            </div>
+        )
+    }
+
     return(
         <main className='dashboard-page'>
             <div className='side-container' onMouseEnter={()=>setSideOpen(true)}
@@ -71,11 +122,11 @@ function Dashboard(){
                 <button className='menu-button' onClick={()=>setSideOpen(!sideOpen)}> ☰ </button>
                 <aside className={`side ${sideOpen ? 'side-open' : ''}`}>
                 <nav className='side-nav'>
-                    <button>
+                    <button type="button" onClick={() => setActivePage('dashboard')}>
                         <span>🏠</span>
                         {sideOpen&&<span>Dashboard</span>}
                     </button>
-                    <button>
+                    <button type="button" onClick={() => setActivePage('profiles')}>
                         <span>👤</span>
                         {sideOpen&&<span>Profiles</span>}
                     </button>
@@ -189,11 +240,12 @@ function Dashboard(){
                             )}
                             <div className="creativepost-footer">
                                 <div className="creativepost-reactions">
-                                    <button>
-                                    ♡ <span>0 likes</span>
+                                    <button type="button" onClick={() => handleLikes(post.id)} > 
+                                        {likePosts.includes(post.id) ? '❤️ 1 Like' : '♡ 0 Likes'}
                                     </button>
-                                    <button>
-                                    💬 <span>0 comments</span>
+                                    <button type="button" onClick={() => handleComments(post.id)}>
+                                        💬 {postComments[post.id]?.length ?? 0}{' '}
+                                        {(postComments[post.id]?.length ?? 0) === 1 ? 'Comment' : 'Comments'}
                                     </button>
                                 </div>
                                 <div className="creativepost-extra-actions">
@@ -201,6 +253,31 @@ function Dashboard(){
                                     <button title="Share"> ⌯⌲ </button>
                                 </div>
                             </div>
+                            {openCommentPost === post.id && (
+                                <div className="comment-section">
+                                    {postComments[post.id]?.map((comment, index) => (
+                                        <div className="posted-comment" key={index}>
+                                            <div className="comment-avatar">👤</div>
+                                            <div className="comment-content">
+                                            <strong>You</strong>
+                                            <span>{comment}</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    <div className="comment-input-area">
+                                        <input
+                                        type="text"
+                                        placeholder="Write a comment..."
+                                        value={commentTxt}
+                                        onChange={(e) => setCommentTxt(e.target.value)}
+                                        />
+
+                                        <button type="button" onClick={() => handleCommentPost(post.id)}>
+                                        Add Comment
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </article>
                         ))}
                         {/* Dummy Post 1 */}
@@ -219,17 +296,38 @@ function Dashboard(){
                             </div>
                             <div className="creativepost-footer">
                                 <div className="creativepost-reactions">
-                                    <button className={likePosts.includes(1) ? 'like-button liked' : 'like-button'}
-                                        onClick={() => handleLikes(1)}>{likePosts.includes(1) ? '♥' : '♡'}
-                                        <span>{9 + (likePosts.includes(1) ? 1 : 0)} likes</span>
+                                    <button type="button" onClick={() => handleLikes(1)}> 
+                                        {likePosts.includes(1) ? '❤️ 1 Like' : '♡ 0 Likes'}
                                     </button>
-                                    <button>💬 <span>3 comments</span></button>
+                                    <button type="button" onClick={() => handleComments(1)}>
+                                        💬 {postComments[1]?.length ?? 0}{' '}
+                                        {(postComments[1]?.length ?? 0) === 1 ? 'Comment' : 'Comments'}
+                                    </button>
                                 </div>
                                 <div className="creativepost-extra-actions">
                                     <button title="Save">📂</button>
                                     <button title="Share">⌯⌲</button>
                                 </div>
                             </div>
+                            {openCommentPost === 1 && (
+                                <div className="comment-section">
+                                    {postComments[1]?.map((comment, index) => (
+                                    <div className="posted-comment" key={index}>
+                                        <div className="comment-avatar">👤</div>
+                                        <div className="comment-content">
+                                        <strong>You</strong>
+                                        <span>{comment}</span>
+                                        </div>
+                                    </div>))}
+                                    <div className="comment-input-area">
+                                        <input type="text" placeholder="Write a comment..."
+                                            value={commentTxt} onChange={(e) => setCommentTxt(e.target.value)}/>
+                                        <button type="button" onClick={() => handleCommentPost(1)}>
+                                            Add Comment
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </article>
                             {/* DUMMY POST 2 */}
                             <article className="creativefeed-post">
@@ -254,19 +352,48 @@ function Dashboard(){
 
                                 <div className="creativepost-footer">
                                     <div className="creativepost-reactions">
-                                        <button 
-                                            className={likePosts.includes(2) ? 'like-button liked' : 'like-button'}
-                                            onClick={() => handleLikes(2)}>{likePosts.includes(2) ? '♥' : '♡'}
-                                            <span>{16 + (likePosts.includes(2) ? 1 : 0)} likes</span>
+                                        <button type="button" onClick={() => handleLikes(2)}>
+                                            {likePosts.includes(2) ? '❤️ 1 Like' : '♡ 0 Likes'} 
                                         </button>
-                                        <button>💬 <span>3 comments</span></button>
+                                        <button type="button" onClick={() => handleComments(2)}>
+                                        💬 {postComments[2]?.length ?? 0}{' '}
+                                        {(postComments[2]?.length ?? 0) === 1 ? 'Comment' : 'Comments'}
+                                        </button>
                                     </div>
                                     <div className="creativepost-extra-actions">
                                         <button title="Save">📂</button>
                                         <button title="Share">⌯⌲</button>
                                     </div>
                                 </div>
-                            </article>
+                                {openCommentPost === 2 && (
+                                <div className="comment-section"> 
+                                {postComments[2]?.map((comment, index) => (
+                                    <div className="posted-comment" key={index}>
+                                        <div className="comment-avatar">👤</div>
+                                        <div className="comment-content">
+                                        <strong>You</strong>
+                                        <span>{comment}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                                    <div className="comment-input-area">
+                                    <input
+                                        type="text"
+                                        placeholder="Write a comment..."
+                                        value={commentTxt}
+                                        onChange={(e) => setCommentTxt(e.target.value)}
+                                    />
+
+                                    <button
+                                        type="button"
+                                        onClick={() => handleCommentPost(2)}>
+                                        Add Comment
+                                    </button>
+                                    </div>
+
+                                </div>
+                                )}
+                        </article>
                     </div>
                     {/* RIGHT SIDE */}
                     <aside className="feed-right">
@@ -281,7 +408,11 @@ function Dashboard(){
                                     <strong>Rhea Kapoor</strong>
                                     <span>Illustrator</span>
                                 </div>
-                                <button className="follow-buttons">Follow</button>
+                                <button type="button" className={`follow-buttons ${ 
+                                    creativesFollowed.includes(1) ? 'following' : ''}`}
+                                    onClick={() => handleFollow(1)}>
+                                    {creativesFollowed.includes(1) ? 'Following' : 'Follow'}
+                                </button>
                             </div>
                             <div className="creative-professional">
                                 <div className="avatar">👤</div>
@@ -289,7 +420,11 @@ function Dashboard(){
                                     <strong>Karan Malhotra</strong>
                                     <span>Filmmaker</span>
                                 </div>
-                                <button className="follow-buttons">Follow</button>
+                                <button type="button" className={`follow-buttons ${ 
+                                    creativesFollowed.includes(2) ? 'following' : ''}`}
+                                    onClick={() => handleFollow(2)}>
+                                    {creativesFollowed.includes(2) ? 'Following' : 'Follow'}
+                                </button>
                             </div>
                         </div>
                         <div className="dashboard-card">

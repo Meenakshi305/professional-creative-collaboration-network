@@ -421,15 +421,31 @@
     font-size: 12px;
 }
 .follow-buttons{
-    font-weight: 600; color: #5748c8; padding: 7px 14px;
-    border: 1px solid #7567df;
-    border-radius: 8px;
-    background: transparent;
-    cursor: pointer;
+    min-width: 88px;
+  padding: 8px 16px;
+
+  border: 1px solid #7567df;
+  border-radius: 20px;
+
+  background: #7567df;
+  color: white;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.25s ease,
+    color 0.25s ease,
+    border-color 0.25s ease,
+    transform 0.2s ease,
+    box-shadow 0.25s ease;
 }
 .follow-buttons :hover{
-    color: white;
-    background: #7567df;
+    background: #6658cf;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(117, 103, 223, 0.3);
 }
 /* Minor-item/icons on right panel */
 .minor-item{
@@ -562,4 +578,84 @@
   max-height: 500px;
   background: #000;
   border-radius: 14px;
+}
+.comment-section {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+.posted-comment {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.comment-avatar {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+}
+.comment-content {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+
+  padding: 8px 12px;
+  border-radius: 12px;
+
+  background: rgba(255, 255, 255, 0.18);
+}
+.comment-content strong {
+  font-size: 13px;
+}
+.comment-content span {
+  font-size: 14px;
+  line-height: 1.4;
+}
+.comment-input-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+.comment-input-area input {
+  flex: 1;
+  min-width: 0;
+
+  padding: 10px 14px;
+
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 20px;
+  outline: none;
+
+  font-family: inherit;
+  font-size: 14px;
+}
+.comment-input-area button {
+  padding: 10px 16px;
+
+  border: none;
+  border-radius: 20px;
+
+  cursor: pointer;
+  font-weight: 600;
+}
+.comment-input-area button:hover {
+  opacity: 0.85;
+}
+.follow-buttons.following {
+  background: rgba(117, 103, 223, 0.12);
+  color: #5f50c9;
+  border: 1px solid #7567df
+}
+.follow-buttons.following:hover {
+  background: rgba(117, 103, 223, 0.22);
+  box-shadow: 0 4px 12px rgba(117, 103, 223, 0.2);
 }
