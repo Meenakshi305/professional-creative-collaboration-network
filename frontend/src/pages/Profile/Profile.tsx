@@ -11,7 +11,11 @@ type EditableProfile = {
 
 type Visibility = 'PUBLIC' | 'MEMBERS_ONLY' | 'PRIVATE'
 
-function Profile() {
+type ProfileProps = {
+  onBack: () => void
+}
+
+function Profile({ onBack }: ProfileProps) {
   const [activeTab, setActiveTab] = useState<
     'portfolio' | 'posts' | 'achievements'
   >('portfolio')
@@ -222,8 +226,22 @@ function Profile() {
   }
 
   return (
-    <main className="profile-page">
-      <div className="profile-content">
+  <main className="profile-page">
+    <div className="profile-content">
+      <div className="profile-navigation">
+        <button
+          className="back-dashboard-button"
+          onClick={onBack}
+        >
+          <span className="back-arrow">←</span>
+          Back to Dashboard
+        </button>
+
+        <div className="profile-page-label">
+          <span className="profile-page-dot"></span>
+          Professional Profile
+        </div>
+      </div>
         <section className="profile-card">
           <div className="profile-banner">
             <div className="banner-number">7</div>

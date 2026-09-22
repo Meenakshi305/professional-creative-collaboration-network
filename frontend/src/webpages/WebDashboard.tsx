@@ -41,7 +41,11 @@ function Dashboard(){
     }
 
     if (currentPage === 'profile') {
-    return <Profile />
+        return (
+            <Profile
+            onBack={() => setCurrentPage('dashboard')}
+            />
+        )
     }
 
     return(

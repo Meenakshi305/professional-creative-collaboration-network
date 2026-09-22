@@ -874,3 +874,83 @@
     width: 100%;
   }
 }
+
+.profile-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  margin-bottom: 18px;
+}
+
+.back-dashboard-button {
+  display: inline-flex;
+  align-items: center;
+
+  gap: 9px;
+
+  padding: 10px 16px;
+
+  border: 1px solid rgba(117, 103, 223, 0.18);
+  border-radius: 10px;
+
+  background: rgba(255, 255, 255, 0.78);
+  color: #5146b8;
+
+  font-size: 13px;
+  font-weight: 700;
+
+  box-shadow: 0 5px 16px rgba(50, 45, 100, 0.07);
+
+  cursor: pointer;
+
+  transition: 0.2s ease;
+}
+
+.back-dashboard-button:hover {
+  background: white;
+  border-color: rgba(117, 103, 223, 0.4);
+
+  color: #29265f;
+
+  transform: translateX(-2px);
+}
+
+.back-arrow {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.profile-page-label {
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  color: #68657a;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  letter-spacing: 0.5px;
+}
+
+.profile-page-dot {
+  width: 8px;
+  height: 8px;
+
+  border-radius: 50%;
+
+  background: #7567df;
+
+  box-shadow: 0 0 0 4px rgba(117, 103, 223, 0.1);
+}
+
+@media (max-width: 700px) {
+  .profile-navigation {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
