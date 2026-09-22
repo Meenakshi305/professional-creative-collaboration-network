@@ -4,6 +4,8 @@ import './WebDashboard.css'
 type PostCreated = {
   id: number
   text: string
+  image?: string
+  video?: string
 }
 
 function Dashboard(){
@@ -12,6 +14,27 @@ function Dashboard(){
     const [postText, setPostText] = useState('')
     const [postMessage, setPostMessage] = useState('')
     const [postCreated, setPostCreated] = useState<PostCreated[]>([])
+    const [selectImage, setSelectImage] = useState<string | null>(null)
+    const [selectVideo, setSelectVideo] = useState<string | null>(null)
+
+    const handleImgSelect = (event: React.ChangeEvent<HTMLInputElement>) => { 
+        const file = event.target.files?.[0]
+        if (!file) {
+            return
+        }
+        const imageUrl = URL.createObjectURL(file)
+        setSelectImage(imageUrl)
+        event.target.value = ''
+    }
+    const handleVdoSelect = ( event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0]
+        if (!file) {
+            return
+        }
+        const videoUrl = URL.createObjectURL(file)
+        setSelectVideo(videoUrl)
+        event.target.value = ''
+    }
 
     const handleLikes=(postId:number)=>{
         if(likePosts.includes(postId)){
@@ -23,17 +46,21 @@ function Dashboard(){
     }
 
     const handleCreatePost = () => {
-        if (postText.trim() === '') {
+        if (postText.trim() === '' && !selectImage && !selectVideo) {
             setPostMessage('Please enter something before posting.')
             return
         }
 
         const newPost: PostCreated = {
             id: Date.now(),
-            text: postText.trim()
+            text: postText.trim(),
+            image: selectImage ?? undefined,
+            video: selectVideo ?? undefined
         }
         setPostCreated([newPost, ...postCreated])
         setPostText('')
+        setSelectImage(null)
+        setSelectVideo(null)
         setPostMessage('')
     }
 
@@ -91,6 +118,28 @@ function Dashboard(){
                                 <textarea placeholder="Share your Creative Updates here..." value={postText}
                                     onChange={(e) => setPostText(e.target.value)}/>
                             </div>
+                            {selectImage && ( 
+                                    <div className="selected-image-preview"> 
+                                        <img src={selectImage} alt="Preview of Post"/>
+                                        <button type="button" className="remove-selected-image" onClick={() => setSelectImage(null)} title="Remove image">
+                                            ✕
+                                        </button>
+                                    </div>
+                                    )
+                                }
+                            {selectVideo && ( 
+                                <div className="selected-video-preview">
+                                    <video src={selectVideo} controls/>
+                                    <button
+                                    type="button"
+                                    className="remove-selected-video"
+                                    onClick={() => setSelectVideo(null)}
+                                    title="Remove video"
+                                    >
+                                    ✕
+                                    </button>
+                                </div>
+                            )}
                             {postMessage && (
                                 <p className="post-message">
                                 {postMessage}
@@ -98,9 +147,11 @@ function Dashboard(){
                             )}
                             <div className="creative-post-actions">
                                 <div className="creativepost-options">
-                                <button title="Add image">🖼️</button>
-                                <button title="Add video">🎥</button>
-                                <button title="Add link">🔗</button>
+                                <input id="postImageInput" type="file" accept="image/*" onChange={handleImgSelect} hidden/>
+                                <input id="postVideoInput" type="file" accept="video/*" onChange={handleVdoSelect} hidden/>
+                                <button type="button" title="Add image" onClick={() => document.getElementById('postImageInput')?.click()}>🖼️</button>
+                                <button type="button" title="Add video" onClick={() => document.getElementById('postVideoInput')?.click()}>🎥</button>
+                                {/* <button title="Add link">🔗</button> */}
                                 </div>
                                 <button className="creativepost-button" onClick={handleCreatePost}> POST </button>
                             </div>
@@ -122,6 +173,20 @@ function Dashboard(){
                             <p className="creativepost-description">
                             {post.text}
                             </p>
+                            {post.image && (
+                                <div className="created-post-image">
+                                    <img
+                                    src={post.image}
+                                    alt="Creative post"
+                                    />
+                                </div>
+                                )
+                            }
+                            {post.video && (
+                                <div className="created-post-video">
+                                    <video src={post.video} controls />
+                                </div>
+                            )}
                             <div className="creativepost-footer">
                                 <div className="creativepost-reactions">
                                     <button>
