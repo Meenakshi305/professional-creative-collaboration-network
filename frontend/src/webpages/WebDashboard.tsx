@@ -1,12 +1,15 @@
 import { useState } from 'react'
 import './WebDashboard.css'
 
+import Profile from '../pages/Profile/Profile'
+
 type PostCreated = {
   id: number
   text: string
 }
 
 function Dashboard(){
+    const [currentPage, setCurrentPage] = useState<'dashboard' | 'profile'>('dashboard')
     const [sideOpen, setSideOpen] = useState(false)
     const [likePosts, setLikePosts] = useState<number[]>([])
     const [postText, setPostText] = useState('')
@@ -37,6 +40,10 @@ function Dashboard(){
         setPostMessage('')
     }
 
+    if (currentPage === 'profile') {
+    return <Profile />
+    }
+
     return(
         <main className='dashboard-page'>
             <div className='side-container' onMouseEnter={()=>setSideOpen(true)}
@@ -48,7 +55,7 @@ function Dashboard(){
                         <span>🏠</span>
                         {sideOpen&&<span>Dashboard</span>}
                     </button>
-                    <button>
+                    <button onClick={() => setCurrentPage('profile')}>
                         <span>👤</span>
                         {sideOpen&&<span>Profiles</span>}
                     </button>
