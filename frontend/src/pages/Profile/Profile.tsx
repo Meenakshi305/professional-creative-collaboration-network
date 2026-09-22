@@ -9,12 +9,17 @@ type EditableProfile = {
   bio: string
 }
 
+type Visibility = 'PUBLIC' | 'MEMBERS_ONLY' | 'PRIVATE'
+
 function Profile() {
   const [activeTab, setActiveTab] = useState<
     'portfolio' | 'posts' | 'achievements'
   >('portfolio')
 
   const [isEditing, setIsEditing] = useState(false)
+  const [isAddingSkill, setIsAddingSkill] = useState(false)
+  const [newSkill, setNewSkill] = useState('')
+  const [visibility, setVisibility] = useState<Visibility>('PUBLIC')
 
   const [profile, setProfile] = useState({
     displayName: 'Sonny Hayes',
@@ -163,6 +168,59 @@ function Profile() {
     setIsEditing(false)
   }
 
+  const addSkill = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+
+    const skill = newSkill.trim()
+
+    if (!skill) {
+      return
+    }
+
+    const skillAlreadyExists = profile.skills.some(
+      (existingSkill) =>
+        existingSkill.toLowerCase() === skill.toLowerCase()
+    )
+
+    if (skillAlreadyExists) {
+      return
+    }
+
+    setProfile((currentProfile) => ({
+      ...currentProfile,
+      skills: [...currentProfile.skills, skill]
+    }))
+
+    setNewSkill('')
+    setIsAddingSkill(false)
+  }
+
+  const removeSkill = (skillToRemove: string) => {
+    setProfile((currentProfile) => ({
+      ...currentProfile,
+      skills: currentProfile.skills.filter(
+        (skill) => skill !== skillToRemove
+      )
+    }))
+  }
+
+  const closeSkillModal = () => {
+    setNewSkill('')
+    setIsAddingSkill(false)
+  }
+
+  const getVisibilityLabel = () => {
+    if (visibility === 'PUBLIC') {
+      return 'Public'
+    }
+
+    if (visibility === 'MEMBERS_ONLY') {
+      return 'Members Only'
+    }
+
+    return 'Private'
+  }
+
   return (
     <main className="profile-page">
       <div className="profile-content">
@@ -202,7 +260,9 @@ function Profile() {
                 <span>🔗 {profile.website}</span>
               </div>
 
-              <p className="profile-bio">{profile.bio}</p>
+              <p className="profile-bio">
+                {profile.bio}
+              </p>
 
               <div className="profile-stats">
                 <div className="profile-stat">
@@ -234,17 +294,92 @@ function Profile() {
               <h2>Skills & Experience</h2>
             </div>
 
-            <button className="profile-small-button">
+            <button
+              className="profile-small-button"
+              onClick={() => setIsAddingSkill(true)}
+            >
               + Add Skill
             </button>
           </div>
 
           <div className="skills-list">
             {profile.skills.map((skill) => (
-              <span className="skill-chip" key={skill}>
-                {skill}
-              </span>
+              <div className="skill-chip" key={skill}>
+                <span>{skill}</span>
+
+                <button
+                  className="remove-skill-button"
+                  onClick={() => removeSkill(skill)}
+                  aria-label={`Remove ${skill}`}
+                >
+                  ×
+                </button>
+              </div>
             ))}
+          </div>
+
+          <div className="visibility-section">
+            <div className="visibility-heading">
+              <div>
+                <p className="section-eyebrow">
+                  PROFILE PRIVACY
+                </p>
+
+                <h3>Profile Visibility</h3>
+
+                <p>
+                  Choose who can view your professional profile.
+                </p>
+              </div>
+
+              <span className="visibility-status">
+                {getVisibilityLabel()}
+              </span>
+            </div>
+
+            <div className="visibility-options">
+              <button
+                className={
+                  visibility === 'PUBLIC'
+                    ? 'visibility-option active'
+                    : 'visibility-option'
+                }
+                onClick={() => setVisibility('PUBLIC')}
+              >
+                <strong>Public</strong>
+                <span>
+                  Anyone can view your profile
+                </span>
+              </button>
+
+              <button
+                className={
+                  visibility === 'MEMBERS_ONLY'
+                    ? 'visibility-option active'
+                    : 'visibility-option'
+                }
+                onClick={() => setVisibility('MEMBERS_ONLY')}
+              >
+                <strong>Members Only</strong>
+                <span>
+                  Only registered creatives can view it
+                </span>
+              </button>
+
+              <button
+                className={
+                  visibility === 'PRIVATE'
+                    ? 'visibility-option active'
+                    : 'visibility-option'
+                }
+                onClick={() => setVisibility('PRIVATE')}
+              >
+                <strong>Private</strong>
+                <span>
+                  Your profile is visible only to you
+                </span>
+              </button>
+            </div>
           </div>
         </section>
 
@@ -333,8 +468,13 @@ function Profile() {
 
                     <div>
                       <div className="post-name">
-                        <strong>{profile.displayName}</strong>
-                        <span className="small-verified">✓</span>
+                        <strong>
+                          {profile.displayName}
+                        </strong>
+
+                        <span className="small-verified">
+                          ✓
+                        </span>
                       </div>
 
                       <span>
@@ -346,8 +486,13 @@ function Profile() {
                   <p>{post.text}</p>
 
                   <div className="profile-post-footer">
-                    <span>♡ {post.likes} likes</span>
-                    <span>💬 Comments</span>
+                    <span>
+                      ♡ {post.likes} likes
+                    </span>
+
+                    <span>
+                      💬 Comments
+                    </span>
                   </div>
                 </article>
               ))}
@@ -367,11 +512,18 @@ function Profile() {
 
                   <div className="achievement-info">
                     <div className="achievement-title-row">
-                      <h3>{achievement.title}</h3>
-                      <span>{achievement.date}</span>
+                      <h3>
+                        {achievement.title}
+                      </h3>
+
+                      <span>
+                        {achievement.date}
+                      </span>
                     </div>
 
-                    <p>{achievement.description}</p>
+                    <p>
+                      {achievement.description}
+                    </p>
                   </div>
                 </article>
               ))}
@@ -387,13 +539,16 @@ function Profile() {
         >
           <div
             className="edit-modal"
-            onMouseDown={(event) => event.stopPropagation()}
+            onMouseDown={(event) =>
+              event.stopPropagation()
+            }
           >
             <div className="edit-modal-header">
               <div>
                 <p className="section-eyebrow">
                   PROFESSIONAL IDENTITY
                 </p>
+
                 <h2>Edit Profile</h2>
               </div>
 
@@ -500,6 +655,74 @@ function Profile() {
                   type="submit"
                 >
                   Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {isAddingSkill && (
+        <div
+          className="edit-modal-overlay"
+          onMouseDown={closeSkillModal}
+        >
+          <div
+            className="skill-modal"
+            onMouseDown={(event) =>
+              event.stopPropagation()
+            }
+          >
+            <div className="edit-modal-header">
+              <div>
+                <p className="section-eyebrow">
+                  PROFESSIONAL EXPERTISE
+                </p>
+
+                <h2>Add Skill</h2>
+              </div>
+
+              <button
+                className="edit-modal-close"
+                type="button"
+                onClick={closeSkillModal}
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={addSkill}>
+              <div className="edit-form-group">
+                <label htmlFor="newSkill">
+                  Skill or Expertise
+                </label>
+
+                <input
+                  id="newSkill"
+                  type="text"
+                  value={newSkill}
+                  onChange={(event) =>
+                    setNewSkill(event.target.value)
+                  }
+                  placeholder="e.g. Wet Weather Racing"
+                  autoFocus
+                />
+              </div>
+
+              <div className="edit-modal-actions">
+                <button
+                  className="edit-cancel-button"
+                  type="button"
+                  onClick={closeSkillModal}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  className="edit-save-button"
+                  type="submit"
+                >
+                  Add Skill
                 </button>
               </div>
             </form>
