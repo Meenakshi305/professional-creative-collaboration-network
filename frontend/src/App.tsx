@@ -1,7 +1,9 @@
 // Importing "useState" -> UserScreen
 import { useState } from 'react'
 import './App.css'
-import logoWebsite from './assets/logoWebsite.png' 
+import './webpages/WebDashboard.css'
+import logoWebsite from './assets/logoWebsite.png'
+import Dashboard from './webpages/WebDashboard'
 
 function CreativeCollabNetwork() {
   // User States
@@ -17,6 +19,8 @@ function CreativeCollabNetwork() {
   const [loginPassword, setLoginPassword] = useState('')
   const dumEmail='Pratik123@gmail.com'
   const dumPassword='Pratik@321'
+
+  const[isLogIn, setIsLogIn] = useState(false)
 
   // Guardian States
   const [emailOfGuardian, setEmailOfGuardian] = useState('')
@@ -62,6 +66,7 @@ function CreativeCollabNetwork() {
     }
 
     setUiMessages("Account created Successfully!! Welcome to out creative network")
+    setIsLogIn(true)
 
   }
 
@@ -73,16 +78,19 @@ function CreativeCollabNetwork() {
     }
     if (loginEmail==dumEmail&&loginPassword==dumPassword){
       setUiMessages("Login Successful !! Wecome to Creative Netowork")
+      setIsLogIn(true)
       return
     }
     setUiMessages('Incorrect Email and Password !!')
   }
 
-
+  if (isLogIn) {
+  return <Dashboard/>
+  }
   return (
     <main className='page-container'>
+      {isLogIn && (<h2>Dashboard - Successful Login</h2>)}
       <section className='intro-section'>
-
         <img 
         src={logoWebsite} 
         alt='Professional Creative Collaboration Network Logo' className='logoWebsite'/>

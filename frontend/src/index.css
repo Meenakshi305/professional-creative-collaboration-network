@@ -1,19 +1,27 @@
-* {
-  box-sizing: border-box;
-}
-
-html,
-body,
-#root {
-  margin: 0;
-  padding: 0;
-  min-width: 100%;
-  min-height: 100%;
-}
-
-body {
-  font-family:
-    Arial,
-    Helvetica,
-    sans-serif;
+:root {
+  --creative-background:
+    radial-gradient(
+      circle at 18% 8%,
+      rgba(78, 151, 207, 0.75),
+      transparent 42%
+    ),
+    radial-gradient(
+      circle at 78% 28%,
+      rgba(220, 128, 117, 0.68),
+      transparent 45%
+    ),
+    radial-gradient(
+      circle at 48% 48%,
+      rgba(205, 167, 103, 0.62),
+      transparent 42%
+    ),
+    linear-gradient(
+      160deg,
+      #75a4c5 0%,
+      #b3aaa1 30%,
+      #c79b75 48%,
+      #b67987 66%,
+      #5662ad 84%,
+      #3f70a5 100%
+    );
 }
