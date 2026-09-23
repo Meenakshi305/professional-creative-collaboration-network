@@ -201,7 +201,7 @@ function Dashboard(){
                                 <input id="postImageInput" type="file" accept="image/*" onChange={handleImgSelect} hidden/>
                                 <input id="postVideoInput" type="file" accept="video/*" onChange={handleVdoSelect} hidden/>
                                 <button type="button" title="Add image" onClick={() => document.getElementById('postImageInput')?.click()}>🖼️</button>
-                                <button type="button" title="Add video" onClick={() => document.getElementById('postVideoInput')?.click()}>🎥</button>
+                                {/* <button type="button" title="Add video" onClick={() => document.getElementById('postVideoInput')?.click()}>🎥</button> */}
                                 {/* <button title="Add link">🔗</button> */}
                                 </div>
                                 <button className="creativepost-button" onClick={handleCreatePost}> POST </button>
@@ -405,8 +405,8 @@ function Dashboard(){
                             <div className="creative-professional">
                                 <div className="avatar">👤</div>
                                 <div className="creativeprof-info">
-                                    <strong>Rhea Kapoor</strong>
-                                    <span>Illustrator</span>
+                                    <strong>Charlie Smith</strong>
+                                    <span>Painter</span>
                                 </div>
                                 <button type="button" className={`follow-buttons ${ 
                                     creativesFollowed.includes(1) ? 'following' : ''}`}
@@ -417,8 +417,8 @@ function Dashboard(){
                             <div className="creative-professional">
                                 <div className="avatar">👤</div>
                                 <div className="creativeprof-info">
-                                    <strong>Karan Malhotra</strong>
-                                    <span>Filmmaker</span>
+                                    <strong>Isla Wilson</strong>
+                                    <span>Musician</span>
                                 </div>
                                 <button type="button" className={`follow-buttons ${ 
                                     creativesFollowed.includes(2) ? 'following' : ''}`}
