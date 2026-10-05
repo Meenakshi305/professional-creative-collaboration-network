@@ -1,6 +1,6 @@
 package com.creative.collaboration.dto;
 
-import com.creative.collaboration.entity.AttendanceStatus;
+
 import com.creative.collaboration.entity.RegistrationStatus;
 
 import java.time.LocalDateTime;
