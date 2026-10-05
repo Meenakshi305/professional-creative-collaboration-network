@@ -550,10 +550,6 @@ public class EventService {
                                 registrationStatus
                         )
 
-                        .attendanceStatus(
-                                AttendanceStatus.REGISTERED
-                        )
-
                         .build();
 
 
@@ -850,8 +846,6 @@ public class EventService {
                 registration.getUser().getUsername(),
 
                 registration.getStatus(),
-
-                registration.getAttendanceStatus(),
 
                 registration.getRegisteredAt(),
 
