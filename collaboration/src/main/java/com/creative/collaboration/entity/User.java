@@ -1,5 +1,6 @@
 package com.creative.collaboration.entity;
 
+import com.creative.collaboration.entity.enums.AccountType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -28,15 +29,21 @@ public class User {
     @Column(nullable = false, unique = true, length = 150)
     private String email;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 255)
     private String passwordHash;
 
     private LocalDate dateOfBirth;
 
-    @Column(nullable = false)
-    private String role;
+    @Enumerated(EnumType.STRING)
+    @Column(length = 30)
+    private AccountType accountType;
+
+    @Column(nullable = false, length = 30)
+    @Builder.Default
+    private String role = "USER";
 
     @Column(nullable = false)
+    @Builder.Default
     private boolean active = true;
 
     @Column(nullable = false, updatable = false)
@@ -44,9 +51,11 @@ public class User {
 
     @PrePersist
     public void beforeInsert() {
-
         if (createdAt == null) {
             createdAt = LocalDateTime.now();
+        }
+        if (role == null) {
+            role = "USER";
         }
     }
 }

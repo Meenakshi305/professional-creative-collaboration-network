@@ -2,9 +2,12 @@ package com.creative.collaboration.controller;
 
 import com.creative.collaboration.dto.PostResponse;
 import com.creative.collaboration.dto.UpdatePostRequest;
+import com.creative.collaboration.service.CurrentUserService;
 import com.creative.collaboration.service.PostService;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -15,27 +18,23 @@ import java.util.List;
 public class PostController {
 
     private final PostService postService;
+    private final CurrentUserService currentUserService;
 
     public PostController(
-            PostService postService
+            PostService postService,
+            CurrentUserService currentUserService
     ) {
         this.postService = postService;
+        this.currentUserService = currentUserService;
     }
 
-
-    // =========================================
-    // CREATE POST
-    // POST /api/posts
-    // =========================================
 
     @PostMapping(
             consumes = "multipart/form-data"
     )
-    public ResponseEntity<PostResponse>
-    createPost(
+    public ResponseEntity<PostResponse> createPost(
 
-            @RequestHeader("X-User-Id")
-            Long userId,
+            Authentication authentication,
 
             @RequestParam(
                     value = "caption",
@@ -51,6 +50,12 @@ public class PostController {
 
     ) {
 
+        Long userId =
+                currentUserService
+                        .getCurrentUserId(
+                                authentication
+                        );
+
         return ResponseEntity.ok(
                 postService.createPost(
                         userId,
@@ -61,19 +66,17 @@ public class PostController {
     }
 
 
-    // =========================================
-    // MY POSTS
-    // GET /api/posts/me
-    // =========================================
-
     @GetMapping("/me")
     public ResponseEntity<List<PostResponse>>
     getMyPosts(
-
-            @RequestHeader("X-User-Id")
-            Long userId
-
+            Authentication authentication
     ) {
+
+        Long userId =
+                currentUserService
+                        .getCurrentUserId(
+                                authentication
+                        );
 
         return ResponseEntity.ok(
                 postService.getMyPosts(
@@ -83,18 +86,10 @@ public class PostController {
     }
 
 
-    // =========================================
-    // GET ONE POST
-    // GET /api/posts/{postId}
-    // =========================================
-
     @GetMapping("/{postId}")
     public ResponseEntity<PostResponse>
     getPost(
-
-            @PathVariable
-            Long postId
-
+            @PathVariable Long postId
     ) {
 
         return ResponseEntity.ok(
@@ -105,25 +100,24 @@ public class PostController {
     }
 
 
-    // =========================================
-    // UPDATE POST
-    // PUT /api/posts/{postId}
-    // =========================================
-
     @PutMapping("/{postId}")
     public ResponseEntity<PostResponse>
     updatePost(
 
-            @PathVariable
-            Long postId,
+            @PathVariable Long postId,
 
-            @RequestHeader("X-User-Id")
-            Long userId,
+            Authentication authentication,
 
             @RequestBody
             UpdatePostRequest request
 
     ) {
+
+        Long userId =
+                currentUserService
+                        .getCurrentUserId(
+                                authentication
+                        );
 
         return ResponseEntity.ok(
                 postService.updatePost(
@@ -135,22 +129,21 @@ public class PostController {
     }
 
 
-    // =========================================
-    // DELETE POST
-    // DELETE /api/posts/{postId}
-    // =========================================
-
     @DeleteMapping("/{postId}")
     public ResponseEntity<Void>
     deletePost(
 
-            @PathVariable
-            Long postId,
+            @PathVariable Long postId,
 
-            @RequestHeader("X-User-Id")
-            Long userId
+            Authentication authentication
 
     ) {
+
+        Long userId =
+                currentUserService
+                        .getCurrentUserId(
+                                authentication
+                        );
 
         postService.deletePost(
                 postId,
