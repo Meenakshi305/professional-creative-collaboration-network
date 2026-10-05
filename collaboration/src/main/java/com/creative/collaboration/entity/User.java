@@ -17,8 +17,10 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "user_id")
     private Long id;
+
+    @Column(length = 150)
+    private String fullName;
 
     @Column(nullable = false, unique = true, length = 100)
     private String username;
@@ -42,6 +44,9 @@ public class User {
 
     @PrePersist
     public void beforeInsert() {
-        createdAt = LocalDateTime.now();
+
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
     }
 }

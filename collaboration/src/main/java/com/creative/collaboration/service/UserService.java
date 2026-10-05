@@ -8,6 +8,7 @@ import com.creative.collaboration.exception.ResourceNotFoundException;
 import com.creative.collaboration.repository.UserFollowRepository;
 import com.creative.collaboration.repository.UserProfileRepository;
 import com.creative.collaboration.repository.UserRepository;
+import com.creative.collaboration.dto.ProfileSearchResponse;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -349,5 +350,42 @@ public class UserService {
                 user.getUsername(),
                 profileImageUrl
         );
+    }
+    public List<ProfileSearchResponse> searchProfiles(
+            String query
+    ) {
+
+        if (query == null || query.isBlank()) {
+            return List.of();
+        }
+
+        return userRepository
+                .searchUsers(query.trim())
+                .stream()
+                .map(user -> {
+
+                    UserProfile profile =
+                            userProfileRepository
+                                    .findByUserId(
+                                            user.getId()
+                                    )
+                                    .orElse(null);
+
+                    return new ProfileSearchResponse(
+                            user.getId(),
+                            user.getFullName(),
+                            user.getUsername(),
+                            profile != null
+                                    ? profile.getSkills()
+                                    : null,
+                            profile != null
+                                    ? profile.getBio()
+                                    : null,
+                            profile != null
+                                    ? profile.getProfileImageUrl()
+                                    : null
+                    );
+                })
+                .toList();
     }
 }

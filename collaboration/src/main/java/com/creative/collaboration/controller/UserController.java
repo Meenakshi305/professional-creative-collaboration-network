@@ -6,7 +6,7 @@ import com.creative.collaboration.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import com.creative.collaboration.dto.ProfileSearchResponse;
 import java.util.List;
 
 @RestController
@@ -183,6 +183,16 @@ public class UserController {
         return ResponseEntity.ok(
                 userService
                         .getFollowing(id)
+        );
+    }
+    @GetMapping("/search")
+    public ResponseEntity<List<ProfileSearchResponse>>
+    searchProfiles(
+            @RequestParam String query
+    ) {
+
+        return ResponseEntity.ok(
+                userService.searchProfiles(query)
         );
     }
 }
