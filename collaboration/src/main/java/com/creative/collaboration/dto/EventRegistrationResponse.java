@@ -19,8 +19,6 @@ public record EventRegistrationResponse(
 
         RegistrationStatus status,
 
-        AttendanceStatus attendanceStatus,
-
         LocalDateTime registeredAt,
 
         LocalDateTime cancelledAt
