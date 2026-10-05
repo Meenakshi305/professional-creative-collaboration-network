@@ -46,9 +46,6 @@ public class EventRegistration {
     @Column(nullable = false, length = 20)
     private RegistrationStatus status;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private AttendanceStatus attendanceStatus;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime registeredAt;
@@ -65,10 +62,6 @@ public class EventRegistration {
 
         if (status == null) {
             status = RegistrationStatus.PENDING;
-        }
-
-        if (attendanceStatus == null) {
-            attendanceStatus = AttendanceStatus.REGISTERED;
         }
     }
 }
