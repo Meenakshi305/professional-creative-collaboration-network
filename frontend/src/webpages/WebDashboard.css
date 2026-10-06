@@ -109,7 +109,7 @@ background: rgba(250, 248, 255, 0.94);
   height: 44px;
   min-width: 220px;
   max-width: 420px;
-
+    
   flex: 1;
 
   display: flex;
@@ -281,7 +281,7 @@ background: rgba(250, 248, 255, 0.94);
    LEFT PROFILE CARD
 ========================================================= */
 
-.profile-card {
+.dashboard-left .profile-card {
   overflow: hidden;
 }
 
@@ -303,7 +303,7 @@ background: rgba(250, 248, 255, 0.94);
   text-align: center;
 }
 
-.profile-avatar {
+.dashboard-left .profile-avatar {
   width: 76px;
   height: 76px;
 
@@ -364,37 +364,36 @@ background: rgba(250, 248, 255, 0.94);
 
 /* ---------------- PROFILE STATS ---------------- */
 
-.profile-stats {
-  padding: 8px 18px;
-
+.dashboard-left .profile-stats {
   display: flex;
   flex-direction: column;
-
-  border-top: 1px solid #eceaf3;
-  border-bottom: 1px solid #eceaf3;
+  gap: 0;
+  padding: 0;
+  border-top: 1px solid rgba(83, 69, 160, 0.1);
 }
 
-.profile-stats > div {
-  padding: 8px 0;
-
+.dashboard-left .profile-stats > div {
   display: flex;
+  flex-direction: row;
   justify-content: space-between;
   align-items: center;
 
-  color: #69657b;
-
+  padding: 15px 22px;
+  min-height: 0;
+}
+.dashboard-left .profile-stats span {
+  color: #77718a;
   font-size: 12px;
 }
-
-.profile-stats strong {
-  color: #6657cf;
-  font-size: 13px;
+.dashboard-left .profile-stats strong {
+  color: #6555db;
+  font-size: 14px;
+  font-weight: 700;
 }
-
 
 /* ---------------- PROFILE LINKS ---------------- */
 
-.profile-links {
+.dashboard-left .profile-links {
   padding: 10px;
 
   display: flex;
@@ -402,7 +401,7 @@ background: rgba(250, 248, 255, 0.94);
   gap: 2px;
 }
 
-.profile-links button {
+.dashboard-left .profile-links button {
   width: 100%;
 
   padding: 10px 11px;

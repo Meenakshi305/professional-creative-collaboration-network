@@ -4,9 +4,11 @@ import './App.css'
 import './webpages/WebDashboard.css'
 import logoWebsite from './assets/logoWebsite.png'
 import Dashboard from './webpages/WebDashboard'
+import Profile from './pages/Profile/Profile'
 
 function CreativeCollabNetwork() {
   // User States
+  const [currentPage, setCurrentPage] = useState<'dashboard' | 'profile'>('dashboard')
   const [authnMode, setAuthnMode] = useState<'login' | 'signup'>('signup')
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
@@ -85,7 +87,16 @@ function CreativeCollabNetwork() {
   }
 
   if (isLogIn) {
-  return <Dashboard/>
+    if (currentPage === 'profile') {
+      return (
+        <Profile
+          onHomeClick={() => setCurrentPage('dashboard')}
+          onProfileClick={() => setCurrentPage('profile')}
+        />
+      )
+    }
+
+    return (<Dashboard onHomeClick={() => setCurrentPage('dashboard')} onProfileClick={() => setCurrentPage('profile')}/>)
   }
   return (
     <main className='page-container'>

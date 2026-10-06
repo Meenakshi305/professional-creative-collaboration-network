@@ -1,13 +1,17 @@
 import { useRef, useState } from 'react'
 import './WebDashboard.css'
-import logoWebsite from '../assets/logoWebsite.png'
+import NavigationBar from '../shared/NavigationBar/NavigationBar'
 
 type UserPost = {
   id: number
   caption: string
   image: string
 }
-function Dashboard() {
+type DashboardProps = {
+  onHomeClick: () => void
+  onProfileClick: () => void
+}
+function Dashboard({ onHomeClick, onProfileClick }: DashboardProps) {
     const [searchText, setSearchText] = useState('')
     const [creativesFollowed, setCreativesFollowed] = useState<number[]>([])
     const [postCaption, setPostCaption] = useState('')
@@ -155,201 +159,136 @@ function Dashboard() {
     <main className="dashboard-page">
 
       {/* ================= HEADER ================= */}
-      <header className="dashboard-header">
-        <div className="header-container">
+      <NavigationBar
+        activePage="home"
+        onHomeClick={onHomeClick}
+        onProfileClick={onProfileClick}
+        searchArea={
+            <div className="search-wrapper">
 
-          <div className="dashboard-brand">
-
-        <div className="brand-logo">
-            <img
-            src={logoWebsite}
-            alt="Professional Creative Collaboration Network"
-            />
-        </div>
-
-        <div className="brand-text">
-            <strong>Professional Creative Collaboration Network</strong>
-            <span>Create • Connect • Collaborate</span>
-        </div>
-
-        </div>
-
-          <div className="search-wrapper">
-            <div className="dashboard-search">
+                <div className="dashboard-search">
                 <span>⌕</span>
 
                 <input
-                type="text"
-                placeholder="Search creatives, collaborations and events"
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
+                    type="text"
+                    placeholder="Search creatives, collaborations and events"
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
                 />
 
                 {searchText && (
-                <button
+                    <button
                     type="button"
                     className="clear-search"
                     onClick={() => setSearchText('')}
-                >
+                    >
                     ✕
-                </button>
+                    </button>
                 )}
-            </div>
+                </div>
 
-
-            {/* Search Results */}
-            {normalizedSearch && (
+                {searchText && (
                 <div className="search-results">
 
-                {/* Creatives */}
-                {filteredCreatives.length > 0 && (
-                    <section className="search-result-section">
+                    {filteredCreatives.length > 0 && (
+                    <div className="search-result-section">
+                        <h4>Creatives</h4>
 
-                    <h4>Creatives</h4>
-
-                    {filteredCreatives.map((creative) => (
+                        {filteredCreatives.map((creative) => (
                         <button
-                        type="button"
-                        className="search-result-item"
-                        key={`creative-${creative.id}`}
+                            type="button"
+                            className="search-result-item"
+                            key={creative.id}
                         >
-                        <div className="search-result-avatar">
+                            <div className="search-result-avatar">
                             {creative.name
-                            .split(' ')
-                            .map((word) => word[0])
-                            .join('')}
-                        </div>
+                                .split(' ')
+                                .map((word) => word[0])
+                                .join('')}
+                            </div>
 
-                        <div className="search-result-info">
+                            <div className="search-result-info">
                             <strong>{creative.name}</strong>
-
                             <span>
-                            {creative.role} • {creative.location}
+                                {creative.role} • {creative.location}
                             </span>
-                        </div>
+                            </div>
 
-                        <span className="search-result-arrow">›</span>
+                            <span className="search-result-arrow">›</span>
                         </button>
-                    ))}
+                        ))}
+                    </div>
+                    )}
 
-                    </section>
-                )}
+                    {filteredCollaborations.length > 0 && (
+                    <div className="search-result-section">
+                        <h4>Collaborations</h4>
 
-
-                {/* Collaborations */}
-                {filteredCollaborations.length > 0 && (
-                    <section className="search-result-section">
-
-                    <h4>Collaborations</h4>
-
-                    {filteredCollaborations.map((collaboration) => (
+                        {filteredCollaborations.map((collaboration) => (
                         <button
-                        type="button"
-                        className="search-result-item"
-                        key={`collaboration-${collaboration.id}`}
+                            type="button"
+                            className="search-result-item"
+                            key={collaboration.id}
                         >
-                        <div className="search-result-icon">
+                            <div className="search-result-icon">
                             🤝
-                        </div>
+                            </div>
 
-                        <div className="search-result-info">
+                            <div className="search-result-info">
                             <strong>{collaboration.title}</strong>
                             <span>{collaboration.description}</span>
-                        </div>
+                            </div>
 
-                        <span className="search-result-arrow">›</span>
+                            <span className="search-result-arrow">›</span>
                         </button>
-                    ))}
+                        ))}
+                    </div>
+                    )}
 
-                    </section>
-                )}
+                    {filteredEvents.length > 0 && (
+                    <div className="search-result-section">
+                        <h4>Events</h4>
 
-
-                {/* Events */}
-                {filteredEvents.length > 0 && (
-                    <section className="search-result-section">
-
-                    <h4>Events</h4>
-
-                    {filteredEvents.map((event) => (
+                        {filteredEvents.map((event) => (
                         <button
-                        type="button"
-                        className="search-result-item"
-                        key={`event-${event.id}`}
+                            type="button"
+                            className="search-result-item"
+                            key={event.id}
                         >
-                        <div className="search-result-icon">
+                            <div className="search-result-icon">
                             📅
-                        </div>
+                            </div>
 
-                        <div className="search-result-info">
+                            <div className="search-result-info">
                             <strong>{event.title}</strong>
                             <span>{event.details}</span>
-                        </div>
+                            </div>
 
-                        <span className="search-result-arrow">›</span>
+                            <span className="search-result-arrow">›</span>
                         </button>
-                    ))}
+                        ))}
+                    </div>
+                    )}
 
-                    </section>
-                )}
-
-
-                {/* No Results */}
-                {filteredCreatives.length === 0 &&
+                    {filteredCreatives.length === 0 &&
                     filteredCollaborations.length === 0 &&
                     filteredEvents.length === 0 && (
-
-                    <div className="no-search-results">
+                        <div className="no-search-results">
                         <span>⌕</span>
-
                         <strong>No results found</strong>
-
                         <p>
-                        Try searching for another creative, collaboration or event.
+                            No creatives, collaborations or events match
+                            "{searchText}".
                         </p>
-                    </div>
-
+                        </div>
                     )}
 
                 </div>
-            )}
+                )}
 
             </div>
-
-          <nav className="dashboard-navigation">
-            <button className="nav-item active">
-              <span>🏠</span>
-              <small>Home</small>
-            </button>
-
-            <button className="nav-item">
-              <span>👤</span>
-              <small>Profiles</small>
-            </button>
-
-            <button className="nav-item">
-              <span>🤝</span>
-              <small>Collaborations</small>
-            </button>
-
-            <button className="nav-item">
-              <span>📅</span>
-              <small>Events</small>
-            </button>
-
-            <button className="nav-item">
-              <span>🔔</span>
-              <small>Notifications</small>
-            </button>
-
-            <button className="nav-item">
-              <span>⚙️</span>
-              <small>Settings</small>
-            </button>
-          </nav>
-
-        </div>
-      </header>
+            }
+        />
 
 
       {/* ================= DASHBOARD BODY ================= */}
@@ -394,7 +333,7 @@ function Dashboard() {
             </div>
 
             <div className="profile-links">
-              <button>👤 View My Profile</button>
+              <button onClick={onProfileClick}>👤 View My Profile</button>
               <button>🎨 My Portfolio</button>
               <button>📅 My Events</button>
               <button>🔖 Saved Items</button>
