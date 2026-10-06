@@ -15,9 +15,10 @@ type Visibility = 'PUBLIC' | 'MEMBERS_ONLY' | 'PRIVATE'
 type ProfileProps = {
   onHomeClick: () => void
   onProfileClick: () => void
+  onEventsClick: () => void
 }
 
-function Profile({onHomeClick,onProfileClick}: ProfileProps) {
+function Profile({onHomeClick,onProfileClick,onEventsClick}: ProfileProps) {
   const [activeTab, setActiveTab] = useState<
     'portfolio' | 'posts' | 'achievements'
   >('portfolio')
@@ -228,11 +229,12 @@ function Profile({onHomeClick,onProfileClick}: ProfileProps) {
   }
 
   return (
-  <>
+  <div className="profile-screen">
     <NavigationBar
       activePage="profile"
       onHomeClick={onHomeClick}
       onProfileClick={onProfileClick}
+      onEventsClick={onEventsClick}
     />
   <main className="profile-page">
     <div className="profile-content">
@@ -748,7 +750,7 @@ function Profile({onHomeClick,onProfileClick}: ProfileProps) {
         </div>
       )}
     </main>
-    </>
+    </div>
   )
 }
 

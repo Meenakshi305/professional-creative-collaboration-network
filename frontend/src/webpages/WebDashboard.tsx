@@ -10,8 +10,9 @@ type UserPost = {
 type DashboardProps = {
   onHomeClick: () => void
   onProfileClick: () => void
+  onEventsClick: () => void
 }
-function Dashboard({ onHomeClick, onProfileClick }: DashboardProps) {
+function Dashboard({ onHomeClick, onProfileClick, onEventsClick }: DashboardProps) {
     const [searchText, setSearchText] = useState('')
     const [creativesFollowed, setCreativesFollowed] = useState<number[]>([])
     const [postCaption, setPostCaption] = useState('')
@@ -163,6 +164,7 @@ function Dashboard({ onHomeClick, onProfileClick }: DashboardProps) {
         activePage="home"
         onHomeClick={onHomeClick}
         onProfileClick={onProfileClick}
+        onEventsClick={onEventsClick}
         searchArea={
             <div className="search-wrapper">
 

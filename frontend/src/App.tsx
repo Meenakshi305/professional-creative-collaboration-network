@@ -5,10 +5,11 @@ import './webpages/WebDashboard.css'
 import logoWebsite from './assets/logoWebsite.png'
 import Dashboard from './webpages/WebDashboard'
 import Profile from './pages/Profile/Profile'
+import Events from './pages/Events/Events'
 
 function CreativeCollabNetwork() {
   // User States
-  const [currentPage, setCurrentPage] = useState<'dashboard' | 'profile'>('dashboard')
+  const [currentPage, setCurrentPage] = useState<'dashboard' | 'profile' | 'events'>('dashboard')
   const [authnMode, setAuthnMode] = useState<'login' | 'signup'>('signup')
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
@@ -87,17 +88,34 @@ function CreativeCollabNetwork() {
   }
 
   if (isLogIn) {
-    if (currentPage === 'profile') {
+  if (currentPage === 'profile') {
+    return (
+      <Profile
+        onHomeClick={() => setCurrentPage('dashboard')}
+        onProfileClick={() => setCurrentPage('profile')}
+        onEventsClick={() => setCurrentPage('events')}
+      />
+    )
+  }
+
+    if (currentPage === 'events') {
       return (
-        <Profile
+        <Events
           onHomeClick={() => setCurrentPage('dashboard')}
           onProfileClick={() => setCurrentPage('profile')}
+          onEventsClick={() => setCurrentPage('events')}
         />
       )
     }
 
-    return (<Dashboard onHomeClick={() => setCurrentPage('dashboard')} onProfileClick={() => setCurrentPage('profile')}/>)
-  }
+    return (
+      <Dashboard
+        onHomeClick={() => setCurrentPage('dashboard')}
+        onProfileClick={() => setCurrentPage('profile')}
+        onEventsClick={() => setCurrentPage('events')}
+      />
+    )
+    }
   return (
     <main className='page-container'>
       {isLogIn && (<h2>Dashboard - Successful Login</h2>)}

@@ -3,9 +3,10 @@ import logoWebsite from '../../assets/logoWebsite.png'
 import './NavigationBar.css'
 
 type NavigationBarProps = {
-  activePage: 'home' | 'profile'
+  activePage: 'home' | 'profile' | 'events'
   onHomeClick: () => void
   onProfileClick: () => void
+  onEventsClick: () => void
   searchArea?: ReactNode
 }
 
@@ -13,6 +14,7 @@ function NavigationBar({
   activePage,
   onHomeClick,
   onProfileClick,
+  onEventsClick,
   searchArea
 }: NavigationBarProps) {
 
@@ -57,7 +59,10 @@ function NavigationBar({
             <small>Collaborations</small>
           </button>
 
-          <button className="nav-item">
+          <button
+            className={`nav-item ${activePage === 'events' ? 'active' : ''}`}
+            onClick={onEventsClick}
+          >
             <span>📅</span>
             <small>Events</small>
           </button>
