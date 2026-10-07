@@ -13,10 +13,16 @@ type EditableProfile = {
 type ProfileProps = {
   onHomeClick: () => void
   onProfileClick: () => void
+  onCollaborationClick: () => void
   onEventsClick: () => void
 }
 
-function Profile({onHomeClick,onProfileClick,onEventsClick}: ProfileProps) {
+function Profile({
+  onHomeClick,
+  onProfileClick,
+  onCollaborationClick,
+  onEventsClick
+}: ProfileProps) {
   const [activeTab, setActiveTab] = useState<
     'portfolio' | 'posts' | 'achievements'
   >('portfolio')
@@ -219,6 +225,7 @@ function Profile({onHomeClick,onProfileClick,onEventsClick}: ProfileProps) {
       activePage="profile"
       onHomeClick={onHomeClick}
       onProfileClick={onProfileClick}
+      onCollaborationClick={onCollaborationClick}
       onEventsClick={onEventsClick}
     />
   <main className="profile-page">

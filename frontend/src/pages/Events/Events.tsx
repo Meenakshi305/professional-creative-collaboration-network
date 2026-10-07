@@ -5,6 +5,7 @@ import NavigationBar from '../../shared/NavigationBar/NavigationBar'
 type EventsProps = {
   onHomeClick: () => void
   onProfileClick: () => void
+  onCollaborationClick: () => void
   onEventsClick: () => void
 }
 type EventItem = {
@@ -104,6 +105,7 @@ const eventData: EventItem[] = [
 function Events({
   onHomeClick,
   onProfileClick,
+  onCollaborationClick,
   onEventsClick
 }: EventsProps) {
     const [eventSearch, setEventSearch] = useState('')
@@ -133,6 +135,7 @@ function Events({
         activePage="events"
         onHomeClick={onHomeClick}
         onProfileClick={onProfileClick}
+        onCollaborationClick={onCollaborationClick}
         onEventsClick={onEventsClick}
       />
 

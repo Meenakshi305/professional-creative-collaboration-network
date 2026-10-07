@@ -6,10 +6,13 @@ import logoWebsite from './assets/logoWebsite.png'
 import Dashboard from './webpages/WebDashboard'
 import Profile from './pages/Profile/Profile'
 import Events from './pages/Events/Events'
+import Collaboration from './pages/Collaboration/Collaboration'
 
 function CreativeCollabNetwork() {
   // User States
-  const [currentPage, setCurrentPage] = useState<'dashboard' | 'profile' | 'events'>('dashboard')
+  const [currentPage, setCurrentPage] = useState<
+  'dashboard' | 'profile' | 'collaboration' | 'events' 
+  >('dashboard')
   const [authnMode, setAuthnMode] = useState<'login' | 'signup'>('signup')
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
@@ -93,16 +96,28 @@ function CreativeCollabNetwork() {
       <Profile
         onHomeClick={() => setCurrentPage('dashboard')}
         onProfileClick={() => setCurrentPage('profile')}
+        onCollaborationClick={() => setCurrentPage('collaboration')}
         onEventsClick={() => setCurrentPage('events')}
       />
     )
   }
 
+  if (currentPage === 'collaboration') {
+  return (
+    <Collaboration
+      onHomeClick={() => setCurrentPage('dashboard')}
+      onProfileClick={() => setCurrentPage('profile')}
+      onCollaborationClick={() => setCurrentPage('collaboration')}
+      onEventsClick={() => setCurrentPage('events')}
+    />
+  )
+}
     if (currentPage === 'events') {
       return (
         <Events
           onHomeClick={() => setCurrentPage('dashboard')}
           onProfileClick={() => setCurrentPage('profile')}
+          onCollaborationClick={() => setCurrentPage('collaboration')}
           onEventsClick={() => setCurrentPage('events')}
         />
       )
@@ -112,6 +127,7 @@ function CreativeCollabNetwork() {
       <Dashboard
         onHomeClick={() => setCurrentPage('dashboard')}
         onProfileClick={() => setCurrentPage('profile')}
+        onCollaborationClick={() => setCurrentPage('collaboration')}
         onEventsClick={() => setCurrentPage('events')}
       />
     )
