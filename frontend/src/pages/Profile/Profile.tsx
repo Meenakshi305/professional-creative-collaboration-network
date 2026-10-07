@@ -1,757 +1,2926 @@
-import { useState } from 'react'
+import {
+  useEffect,
+  useState
+} from 'react'
+
 import './Profile.css'
-import NavigationBar from '../../shared/NavigationBar/NavigationBar'
+
+import NavigationBar
+  from '../../shared/NavigationBar/NavigationBar'
+
+import {
+  getCurrentUser,
+  type CurrentUserResponse
+} from '../../service/authService'
+
+import {
+  getUserProfile,
+  updateUserProfile,
+  uploadProfileImage,
+  type ProfileResponse
+} from '../../service/profileService'
+
+import {
+  getExperiences,
+  addExperience,
+  updateExperience,
+  deleteExperience,
+  type Experience
+} from '../../service/experienceService'
+
+import {
+  getFollowersCount,
+  getFollowingCount
+} from '../../service/followService'
+
 
 type EditableProfile = {
-  displayName: string
-  professionalTitle: string
-  location: string
-  website: string
   bio: string
+  achievements: string
 }
 
-type Visibility = 'PUBLIC' | 'MEMBERS_ONLY' | 'PRIVATE'
+
+type ExperienceForm = {
+  jobTitle: string
+  organisation: string
+  startDate: string
+  endDate: string
+  currentRole: boolean
+  description: string
+}
+
 
 type ProfileProps = {
+
   onHomeClick: () => void
+
   onProfileClick: () => void
+
   onEventsClick: () => void
 }
 
-function Profile({onHomeClick,onProfileClick,onEventsClick}: ProfileProps) {
-  const [activeTab, setActiveTab] = useState<
-    'portfolio' | 'posts' | 'achievements'
-  >('portfolio')
 
-  const [isEditing, setIsEditing] = useState(false)
-  const [isAddingSkill, setIsAddingSkill] = useState(false)
-  const [newSkill, setNewSkill] = useState('')
-  const [visibility, setVisibility] = useState<Visibility>('PUBLIC')
+function Profile({
 
-  const [profile, setProfile] = useState({
-    displayName: 'Sonny Hayes',
-    professionalTitle: 'Professional Racing Driver',
-    location: 'United States',
-    website: 'sonnyhayes.racing',
-    bio: 'Veteran racing driver with decades of experience behind the wheel. Focused on performance, teamwork and pushing every lap to the limit.',
+  onHomeClick,
 
-    stats: {
-      followers: '1.2M',
-      following: 184,
-      collaborations: 27
-    },
+  onProfileClick,
 
-    skills: [
-      'Race Craft',
-      'Vehicle Development',
-      'Race Strategy',
-      'Driver Mentoring',
-      'Performance Analysis'
-    ],
+  onEventsClick
 
-    portfolio: [
-      {
-        id: 1,
-        title: 'APXGP Formula 1',
-        category: 'Motorsport',
-        description:
-          'Competing at the highest level of motorsport while working closely with the team to improve performance on and off the track.',
-        symbol: 'F1'
-      },
-      {
-        id: 2,
-        title: 'Race Development',
-        category: 'Performance',
-        description:
-          'Working with engineers and the racing team to analyse vehicle behaviour, race performance and competitive strategy.',
-        symbol: '01'
-      },
-      {
-        id: 3,
-        title: 'Driver Mentorship',
-        category: 'Collaboration',
-        description:
-          'Sharing racing experience and working alongside the next generation of drivers in a competitive team environment.',
-        symbol: 'SH'
-      }
-    ],
+}: ProfileProps) {
 
-    posts: [
-      {
-        id: 1,
-        text:
-          'Every lap gives you information. The challenge is knowing what matters, adapting quickly and giving the team everything you have.',
-        date: '2 days ago',
-        likes: '42K'
-      },
-      {
-        id: 2,
-        text:
-          'Long day at the circuit with the team. Plenty of data to work through, but we are moving in the right direction.',
-        date: '5 days ago',
-        likes: '31K'
-      },
-      {
-        id: 3,
-        text:
-          'Racing has always been a team effort. Drivers get the spotlight, but every person behind the car contributes to what happens on Sunday.',
-        date: '2 weeks ago',
-        likes: '58K'
-      }
-    ],
 
-    achievements: [
-      {
-        id: 1,
-        title: 'Formula 1 Return',
-        description:
-          'Returned to elite single-seater competition as part of the APXGP racing programme.',
-        date: 'Recent'
-      },
-      {
-        id: 2,
-        title: 'Endurance Racing Experience',
-        description:
-          'Built extensive experience across demanding endurance and professional motorsport environments.',
-        date: 'Career'
-      },
-      {
-        id: 3,
-        title: 'Driver Development',
-        description:
-          'Contributed racing knowledge and experience to support team performance and driver development.',
-        date: 'Career'
-      }
-    ]
+  // ============================================
+  // CURRENT USER
+  // ============================================
+
+  const [
+    currentUser,
+    setCurrentUser
+  ] = useState<CurrentUserResponse | null>(
+    null
+  )
+
+
+  // ============================================
+  // PROFILE
+  // ============================================
+
+  const [
+    ,
+    setProfile
+  ] = useState<ProfileResponse | null>(
+    null
+  )
+
+
+  const [
+    bio,
+    setBio
+  ] = useState('')
+
+
+  const [
+    skills,
+    setSkills
+  ] = useState<string[]>([])
+
+
+  const [
+    achievements,
+    setAchievements
+  ] = useState('')
+
+
+  const [
+    profileImageUrl,
+    setProfileImageUrl
+  ] = useState('')
+
+
+  // ============================================
+  // FOLLOW COUNTS
+  // ============================================
+
+  const [
+    followersCount,
+    setFollowersCount
+  ] = useState(0)
+
+
+  const [
+    followingCount,
+    setFollowingCount
+  ] = useState(0)
+
+
+  // ============================================
+  // PROFILE IMAGE
+  // ============================================
+
+  const [
+    selectedImage,
+    setSelectedImage
+  ] = useState<File | null>(
+    null
+  )
+
+
+  const [
+    imagePreview,
+    setImagePreview
+  ] = useState('')
+
+
+  // ============================================
+  // PROFILE EDIT
+  // ============================================
+
+  const [
+    editForm,
+    setEditForm
+  ] = useState<EditableProfile>({
+
+    bio: '',
+
+    achievements: ''
+
   })
 
-  const [editForm, setEditForm] = useState<EditableProfile>({
-    displayName: profile.displayName,
-    professionalTitle: profile.professionalTitle,
-    location: profile.location,
-    website: profile.website,
-    bio: profile.bio
+
+  // ============================================
+  // SKILLS
+  // ============================================
+
+  const [
+    isAddingSkill,
+    setIsAddingSkill
+  ] = useState(false)
+
+
+  const [
+    newSkill,
+    setNewSkill
+  ] = useState('')
+
+
+  // ============================================
+  // EXPERIENCE
+  // ============================================
+
+  const [
+    experiences,
+    setExperiences
+  ] = useState<Experience[]>([])
+
+
+  const [
+    isExperienceModalOpen,
+    setIsExperienceModalOpen
+  ] = useState(false)
+
+
+  const [
+    editingExperience,
+    setEditingExperience
+  ] = useState<Experience | null>(
+    null
+  )
+
+
+  const [
+    experienceForm,
+    setExperienceForm
+  ] = useState<ExperienceForm>({
+
+    jobTitle: '',
+
+    organisation: '',
+
+    startDate: '',
+
+    endDate: '',
+
+    currentRole: false,
+
+    description: ''
+
   })
+
+
+  // ============================================
+  // TABS
+  // ============================================
+
+  const [
+    activeTab,
+    setActiveTab
+  ] = useState<
+    'posts' |
+    'achievements'
+  >('posts')
+
+
+  // ============================================
+  // UI STATES
+  // ============================================
+
+  const [
+    isEditing,
+    setIsEditing
+  ] = useState(false)
+
+
+  const [
+    isLoading,
+    setIsLoading
+  ] = useState(true)
+
+
+  const [
+    isSaving,
+    setIsSaving
+  ] = useState(false)
+
+
+  const [
+    message,
+    setMessage
+  ] = useState('')
+
+
+  // ============================================
+  // LOAD PROFILE
+  // ============================================
+
+  useEffect(() => {
+
+    const loadProfile =
+      async () => {
+
+        try {
+
+          setIsLoading(
+            true
+          )
+
+
+          setMessage(
+            ''
+          )
+
+
+          const user =
+            await getCurrentUser()
+
+
+          setCurrentUser(
+            user
+          )
+
+
+          const [
+            profileData,
+            experienceData,
+            followerCount,
+            followingCountValue
+          ] =
+            await Promise.all([
+
+              getUserProfile(
+                user.userId
+              ),
+
+              getExperiences(
+                user.userId
+              ),
+
+              getFollowersCount(
+                user.userId
+              ),
+
+              getFollowingCount(
+                user.userId
+              )
+
+            ])
+
+
+          setProfile(
+            profileData
+          )
+
+
+          setExperiences(
+            experienceData
+          )
+
+
+          setFollowersCount(
+            followerCount
+          )
+
+
+          setFollowingCount(
+            followingCountValue
+          )
+
+
+          setBio(
+            profileData.bio || ''
+          )
+
+
+          setAchievements(
+            profileData.achievements || ''
+          )
+
+
+          setProfileImageUrl(
+            profileData.profileImageUrl || ''
+          )
+
+
+          const loadedSkills =
+            profileData.skills
+              ? profileData.skills
+                  .split(',')
+                  .map(
+                    skill =>
+                      skill.trim()
+                  )
+                  .filter(Boolean)
+              : []
+
+
+          setSkills(
+            loadedSkills
+          )
+
+
+        } catch (error) {
+
+          console.error(
+            'Profile load error:',
+            error
+          )
+
+
+          setMessage(
+            error instanceof Error
+              ? error.message
+              : 'Unable to load profile.'
+          )
+
+
+        } finally {
+
+          setIsLoading(
+            false
+          )
+        }
+      }
+
+
+    loadProfile()
+
+  }, [])
+
+
+  // ============================================
+  // IMAGE PREVIEW CLEANUP
+  // ============================================
+
+  useEffect(() => {
+
+    return () => {
+
+      if (imagePreview) {
+
+        URL.revokeObjectURL(
+          imagePreview
+        )
+      }
+    }
+
+  }, [imagePreview])
+
+
+  // ============================================
+  // INITIALS
+  // ============================================
+
+  const getInitials = () => {
+
+    if (!currentUser?.fullName) {
+
+      return 'U'
+    }
+
+
+    return currentUser.fullName
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map(
+        name =>
+          name.charAt(0)
+      )
+      .join('')
+      .toUpperCase()
+  }
+
+
+  // ============================================
+  // EDIT PROFILE
+  // ============================================
 
   const openEditProfile = () => {
+
     setEditForm({
-      displayName: profile.displayName,
-      professionalTitle: profile.professionalTitle,
-      location: profile.location,
-      website: profile.website,
-      bio: profile.bio
+
+      bio,
+
+      achievements
+
     })
 
-    setIsEditing(true)
-  }
 
-  const handleEditChange = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = event.target
-
-    setEditForm((currentForm) => ({
-      ...currentForm,
-      [name]: value
-    }))
-  }
-
-  const saveProfile = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-
-    setProfile((currentProfile) => ({
-      ...currentProfile,
-      displayName: editForm.displayName.trim(),
-      professionalTitle: editForm.professionalTitle.trim(),
-      location: editForm.location.trim(),
-      website: editForm.website.trim(),
-      bio: editForm.bio.trim()
-    }))
-
-    setIsEditing(false)
-  }
-
-  const cancelEdit = () => {
-    setIsEditing(false)
-  }
-
-  const addSkill = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-
-    const skill = newSkill.trim()
-
-    if (!skill) {
-      return
-    }
-
-    const skillAlreadyExists = profile.skills.some(
-      (existingSkill) =>
-        existingSkill.toLowerCase() === skill.toLowerCase()
+    setSelectedImage(
+      null
     )
 
-    if (skillAlreadyExists) {
+
+    if (imagePreview) {
+
+      URL.revokeObjectURL(
+        imagePreview
+      )
+    }
+
+
+    setImagePreview(
+      ''
+    )
+
+
+    setMessage(
+      ''
+    )
+
+
+    setIsEditing(
+      true
+    )
+  }
+
+
+  const handleEditChange = (
+    event:
+      React.ChangeEvent<
+        HTMLInputElement |
+        HTMLTextAreaElement
+      >
+  ) => {
+
+    const {
+      name,
+      value
+    } = event.target
+
+
+    setEditForm(
+      current => ({
+
+        ...current,
+
+        [name]:
+          value
+
+      })
+    )
+  }
+
+
+  // ============================================
+  // IMAGE
+  // ============================================
+
+  const handleImageSelection = (
+    event:
+      React.ChangeEvent<HTMLInputElement>
+  ) => {
+
+    const file =
+      event.target.files?.[0]
+
+
+    if (!file) {
+
       return
     }
 
-    setProfile((currentProfile) => ({
-      ...currentProfile,
-      skills: [...currentProfile.skills, skill]
-    }))
 
-    setNewSkill('')
-    setIsAddingSkill(false)
-  }
-
-  const removeSkill = (skillToRemove: string) => {
-    setProfile((currentProfile) => ({
-      ...currentProfile,
-      skills: currentProfile.skills.filter(
-        (skill) => skill !== skillToRemove
+    if (
+      !file.type.startsWith(
+        'image/'
       )
-    }))
-  }
+    ) {
 
-  const closeSkillModal = () => {
-    setNewSkill('')
-    setIsAddingSkill(false)
-  }
+      setMessage(
+        'Please select an image file.'
+      )
 
-  const getVisibilityLabel = () => {
-    if (visibility === 'PUBLIC') {
-      return 'Public'
+      return
     }
 
-    if (visibility === 'MEMBERS_ONLY') {
-      return 'Members Only'
+
+    if (
+      file.size >
+      5 * 1024 * 1024
+    ) {
+
+      setMessage(
+        'Profile image must be smaller than 5 MB.'
+      )
+
+      return
     }
 
-    return 'Private'
+
+    if (imagePreview) {
+
+      URL.revokeObjectURL(
+        imagePreview
+      )
+    }
+
+
+    setSelectedImage(
+      file
+    )
+
+
+    setImagePreview(
+      URL.createObjectURL(
+        file
+      )
+    )
+
+
+    setMessage(
+      ''
+    )
   }
+
+
+  // ============================================
+  // SAVE PROFILE
+  // ============================================
+
+  const saveProfile = async (
+    event:
+      React.FormEvent<HTMLFormElement>
+  ) => {
+
+    event.preventDefault()
+
+
+    if (!currentUser) {
+
+      return
+    }
+
+
+    try {
+
+      setIsSaving(
+        true
+      )
+
+
+      setMessage(
+        ''
+      )
+
+
+      if (selectedImage) {
+
+        const uploaded =
+          await uploadProfileImage(
+
+            currentUser.userId,
+
+            selectedImage
+
+          )
+
+
+        const refreshed =
+          uploaded.includes('?')
+            ? `${uploaded}&t=${Date.now()}`
+            : `${uploaded}?t=${Date.now()}`
+
+
+        setProfileImageUrl(
+          refreshed
+        )
+      }
+
+
+      const updated =
+        await updateUserProfile(
+
+          currentUser.userId,
+
+          {
+
+            bio:
+              editForm.bio.trim(),
+
+            skills:
+              skills.join(', '),
+
+            achievements:
+              editForm
+                .achievements
+                .trim()
+
+          }
+        )
+
+
+      setProfile(
+        updated
+      )
+
+
+      setBio(
+        updated.bio || ''
+      )
+
+
+      setAchievements(
+        updated.achievements || ''
+      )
+
+
+      if (!selectedImage) {
+
+        setProfileImageUrl(
+          updated.profileImageUrl || ''
+        )
+      }
+
+
+      const savedSkills =
+        updated.skills
+          ? updated.skills
+              .split(',')
+              .map(
+                skill =>
+                  skill.trim()
+              )
+              .filter(Boolean)
+          : []
+
+
+      setSkills(
+        savedSkills
+      )
+
+
+      if (imagePreview) {
+
+        URL.revokeObjectURL(
+          imagePreview
+        )
+      }
+
+
+      setImagePreview(
+        ''
+      )
+
+
+      setSelectedImage(
+        null
+      )
+
+
+      setIsEditing(
+        false
+      )
+
+
+      setMessage(
+        'Profile saved successfully.'
+      )
+
+
+    } catch (error) {
+
+      console.error(
+        error
+      )
+
+
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : 'Unable to save profile.'
+      )
+
+
+    } finally {
+
+      setIsSaving(
+        false
+      )
+    }
+  }
+
+
+  const cancelEdit = () => {
+
+    if (imagePreview) {
+
+      URL.revokeObjectURL(
+        imagePreview
+      )
+    }
+
+
+    setImagePreview(
+      ''
+    )
+
+
+    setSelectedImage(
+      null
+    )
+
+
+    setIsEditing(
+      false
+    )
+  }
+
+
+  // ============================================
+  // SKILLS
+  // ============================================
+
+  const saveSkills = async (
+    updatedSkills: string[]
+  ) => {
+
+    if (!currentUser) {
+
+      return
+    }
+
+
+    const updated =
+      await updateUserProfile(
+
+        currentUser.userId,
+
+        {
+
+          bio,
+
+          skills:
+            updatedSkills.join(', '),
+
+          achievements
+
+        }
+      )
+
+
+    setProfile(
+      updated
+    )
+
+
+    setSkills(
+      updated.skills
+        ? updated.skills
+            .split(',')
+            .map(
+              skill =>
+                skill.trim()
+            )
+            .filter(Boolean)
+        : []
+    )
+  }
+
+
+  const addSkillHandler = async (
+    event:
+      React.FormEvent<HTMLFormElement>
+  ) => {
+
+    event.preventDefault()
+
+
+    const skill =
+      newSkill.trim()
+
+
+    if (!skill) {
+
+      return
+    }
+
+
+    const exists =
+      skills.some(
+
+        existing =>
+          existing.toLowerCase()
+          ===
+          skill.toLowerCase()
+
+      )
+
+
+    if (exists) {
+
+      setMessage(
+        'That skill already exists.'
+      )
+
+      return
+    }
+
+
+    try {
+
+      setIsSaving(
+        true
+      )
+
+
+      await saveSkills([
+        ...skills,
+        skill
+      ])
+
+
+      setNewSkill(
+        ''
+      )
+
+
+      setIsAddingSkill(
+        false
+      )
+
+
+      setMessage(
+        'Skill added successfully.'
+      )
+
+
+    } catch (error) {
+
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : 'Unable to save skill.'
+      )
+
+
+    } finally {
+
+      setIsSaving(
+        false
+      )
+    }
+  }
+
+
+  const removeSkillHandler =
+    async (
+      skillToRemove: string
+    ) => {
+
+      try {
+
+        setIsSaving(
+          true
+        )
+
+
+        await saveSkills(
+
+          skills.filter(
+            skill =>
+              skill !== skillToRemove
+          )
+
+        )
+
+
+        setMessage(
+          'Skill removed successfully.'
+        )
+
+
+      } catch (error) {
+
+        setMessage(
+          error instanceof Error
+            ? error.message
+            : 'Unable to remove skill.'
+        )
+
+
+      } finally {
+
+        setIsSaving(
+          false
+        )
+      }
+    }
+
+
+  // ============================================
+  // EXPERIENCE
+  // ============================================
+
+  const openAddExperience = () => {
+
+    setEditingExperience(
+      null
+    )
+
+
+    setExperienceForm({
+
+      jobTitle: '',
+
+      organisation: '',
+
+      startDate: '',
+
+      endDate: '',
+
+      currentRole: false,
+
+      description: ''
+
+    })
+
+
+    setIsExperienceModalOpen(
+      true
+    )
+  }
+
+
+  const openEditExperience = (
+    experience: Experience
+  ) => {
+
+    setEditingExperience(
+      experience
+    )
+
+
+    setExperienceForm({
+
+      jobTitle:
+        experience.jobTitle,
+
+      organisation:
+        experience.organisation,
+
+      startDate:
+        experience.startDate,
+
+      endDate:
+        experience.endDate || '',
+
+      currentRole:
+        experience.currentRole,
+
+      description:
+        experience.description || ''
+
+    })
+
+
+    setIsExperienceModalOpen(
+      true
+    )
+  }
+
+
+  const handleExperienceChange = (
+    event:
+      React.ChangeEvent<
+        HTMLInputElement |
+        HTMLTextAreaElement
+      >
+  ) => {
+
+    const {
+      name,
+      value
+    } = event.target
+
+
+    setExperienceForm(
+      current => ({
+
+        ...current,
+
+        [name]:
+          value
+
+      })
+    )
+  }
+
+
+  const handleCurrentRoleChange = (
+    event:
+      React.ChangeEvent<HTMLInputElement>
+  ) => {
+
+    const checked =
+      event.target.checked
+
+
+    setExperienceForm(
+      current => ({
+
+        ...current,
+
+        currentRole:
+          checked,
+
+        endDate:
+          checked
+            ? ''
+            : current.endDate
+
+      })
+    )
+  }
+
+
+  const saveExperienceHandler = async (
+    event:
+      React.FormEvent<HTMLFormElement>
+  ) => {
+
+    event.preventDefault()
+
+
+    if (!currentUser) {
+
+      return
+    }
+
+
+    if (
+      !experienceForm.jobTitle.trim()
+      ||
+      !experienceForm.organisation.trim()
+      ||
+      !experienceForm.startDate
+    ) {
+
+      setMessage(
+        'Please complete the required experience fields.'
+      )
+
+      return
+    }
+
+
+    if (
+      !experienceForm.currentRole
+      &&
+      !experienceForm.endDate
+    ) {
+
+      setMessage(
+        'Please enter the end date.'
+      )
+
+      return
+    }
+
+
+    try {
+
+      setIsSaving(
+        true
+      )
+
+
+      const request = {
+
+        jobTitle:
+          experienceForm.jobTitle.trim(),
+
+        organisation:
+          experienceForm.organisation.trim(),
+
+        startDate:
+          experienceForm.startDate,
+
+        endDate:
+          experienceForm.currentRole
+            ? null
+            : experienceForm.endDate,
+
+        currentRole:
+          experienceForm.currentRole,
+
+        description:
+          experienceForm.description.trim()
+
+      }
+
+
+      if (editingExperience) {
+
+        const updated =
+          await updateExperience(
+
+            currentUser.userId,
+
+            editingExperience.id,
+
+            request
+
+          )
+
+
+        setExperiences(
+          current =>
+            current.map(
+              item =>
+                item.id === updated.id
+                  ? updated
+                  : item
+            )
+        )
+
+
+        setMessage(
+          'Experience updated successfully.'
+        )
+
+
+      } else {
+
+        const created =
+          await addExperience(
+
+            currentUser.userId,
+
+            request
+
+          )
+
+
+        setExperiences(
+          current => [
+
+            created,
+
+            ...current
+
+          ]
+        )
+
+
+        setMessage(
+          'Experience added successfully.'
+        )
+      }
+
+
+      setEditingExperience(
+        null
+      )
+
+
+      setIsExperienceModalOpen(
+        false
+      )
+
+
+    } catch (error) {
+
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : 'Unable to save experience.'
+      )
+
+
+    } finally {
+
+      setIsSaving(
+        false
+      )
+    }
+  }
+
+
+  const deleteExperienceHandler =
+    async (
+      experienceId: number
+    ) => {
+
+      if (!currentUser) {
+
+        return
+      }
+
+
+      if (
+        !window.confirm(
+          'Delete this experience?'
+        )
+      ) {
+
+        return
+      }
+
+
+      try {
+
+        await deleteExperience(
+
+          currentUser.userId,
+
+          experienceId
+
+        )
+
+
+        setExperiences(
+          current =>
+            current.filter(
+              item =>
+                item.id !== experienceId
+            )
+        )
+
+
+        setMessage(
+          'Experience deleted successfully.'
+        )
+
+
+      } catch (error) {
+
+        setMessage(
+          error instanceof Error
+            ? error.message
+            : 'Unable to delete experience.'
+        )
+      }
+    }
+
+
+  const formatExperienceDate = (
+    value: string | null
+  ) => {
+
+    if (!value) {
+
+      return ''
+    }
+
+
+    return new Date(
+      `${value}T00:00:00`
+    ).toLocaleDateString(
+
+      'en-AU',
+
+      {
+        month:
+          'short',
+
+        year:
+          'numeric'
+      }
+    )
+  }
+
+
+  if (isLoading) {
+
+    return (
+
+      <div className="profile-screen">
+
+        <NavigationBar
+
+          activePage="profile"
+
+          onHomeClick={
+            onHomeClick
+          }
+
+          onProfileClick={
+            onProfileClick
+          }
+
+          onEventsClick={
+            onEventsClick
+          }
+
+        />
+
+        <main className="profile-page">
+
+          <div className="profile-content">
+
+            <section className="profile-section-card">
+
+              Loading profile...
+
+            </section>
+
+          </div>
+
+        </main>
+
+      </div>
+    )
+  }
+
 
   return (
-  <div className="profile-screen">
-    <NavigationBar
-      activePage="profile"
-      onHomeClick={onHomeClick}
-      onProfileClick={onProfileClick}
-      onEventsClick={onEventsClick}
-    />
-  <main className="profile-page">
-    <div className="profile-content">
-      <div className="profile-navigation">
-        <div className="profile-page-label">
-          <span className="profile-page-dot"></span>
-          Professional Profile
-        </div>
-      </div>
-        <section className="profile-card">
-          <div className="profile-banner">
-            <div className="banner-number">7</div>
-            <div className="banner-label">APXGP</div>
-          </div>
 
-          <div className="profile-main-info">
-            <div className="profile-avatar">SH</div>
+    <div className="profile-screen">
 
-            <div className="profile-heading">
-              <div className="profile-name-row">
-                <div>
-                  <div className="profile-name-line">
-                    <h1>{profile.displayName}</h1>
-                    <span className="verified-badge">✓</span>
-                  </div>
 
-                  <p className="profile-title">
-                    {profile.professionalTitle}
-                  </p>
-                </div>
+      <NavigationBar
 
-                <button
-                  className="edit-profile-button"
-                  onClick={openEditProfile}
-                >
-                  Edit Profile
-                </button>
-              </div>
+        activePage="profile"
 
-              <div className="profile-meta">
-                <span>📍 {profile.location}</span>
-                <span>🏁 APXGP Racing</span>
-                <span>🔗 {profile.website}</span>
-              </div>
+        onHomeClick={
+          onHomeClick
+        }
 
-              <p className="profile-bio">
-                {profile.bio}
-              </p>
+        onProfileClick={
+          onProfileClick
+        }
 
-              <div className="profile-stats">
-                <div className="profile-stat">
-                  <strong>{profile.stats.followers}</strong>
-                  <span>Followers</span>
-                </div>
+        onEventsClick={
+          onEventsClick
+        }
 
-                <div className="profile-stat">
-                  <strong>{profile.stats.following}</strong>
-                  <span>Following</span>
-                </div>
+      />
 
-                <div className="profile-stat">
-                  <strong>{profile.stats.collaborations}</strong>
-                  <span>Collaborations</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
 
-        <section className="profile-section-card">
-          <div className="profile-section-heading">
-            <div>
-              <p className="section-eyebrow">
-                PROFESSIONAL EXPERTISE
-              </p>
+      <main className="profile-page">
 
-              <h2>Skills & Experience</h2>
-            </div>
+
+        <div className="profile-content">
+
+
+          <div className="profile-navigation">
+
 
             <button
-              className="profile-small-button"
-              onClick={() => setIsAddingSkill(true)}
+
+              type="button"
+
+              className="back-dashboard-button"
+
+              onClick={
+                onHomeClick
+              }
+
             >
-              + Add Skill
-            </button>
-          </div>
 
-          <div className="skills-list">
-            {profile.skills.map((skill) => (
-              <div className="skill-chip" key={skill}>
-                <span>{skill}</span>
+              <span className="back-arrow">
 
-                <button
-                  className="remove-skill-button"
-                  onClick={() => removeSkill(skill)}
-                  aria-label={`Remove ${skill}`}
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
+                ←
 
-          <div className="visibility-section">
-            <div className="visibility-heading">
-              <div>
-                <p className="section-eyebrow">
-                  PROFILE PRIVACY
-                </p>
-
-                <h3>Profile Visibility</h3>
-
-                <p>
-                  Choose who can view your professional profile.
-                </p>
-              </div>
-
-              <span className="visibility-status">
-                {getVisibilityLabel()}
               </span>
+
+              Back to Dashboard
+
+            </button>
+
+
+            <div className="profile-page-label">
+
+              <span className="profile-page-dot" />
+
+              Professional Profile
+
             </div>
 
-            <div className="visibility-options">
-              <button
-                className={
-                  visibility === 'PUBLIC'
-                    ? 'visibility-option active'
-                    : 'visibility-option'
-                }
-                onClick={() => setVisibility('PUBLIC')}
-              >
-                <strong>Public</strong>
-                <span>
-                  Anyone can view your profile
-                </span>
-              </button>
 
-              <button
-                className={
-                  visibility === 'MEMBERS_ONLY'
-                    ? 'visibility-option active'
-                    : 'visibility-option'
-                }
-                onClick={() => setVisibility('MEMBERS_ONLY')}
-              >
-                <strong>Members Only</strong>
-                <span>
-                  Only registered creatives can view it
-                </span>
-              </button>
-
-              <button
-                className={
-                  visibility === 'PRIVATE'
-                    ? 'visibility-option active'
-                    : 'visibility-option'
-                }
-                onClick={() => setVisibility('PRIVATE')}
-              >
-                <strong>Private</strong>
-                <span>
-                  Your profile is visible only to you
-                </span>
-              </button>
-            </div>
-          </div>
-        </section>
-
-        <section className="profile-section-card profile-work-section">
-          <div className="profile-tabs">
-            <button
-              className={
-                activeTab === 'portfolio'
-                  ? 'profile-tab active'
-                  : 'profile-tab'
-              }
-              onClick={() => setActiveTab('portfolio')}
-            >
-              Career
-            </button>
-
-            <button
-              className={
-                activeTab === 'posts'
-                  ? 'profile-tab active'
-                  : 'profile-tab'
-              }
-              onClick={() => setActiveTab('posts')}
-            >
-              Posts
-            </button>
-
-            <button
-              className={
-                activeTab === 'achievements'
-                  ? 'profile-tab active'
-                  : 'profile-tab'
-              }
-              onClick={() => setActiveTab('achievements')}
-            >
-              Achievements
-            </button>
           </div>
 
-          {activeTab === 'portfolio' && (
-            <div className="portfolio-grid">
-              {profile.portfolio.map((project) => (
-                <article
-                  className="portfolio-card"
-                  key={project.id}
-                >
-                  <div className="portfolio-image-placeholder">
-                    <span className="project-symbol">
-                      {project.symbol}
-                    </span>
 
-                    <span className="project-background-text">
-                      RACING
-                    </span>
-                  </div>
+          {
+            message
+            &&
+            (
 
-                  <div className="portfolio-card-content">
-                    <span className="portfolio-category">
-                      {project.category}
-                    </span>
+              <section className="profile-section-card">
 
-                    <h3>{project.title}</h3>
+                {message}
 
-                    <p>{project.description}</p>
+              </section>
 
-                    <button className="portfolio-view-button">
-                      View Details
-                    </button>
-                  </div>
-                </article>
-              ))}
+            )
+          }
+
+
+          {/* PROFILE HEADER */}
+
+          <section className="profile-card">
+
+
+            <div className="profile-banner">
+
+              <div className="banner-number">
+                7
+              </div>
+
+              <div className="banner-label">
+                CREATIVE
+              </div>
+
             </div>
-          )}
 
-          {activeTab === 'posts' && (
-            <div className="profile-posts">
-              {profile.posts.map((post) => (
-                <article
-                  className="profile-post"
-                  key={post.id}
-                >
-                  <div className="profile-post-header">
-                    <div className="profile-post-avatar">
-                      SH
-                    </div>
 
-                    <div>
-                      <div className="post-name">
-                        <strong>
-                          {profile.displayName}
-                        </strong>
+            <div className="profile-main-info">
 
-                        <span className="small-verified">
-                          ✓
-                        </span>
+
+              {
+                profileImageUrl
+                  ? (
+
+                      <img
+
+                        src={
+                          profileImageUrl
+                        }
+
+                        alt="Profile"
+
+                        className="profile-avatar"
+
+                      />
+
+                    )
+                  : (
+
+                      <div className="profile-avatar">
+
+                        {getInitials()}
+
                       </div>
 
-                      <span>
-                        {profile.professionalTitle} • {post.date}
+                    )
+              }
+
+
+              <div className="profile-heading">
+
+
+                <div className="profile-name-row">
+
+
+                  <div>
+
+
+                    <div className="profile-name-line">
+
+                      <h1>
+
+                        {
+                          currentUser?.fullName
+                          ||
+                          'Creative User'
+                        }
+
+                      </h1>
+
+                      <span className="verified-badge">
+
+                        ✓
+
                       </span>
+
                     </div>
+
+
+                    <p className="profile-title">
+
+                      @{currentUser?.username}
+
+                    </p>
+
+
                   </div>
 
-                  <p>{post.text}</p>
 
-                  <div className="profile-post-footer">
+                  <button
+
+                    type="button"
+
+                    className="edit-profile-button"
+
+                    onClick={
+                      openEditProfile
+                    }
+
+                  >
+
+                    Edit Profile
+
+                  </button>
+
+
+                </div>
+
+
+                <div className="profile-meta">
+
+                  <span>
+
+                    ✉ {currentUser?.email}
+
+                  </span>
+
+                  <span>
+
+                    Role: {currentUser?.role}
+
+                  </span>
+
+                </div>
+
+
+                <p className="profile-bio">
+
+                  {
+                    bio
+                    ||
+                    'Add a professional bio to your profile.'
+                  }
+
+                </p>
+
+
+                {/* NOT CLICKABLE */}
+
+                <div className="profile-stats">
+
+
+                  <div className="profile-stat">
+
+                    <strong>
+
+                      {skills.length}
+
+                    </strong>
+
                     <span>
-                      ♡ {post.likes} likes
+
+                      Skills
+
                     </span>
 
-                    <span>
-                      💬 Comments
-                    </span>
                   </div>
-                </article>
-              ))}
+
+
+                  <div className="profile-stat">
+
+                    <strong>
+
+                      {experiences.length}
+
+                    </strong>
+
+                    <span>
+
+                      Experience
+
+                    </span>
+
+                  </div>
+
+
+                  <div className="profile-stat">
+
+                    <strong>
+
+                      {followersCount}
+
+                    </strong>
+
+                    <span>
+
+                      Followers
+
+                    </span>
+
+                  </div>
+
+
+                  <div className="profile-stat">
+
+                    <strong>
+
+                      {followingCount}
+
+                    </strong>
+
+                    <span>
+
+                      Following
+
+                    </span>
+
+                  </div>
+
+
+                </div>
+
+
+              </div>
+
+
             </div>
-          )}
 
-          {activeTab === 'achievements' && (
+
+          </section>
+
+
+          {/* SKILLS */}
+
+          <section className="profile-section-card">
+
+
+            <div className="profile-section-heading">
+
+
+              <div>
+
+                <p className="section-eyebrow">
+
+                  PROFESSIONAL SKILLS
+
+                </p>
+
+                <h2>
+                  Skills
+                </h2>
+
+              </div>
+
+
+              <button
+
+                type="button"
+
+                className="profile-small-button"
+
+                onClick={
+                  () =>
+                    setIsAddingSkill(
+                      true
+                    )
+                }
+
+              >
+
+                + Add Skill
+
+              </button>
+
+
+            </div>
+
+
+            <div className="skills-list">
+
+
+              {
+                skills.length === 0
+                  ? (
+
+                      <p>
+                        No skills added yet.
+                      </p>
+
+                    )
+                  : skills.map(
+                      skill => (
+
+                        <div
+                          className="skill-chip"
+                          key={
+                            skill
+                          }
+                        >
+
+                          <span>
+
+                            {skill}
+
+                          </span>
+
+
+                          <button
+
+                            type="button"
+
+                            className="remove-skill-button"
+
+                            disabled={
+                              isSaving
+                            }
+
+                            onClick={
+                              () =>
+                                removeSkillHandler(
+                                  skill
+                                )
+                            }
+
+                          >
+
+                            ×
+
+                          </button>
+
+
+                        </div>
+
+                      )
+                    )
+              }
+
+
+            </div>
+
+
+          </section>
+
+
+          {/* EXPERIENCE */}
+
+          <section className="profile-section-card">
+
+
+            <div className="profile-section-heading">
+
+
+              <div>
+
+                <p className="section-eyebrow">
+
+                  CAREER HISTORY
+
+                </p>
+
+                <h2>
+                  Experience
+                </h2>
+
+              </div>
+
+
+              <button
+
+                type="button"
+
+                className="profile-small-button"
+
+                onClick={
+                  openAddExperience
+                }
+
+              >
+
+                + Add Experience
+
+              </button>
+
+
+            </div>
+
+
             <div className="achievements-list">
-              {profile.achievements.map((achievement) => (
-                <article
-                  className="achievement-card"
-                  key={achievement.id}
-                >
-                  <div className="achievement-icon">
-                    ★
-                  </div>
 
-                  <div className="achievement-info">
-                    <div className="achievement-title-row">
-                      <h3>
-                        {achievement.title}
-                      </h3>
 
-                      <span>
-                        {achievement.date}
-                      </span>
+              {
+                experiences.length === 0
+                  ? (
+
+                      <p>
+
+                        No experience added yet.
+
+                      </p>
+
+                    )
+                  : experiences.map(
+                      experience => (
+
+                        <article
+
+                          className="achievement-card"
+
+                          key={
+                            experience.id
+                          }
+
+                        >
+
+
+                          <div className="achievement-icon">
+
+                            💼
+
+                          </div>
+
+
+                          <div className="achievement-info">
+
+
+                            <div className="achievement-title-row">
+
+
+                              <h3>
+
+                                {experience.jobTitle}
+
+                              </h3>
+
+
+                              <span>
+
+                                {
+                                  formatExperienceDate(
+                                    experience.startDate
+                                  )
+                                }
+
+                                {' – '}
+
+                                {
+                                  experience.currentRole
+                                    ? 'Present'
+                                    : formatExperienceDate(
+                                        experience.endDate
+                                      )
+                                }
+
+                              </span>
+
+
+                            </div>
+
+
+                            <p>
+
+                              <strong>
+
+                                {
+                                  experience.organisation
+                                }
+
+                              </strong>
+
+                            </p>
+
+
+                            {
+                              experience.description
+                              &&
+                              (
+
+                                <p>
+
+                                  {
+                                    experience.description
+                                  }
+
+                                </p>
+
+                              )
+                            }
+
+
+                            <div
+                              style={{
+                                display:
+                                  'flex',
+                                gap:
+                                  '10px',
+                                marginTop:
+                                  '14px'
+                              }}
+                            >
+
+
+                              <button
+
+                                type="button"
+
+                                className="profile-small-button"
+
+                                onClick={
+                                  () =>
+                                    openEditExperience(
+                                      experience
+                                    )
+                                }
+
+                              >
+
+                                Edit
+
+                              </button>
+
+
+                              <button
+
+                                type="button"
+
+                                className="profile-small-button"
+
+                                onClick={
+                                  () =>
+                                    deleteExperienceHandler(
+                                      experience.id
+                                    )
+                                }
+
+                              >
+
+                                Delete
+
+                              </button>
+
+
+                            </div>
+
+
+                          </div>
+
+
+                        </article>
+
+                      )
+                    )
+              }
+
+
+            </div>
+
+
+          </section>
+
+
+          {/* POSTS / ACHIEVEMENTS */}
+
+          <section
+            className="
+              profile-section-card
+              profile-work-section
+            "
+          >
+
+
+            <div className="profile-tabs">
+
+
+              <button
+
+                type="button"
+
+                className={
+                  activeTab === 'posts'
+                    ? 'profile-tab active'
+                    : 'profile-tab'
+                }
+
+                onClick={
+                  () =>
+                    setActiveTab(
+                      'posts'
+                    )
+                }
+
+              >
+
+                Posts
+
+              </button>
+
+
+              <button
+
+                type="button"
+
+                className={
+                  activeTab === 'achievements'
+                    ? 'profile-tab active'
+                    : 'profile-tab'
+                }
+
+                onClick={
+                  () =>
+                    setActiveTab(
+                      'achievements'
+                    )
+                }
+
+              >
+
+                Achievements
+
+              </button>
+
+
+            </div>
+
+
+            {
+              activeTab === 'posts'
+              &&
+              (
+
+                <div className="profile-posts">
+
+
+                  <article className="profile-post">
+
+
+                    <div className="profile-post-header">
+
+
+                      <div className="profile-post-avatar">
+
+                        {getInitials()}
+
+                      </div>
+
+
+                      <div>
+
+                        <div className="post-name">
+
+                          <strong>
+
+                            {currentUser?.fullName}
+
+                          </strong>
+
+                          <span className="small-verified">
+                            ✓
+                          </span>
+
+                        </div>
+
+                        <span>
+                          No posts yet
+                        </span>
+
+                      </div>
+
+
                     </div>
+
 
                     <p>
-                      {achievement.description}
+
+                      Your posts will appear here.
+
                     </p>
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
-        </section>
-      </div>
 
-      {isEditing && (
-        <div
-          className="edit-modal-overlay"
-          onMouseDown={cancelEdit}
-        >
-          <div
-            className="edit-modal"
-            onMouseDown={(event) =>
-              event.stopPropagation()
+
+                  </article>
+
+
+                </div>
+
+              )
             }
-          >
-            <div className="edit-modal-header">
-              <div>
-                <p className="section-eyebrow">
-                  PROFESSIONAL IDENTITY
-                </p>
 
-                <h2>Edit Profile</h2>
-              </div>
 
-              <button
-                className="edit-modal-close"
-                onClick={cancelEdit}
-                type="button"
-              >
-                ×
-              </button>
-            </div>
+            {
+              activeTab === 'achievements'
+              &&
+              (
 
-            <form
-              className="edit-profile-form"
-              onSubmit={saveProfile}
-            >
-              <div className="edit-form-row">
-                <div className="edit-form-group">
-                  <label htmlFor="displayName">
-                    Display Name
-                  </label>
+                <div className="achievements-list">
 
-                  <input
-                    id="displayName"
-                    name="displayName"
-                    type="text"
-                    value={editForm.displayName}
-                    onChange={handleEditChange}
-                    required
-                  />
-                </div>
 
-                <div className="edit-form-group">
-                  <label htmlFor="professionalTitle">
-                    Professional Title
-                  </label>
+                  {
+                    achievements
+                      ? (
 
-                  <input
-                    id="professionalTitle"
-                    name="professionalTitle"
-                    type="text"
-                    value={editForm.professionalTitle}
-                    onChange={handleEditChange}
-                    required
-                  />
-                </div>
-              </div>
+                          <article className="achievement-card">
 
-              <div className="edit-form-row">
-                <div className="edit-form-group">
-                  <label htmlFor="location">
-                    Location
-                  </label>
 
-                  <input
-                    id="location"
-                    name="location"
-                    type="text"
-                    value={editForm.location}
-                    onChange={handleEditChange}
-                  />
-                </div>
+                            <div className="achievement-icon">
+                              ★
+                            </div>
 
-                <div className="edit-form-group">
-                  <label htmlFor="website">
-                    Website
-                  </label>
 
-                  <input
-                    id="website"
-                    name="website"
-                    type="text"
-                    value={editForm.website}
-                    onChange={handleEditChange}
-                  />
-                </div>
-              </div>
+                            <div className="achievement-info">
 
-              <div className="edit-form-group">
-                <label htmlFor="bio">
-                  Professional Bio
-                </label>
+                              <h3>
+                                Achievements
+                              </h3>
 
-                <textarea
-                  id="bio"
-                  name="bio"
-                  value={editForm.bio}
-                  onChange={handleEditChange}
-                  rows={5}
-                />
-              </div>
+                              <p>
+                                {achievements}
+                              </p>
 
-              <div className="edit-modal-actions">
-                <button
-                  className="edit-cancel-button"
-                  type="button"
-                  onClick={cancelEdit}
-                >
-                  Cancel
-                </button>
+                            </div>
 
-                <button
-                  className="edit-save-button"
-                  type="submit"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
-      {isAddingSkill && (
-        <div
-          className="edit-modal-overlay"
-          onMouseDown={closeSkillModal}
-        >
-          <div
-            className="skill-modal"
-            onMouseDown={(event) =>
-              event.stopPropagation()
-            }
-          >
-            <div className="edit-modal-header">
-              <div>
-                <p className="section-eyebrow">
-                  PROFESSIONAL EXPERTISE
-                </p>
+                          </article>
 
-                <h2>Add Skill</h2>
-              </div>
+                        )
+                      : (
 
-              <button
-                className="edit-modal-close"
-                type="button"
-                onClick={closeSkillModal}
-              >
-                ×
-              </button>
-            </div>
+                          <p>
 
-            <form onSubmit={addSkill}>
-              <div className="edit-form-group">
-                <label htmlFor="newSkill">
-                  Skill or Expertise
-                </label>
+                            No achievements added yet.
 
-                <input
-                  id="newSkill"
-                  type="text"
-                  value={newSkill}
-                  onChange={(event) =>
-                    setNewSkill(event.target.value)
+                          </p>
+
+                        )
                   }
-                  placeholder="e.g. Wet Weather Racing"
-                  autoFocus
-                />
-              </div>
 
-              <div className="edit-modal-actions">
-                <button
-                  className="edit-cancel-button"
-                  type="button"
-                  onClick={closeSkillModal}
-                >
-                  Cancel
-                </button>
 
-                <button
-                  className="edit-save-button"
-                  type="submit"
-                >
-                  Add Skill
-                </button>
-              </div>
-            </form>
-          </div>
+                </div>
+
+              )
+            }
+
+
+          </section>
+
+
         </div>
-      )}
-    </main>
+
+
+        {/* EDIT PROFILE MODAL */}
+
+        {
+          isEditing
+          &&
+          (
+
+            <div
+              className="edit-modal-overlay"
+              onMouseDown={
+                cancelEdit
+              }
+            >
+
+
+              <div
+                className="edit-modal"
+                onMouseDown={
+                  event =>
+                    event.stopPropagation()
+                }
+              >
+
+
+                <div className="edit-modal-header">
+
+
+                  <div>
+
+                    <p className="section-eyebrow">
+                      PROFILE SETTINGS
+                    </p>
+
+                    <h2>
+                      Edit Profile
+                    </h2>
+
+                  </div>
+
+
+                  <button
+                    type="button"
+                    className="edit-modal-close"
+                    onClick={
+                      cancelEdit
+                    }
+                  >
+
+                    ×
+
+                  </button>
+
+
+                </div>
+
+
+                <form
+                  className="edit-profile-form"
+                  onSubmit={
+                    saveProfile
+                  }
+                >
+
+
+                  <div className="edit-form-group">
+
+
+                    <label htmlFor="profileImage">
+
+                      Profile Picture
+
+                    </label>
+
+
+                    {
+                      imagePreview
+                        ? (
+
+                            <img
+                              src={
+                                imagePreview
+                              }
+                              alt="Preview"
+                              style={{
+                                width:
+                                  '110px',
+                                height:
+                                  '110px',
+                                borderRadius:
+                                  '50%',
+                                objectFit:
+                                  'cover'
+                              }}
+                            />
+
+                          )
+                        : profileImageUrl
+                          ? (
+
+                              <img
+                                src={
+                                  profileImageUrl
+                                }
+                                alt="Current profile"
+                                style={{
+                                  width:
+                                    '110px',
+                                  height:
+                                    '110px',
+                                  borderRadius:
+                                    '50%',
+                                  objectFit:
+                                    'cover'
+                                }}
+                              />
+
+                            )
+                          : null
+                    }
+
+
+                    <input
+
+                      id="profileImage"
+
+                      type="file"
+
+                      accept="image/png,image/jpeg,image/jpg,image/webp"
+
+                      onChange={
+                        handleImageSelection
+                      }
+
+                    />
+
+
+                  </div>
+
+
+                  <div className="edit-form-group">
+
+
+                    <label htmlFor="bio">
+
+                      Professional Bio
+
+                    </label>
+
+
+                    <textarea
+
+                      id="bio"
+
+                      name="bio"
+
+                      rows={5}
+
+                      value={
+                        editForm.bio
+                      }
+
+                      onChange={
+                        handleEditChange
+                      }
+
+                    />
+
+
+                  </div>
+
+
+                  <div className="edit-form-group">
+
+
+                    <label htmlFor="achievements">
+
+                      Achievements
+
+                    </label>
+
+
+                    <textarea
+
+                      id="achievements"
+
+                      name="achievements"
+
+                      rows={4}
+
+                      value={
+                        editForm.achievements
+                      }
+
+                      onChange={
+                        handleEditChange
+                      }
+
+                    />
+
+
+                  </div>
+
+
+                  <div className="edit-modal-actions">
+
+
+                    <button
+
+                      type="button"
+
+                      className="edit-cancel-button"
+
+                      onClick={
+                        cancelEdit
+                      }
+
+                    >
+
+                      Cancel
+
+                    </button>
+
+
+                    <button
+
+                      type="submit"
+
+                      className="edit-save-button"
+
+                      disabled={
+                        isSaving
+                      }
+
+                    >
+
+                      {
+                        isSaving
+                          ? 'Saving...'
+                          : 'Save Changes'
+                      }
+
+                    </button>
+
+
+                  </div>
+
+
+                </form>
+
+
+              </div>
+
+
+            </div>
+
+          )
+        }
+
+
+        {/* SKILL MODAL */}
+
+        {
+          isAddingSkill
+          &&
+          (
+
+            <div
+              className="edit-modal-overlay"
+              onMouseDown={
+                () =>
+                  setIsAddingSkill(
+                    false
+                  )
+              }
+            >
+
+
+              <div
+                className="skill-modal"
+                onMouseDown={
+                  event =>
+                    event.stopPropagation()
+                }
+              >
+
+
+                <div className="edit-modal-header">
+
+
+                  <div>
+
+                    <p className="section-eyebrow">
+
+                      PROFESSIONAL SKILLS
+
+                    </p>
+
+                    <h2>
+
+                      Add Skill
+
+                    </h2>
+
+                  </div>
+
+
+                  <button
+
+                    type="button"
+
+                    className="edit-modal-close"
+
+                    onClick={
+                      () =>
+                        setIsAddingSkill(
+                          false
+                        )
+                    }
+
+                  >
+
+                    ×
+
+                  </button>
+
+
+                </div>
+
+
+                <form
+                  onSubmit={
+                    addSkillHandler
+                  }
+                >
+
+
+                  <div className="edit-form-group">
+
+
+                    <label htmlFor="newSkill">
+
+                      Skill
+
+                    </label>
+
+
+                    <input
+
+                      id="newSkill"
+
+                      type="text"
+
+                      value={
+                        newSkill
+                      }
+
+                      onChange={
+                        event =>
+                          setNewSkill(
+                            event.target.value
+                          )
+                      }
+
+                      placeholder="Example: Photography"
+
+                      autoFocus
+
+                    />
+
+
+                  </div>
+
+
+                  <div className="edit-modal-actions">
+
+
+                    <button
+
+                      type="button"
+
+                      className="edit-cancel-button"
+
+                      onClick={
+                        () =>
+                          setIsAddingSkill(
+                            false
+                          )
+                      }
+
+                    >
+
+                      Cancel
+
+                    </button>
+
+
+                    <button
+
+                      type="submit"
+
+                      className="edit-save-button"
+
+                      disabled={
+                        isSaving
+                      }
+
+                    >
+
+                      Add Skill
+
+                    </button>
+
+
+                  </div>
+
+
+                </form>
+
+
+              </div>
+
+
+            </div>
+
+          )
+        }
+
+
+        {/* EXPERIENCE MODAL */}
+
+        {
+          isExperienceModalOpen
+          &&
+          (
+
+            <div
+              className="edit-modal-overlay"
+              onMouseDown={
+                () =>
+                  setIsExperienceModalOpen(
+                    false
+                  )
+              }
+            >
+
+
+              <div
+                className="edit-modal"
+                onMouseDown={
+                  event =>
+                    event.stopPropagation()
+                }
+              >
+
+
+                <div className="edit-modal-header">
+
+
+                  <div>
+
+                    <p className="section-eyebrow">
+                      CAREER HISTORY
+                    </p>
+
+                    <h2>
+
+                      {
+                        editingExperience
+                          ? 'Edit Experience'
+                          : 'Add Experience'
+                      }
+
+                    </h2>
+
+                  </div>
+
+
+                  <button
+
+                    type="button"
+
+                    className="edit-modal-close"
+
+                    onClick={
+                      () =>
+                        setIsExperienceModalOpen(
+                          false
+                        )
+                    }
+
+                  >
+
+                    ×
+
+                  </button>
+
+
+                </div>
+
+
+                <form
+                  className="edit-profile-form"
+                  onSubmit={
+                    saveExperienceHandler
+                  }
+                >
+
+
+                  <div className="edit-form-group">
+
+                    <label htmlFor="jobTitle">
+                      Job Title
+                    </label>
+
+                    <input
+                      id="jobTitle"
+                      name="jobTitle"
+                      type="text"
+                      required
+                      value={
+                        experienceForm.jobTitle
+                      }
+                      onChange={
+                        handleExperienceChange
+                      }
+                    />
+
+                  </div>
+
+
+                  <div className="edit-form-group">
+
+                    <label htmlFor="organisation">
+                      Organisation
+                    </label>
+
+                    <input
+                      id="organisation"
+                      name="organisation"
+                      type="text"
+                      required
+                      value={
+                        experienceForm.organisation
+                      }
+                      onChange={
+                        handleExperienceChange
+                      }
+                    />
+
+                  </div>
+
+
+                  <div className="edit-form-row">
+
+
+                    <div className="edit-form-group">
+
+                      <label htmlFor="startDate">
+                        Start Date
+                      </label>
+
+                      <input
+                        id="startDate"
+                        name="startDate"
+                        type="date"
+                        required
+                        value={
+                          experienceForm.startDate
+                        }
+                        onChange={
+                          handleExperienceChange
+                        }
+                      />
+
+                    </div>
+
+
+                    <div className="edit-form-group">
+
+                      <label htmlFor="endDate">
+                        End Date
+                      </label>
+
+                      <input
+                        id="endDate"
+                        name="endDate"
+                        type="date"
+                        value={
+                          experienceForm.endDate
+                        }
+                        disabled={
+                          experienceForm.currentRole
+                        }
+                        required={
+                          !experienceForm.currentRole
+                        }
+                        onChange={
+                          handleExperienceChange
+                        }
+                      />
+
+                    </div>
+
+
+                  </div>
+
+
+                  <label
+                    style={{
+                      display:
+                        'flex',
+                      alignItems:
+                        'center',
+                      gap:
+                        '10px'
+                    }}
+                  >
+
+                    <input
+                      type="checkbox"
+                      checked={
+                        experienceForm.currentRole
+                      }
+                      onChange={
+                        handleCurrentRoleChange
+                      }
+                      style={{
+                        width:
+                          'auto'
+                      }}
+                    />
+
+                    I currently work here
+
+                  </label>
+
+
+                  <div className="edit-form-group">
+
+                    <label htmlFor="experienceDescription">
+                      Description
+                    </label>
+
+                    <textarea
+                      id="experienceDescription"
+                      name="description"
+                      rows={5}
+                      value={
+                        experienceForm.description
+                      }
+                      onChange={
+                        handleExperienceChange
+                      }
+                    />
+
+                  </div>
+
+
+                  <div className="edit-modal-actions">
+
+
+                    <button
+                      type="button"
+                      className="edit-cancel-button"
+                      onClick={
+                        () =>
+                          setIsExperienceModalOpen(
+                            false
+                          )
+                      }
+                    >
+
+                      Cancel
+
+                    </button>
+
+
+                    <button
+                      type="submit"
+                      className="edit-save-button"
+                      disabled={
+                        isSaving
+                      }
+                    >
+
+                      {
+                        editingExperience
+                          ? 'Update Experience'
+                          : 'Add Experience'
+                      }
+
+                    </button>
+
+
+                  </div>
+
+
+                </form>
+
+
+              </div>
+
+
+            </div>
+
+          )
+        }
+
+
+      </main>
+
+
     </div>
   )
 }
+
 
 export default Profile
