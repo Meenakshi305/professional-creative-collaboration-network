@@ -10,8 +10,6 @@ type EditableProfile = {
   bio: string
 }
 
-type Visibility = 'PUBLIC' | 'MEMBERS_ONLY' | 'PRIVATE'
-
 type ProfileProps = {
   onHomeClick: () => void
   onProfileClick: () => void
@@ -26,7 +24,6 @@ function Profile({onHomeClick,onProfileClick,onEventsClick}: ProfileProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [isAddingSkill, setIsAddingSkill] = useState(false)
   const [newSkill, setNewSkill] = useState('')
-  const [visibility, setVisibility] = useState<Visibility>('PUBLIC')
 
   const [profile, setProfile] = useState({
     displayName: 'Sonny Hayes',
@@ -216,18 +213,6 @@ function Profile({onHomeClick,onProfileClick,onEventsClick}: ProfileProps) {
     setIsAddingSkill(false)
   }
 
-  const getVisibilityLabel = () => {
-    if (visibility === 'PUBLIC') {
-      return 'Public'
-    }
-
-    if (visibility === 'MEMBERS_ONLY') {
-      return 'Members Only'
-    }
-
-    return 'Private'
-  }
-
   return (
   <div className="profile-screen">
     <NavigationBar
@@ -336,70 +321,6 @@ function Profile({onHomeClick,onProfileClick,onEventsClick}: ProfileProps) {
                 </button>
               </div>
             ))}
-          </div>
-
-          <div className="visibility-section">
-            <div className="visibility-heading">
-              <div>
-                <p className="section-eyebrow">
-                  PROFILE PRIVACY
-                </p>
-
-                <h3>Profile Visibility</h3>
-
-                <p>
-                  Choose who can view your professional profile.
-                </p>
-              </div>
-
-              <span className="visibility-status">
-                {getVisibilityLabel()}
-              </span>
-            </div>
-
-            <div className="visibility-options">
-              <button
-                className={
-                  visibility === 'PUBLIC'
-                    ? 'visibility-option active'
-                    : 'visibility-option'
-                }
-                onClick={() => setVisibility('PUBLIC')}
-              >
-                <strong>Public</strong>
-                <span>
-                  Anyone can view your profile
-                </span>
-              </button>
-
-              <button
-                className={
-                  visibility === 'MEMBERS_ONLY'
-                    ? 'visibility-option active'
-                    : 'visibility-option'
-                }
-                onClick={() => setVisibility('MEMBERS_ONLY')}
-              >
-                <strong>Members Only</strong>
-                <span>
-                  Only registered creatives can view it
-                </span>
-              </button>
-
-              <button
-                className={
-                  visibility === 'PRIVATE'
-                    ? 'visibility-option active'
-                    : 'visibility-option'
-                }
-                onClick={() => setVisibility('PRIVATE')}
-              >
-                <strong>Private</strong>
-                <span>
-                  Your profile is visible only to you
-                </span>
-              </button>
-            </div>
           </div>
         </section>
 
