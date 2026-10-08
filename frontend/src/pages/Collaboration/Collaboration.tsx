@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import './Collaboration.css'
 import NavigationBar from '../../shared/NavigationBar/NavigationBar'
 
@@ -108,6 +109,141 @@ function Collaboration({
   onCollaborationClick,
   onEventsClick
 }: CollaborationProps) {
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState('All')
+  const [selectedLocation, setSelectedLocation] = useState('All')
+
+  const [selectedOpportunity, setSelectedOpportunity] =
+    useState<CollaborationOpportunity | null>(null)
+
+  const [coverMessage, setCoverMessage] = useState('')
+  const [applicationError, setApplicationError] = useState('')
+  const [applicationSuccess, setApplicationSuccess] = useState('')
+  const [appliedOpportunityIds, setAppliedOpportunityIds] =
+    useState<number[]>([])
+
+  const categories = [
+    'All',
+    ...Array.from(
+      new Set(
+        collaborationOpportunities.map(
+          (opportunity) => opportunity.category
+        )
+      )
+    )
+  ]
+
+  const locations = [
+    'All',
+    ...Array.from(
+      new Set(
+        collaborationOpportunities.map(
+          (opportunity) => opportunity.location
+        )
+      )
+    )
+  ]
+
+  const filteredOpportunities = collaborationOpportunities.filter(
+    (opportunity) => {
+      const searchValue = searchTerm.toLowerCase().trim()
+
+      const matchesSearch =
+        searchValue === '' ||
+        opportunity.title.toLowerCase().includes(searchValue) ||
+        opportunity.description.toLowerCase().includes(searchValue) ||
+        opportunity.roleRequired.toLowerCase().includes(searchValue) ||
+        opportunity.creator.toLowerCase().includes(searchValue) ||
+        opportunity.skills.some((skill) =>
+          skill.toLowerCase().includes(searchValue)
+        )
+
+      const matchesCategory =
+        selectedCategory === 'All' ||
+        opportunity.category === selectedCategory
+
+      const matchesLocation =
+        selectedLocation === 'All' ||
+        opportunity.location === selectedLocation
+
+      return matchesSearch && matchesCategory && matchesLocation
+    }
+  )
+
+  const hasActiveFilters =
+    searchTerm.trim() !== '' ||
+    selectedCategory !== 'All' ||
+    selectedLocation !== 'All'
+
+  const clearFilters = () => {
+    setSearchTerm('')
+    setSelectedCategory('All')
+    setSelectedLocation('All')
+  }
+
+  const openApplication = (
+    opportunity: CollaborationOpportunity
+  ) => {
+    if (appliedOpportunityIds.includes(opportunity.id)) {
+      return
+    }
+
+    setSelectedOpportunity(opportunity)
+    setCoverMessage('')
+    setApplicationError('')
+    setApplicationSuccess('')
+  }
+
+  const closeApplication = () => {
+    setSelectedOpportunity(null)
+    setCoverMessage('')
+    setApplicationError('')
+    setApplicationSuccess('')
+  }
+
+  const submitApplication = (
+    event: React.FormEvent<HTMLFormElement>
+  ) => {
+    event.preventDefault()
+
+    if (!selectedOpportunity) {
+      return
+    }
+
+    const trimmedMessage = coverMessage.trim()
+
+    if (!trimmedMessage) {
+      setApplicationError(
+        'Please enter a cover message before submitting your application.'
+      )
+      return
+    }
+
+    if (trimmedMessage.length < 30) {
+      setApplicationError(
+        'Your cover message must be at least 30 characters.'
+      )
+      return
+    }
+
+    if (appliedOpportunityIds.includes(selectedOpportunity.id)) {
+      setApplicationError(
+        'You have already applied for this opportunity.'
+      )
+      return
+    }
+
+    setAppliedOpportunityIds((currentIds) => [
+      ...currentIds,
+      selectedOpportunity.id
+    ])
+
+    setApplicationError('')
+    setApplicationSuccess(
+      'Application submitted successfully.'
+    )
+  }
+
   return (
     <div className="collaboration-screen">
       <NavigationBar
@@ -142,6 +278,92 @@ function Collaboration({
           </button>
         </section>
 
+        <section
+          className="collaboration-filters"
+          aria-label="Search and filter collaboration opportunities"
+        >
+          <div className="collaboration-search">
+            <label htmlFor="collaboration-search">
+              Search opportunities
+            </label>
+
+            <div className="search-input-wrapper">
+              <span
+                className="search-icon"
+                aria-hidden="true"
+              >
+                ⌕
+              </span>
+
+              <input
+                id="collaboration-search"
+                type="search"
+                placeholder="Search by role, skill, project or creator..."
+                value={searchTerm}
+                onChange={(event) =>
+                  setSearchTerm(event.target.value)
+                }
+              />
+            </div>
+          </div>
+
+          <div className="filter-control">
+            <label htmlFor="category-filter">
+              Category
+            </label>
+
+            <select
+              id="category-filter"
+              value={selectedCategory}
+              onChange={(event) =>
+                setSelectedCategory(event.target.value)
+              }
+            >
+              {categories.map((category) => (
+                <option
+                  value={category}
+                  key={category}
+                >
+                  {category}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="filter-control">
+            <label htmlFor="location-filter">
+              Location
+            </label>
+
+            <select
+              id="location-filter"
+              value={selectedLocation}
+              onChange={(event) =>
+                setSelectedLocation(event.target.value)
+              }
+            >
+              {locations.map((location) => (
+                <option
+                  value={location}
+                  key={location}
+                >
+                  {location}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {hasActiveFilters && (
+            <button
+              className="clear-filters-button"
+              type="button"
+              onClick={clearFilters}
+            >
+              Clear filters
+            </button>
+          )}
+        </section>
+
         <section className="opportunities-section">
           <div className="opportunities-heading">
             <div>
@@ -152,87 +374,270 @@ function Collaboration({
             </div>
 
             <span className="opportunity-count">
-              {collaborationOpportunities.length} opportunities
+              {filteredOpportunities.length}{' '}
+              {filteredOpportunities.length === 1
+                ? 'opportunity'
+                : 'opportunities'}
             </span>
           </div>
 
-          <div className="opportunities-grid">
-            {collaborationOpportunities.map((opportunity) => (
-              <article
-                className="opportunity-card"
-                key={opportunity.id}
-              >
-                <div className="opportunity-card-top">
-                  <span className="opportunity-category">
-                    {opportunity.category}
-                  </span>
+          {filteredOpportunities.length > 0 ? (
+            <div className="opportunities-grid">
+              {filteredOpportunities.map((opportunity) => {
+                const hasApplied =
+                  appliedOpportunityIds.includes(opportunity.id)
 
-                  <span className="opportunity-status">
-                    {opportunity.status}
-                  </span>
-                </div>
-
-                <h3>{opportunity.title}</h3>
-
-                <p className="opportunity-creator">
-                  Posted by {opportunity.creator}
-                </p>
-
-                <p className="opportunity-description">
-                  {opportunity.description}
-                </p>
-
-                <div className="opportunity-details">
-                  <div className="opportunity-detail">
-                    <span className="detail-label">
-                      Role required
-                    </span>
-                    <strong>{opportunity.roleRequired}</strong>
-                  </div>
-
-                  <div className="opportunity-detail">
-                    <span className="detail-label">
-                      Location
-                    </span>
-                    <strong>{opportunity.location}</strong>
-                  </div>
-                </div>
-
-                <div className="opportunity-skills">
-                  <span className="detail-label">
-                    Skills
-                  </span>
-
-                  <div className="skill-list">
-                    {opportunity.skills.map((skill) => (
-                      <span
-                        className="skill-tag"
-                        key={skill}
-                      >
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="opportunity-footer">
-                  <div className="closing-date">
-                    <span>Applications close</span>
-                    <strong>{opportunity.closingDate}</strong>
-                  </div>
-
-                  <button
-                    className="apply-button"
-                    type="button"
+                return (
+                  <article
+                    className="opportunity-card"
+                    key={opportunity.id}
                   >
-                    Apply
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
+                    <div className="opportunity-card-top">
+                      <span className="opportunity-category">
+                        {opportunity.category}
+                      </span>
+
+                      <span className="opportunity-status">
+                        {opportunity.status}
+                      </span>
+                    </div>
+
+                    <h3>{opportunity.title}</h3>
+
+                    <p className="opportunity-creator">
+                      Posted by {opportunity.creator}
+                    </p>
+
+                    <p className="opportunity-description">
+                      {opportunity.description}
+                    </p>
+
+                    <div className="opportunity-details">
+                      <div className="opportunity-detail">
+                        <span className="detail-label">
+                          Role required
+                        </span>
+                        <strong>
+                          {opportunity.roleRequired}
+                        </strong>
+                      </div>
+
+                      <div className="opportunity-detail">
+                        <span className="detail-label">
+                          Location
+                        </span>
+                        <strong>
+                          {opportunity.location}
+                        </strong>
+                      </div>
+                    </div>
+
+                    <div className="opportunity-skills">
+                      <span className="detail-label">
+                        Skills
+                      </span>
+
+                      <div className="skill-list">
+                        {opportunity.skills.map((skill) => (
+                          <span
+                            className="skill-tag"
+                            key={skill}
+                          >
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="opportunity-footer">
+                      <div className="closing-date">
+                        <span>Applications close</span>
+                        <strong>
+                          {opportunity.closingDate}
+                        </strong>
+                      </div>
+
+                      <button
+                        className={`apply-button ${
+                          hasApplied ? 'applied' : ''
+                        }`}
+                        type="button"
+                        disabled={hasApplied}
+                        onClick={() =>
+                          openApplication(opportunity)
+                        }
+                      >
+                        {hasApplied ? 'Applied ✓' : 'Apply'}
+                      </button>
+                    </div>
+                  </article>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="no-opportunities">
+              <div
+                className="no-opportunities-icon"
+                aria-hidden="true"
+              >
+                ⌕
+              </div>
+
+              <h3>No opportunities found</h3>
+
+              <p>
+                We couldn't find any collaboration opportunities
+                matching your current search and filters.
+              </p>
+
+              <button
+                type="button"
+                onClick={clearFilters}
+              >
+                Clear all filters
+              </button>
+            </div>
+          )}
         </section>
       </main>
+
+      {selectedOpportunity && (
+        <div
+          className="application-modal-backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              closeApplication()
+            }
+          }}
+        >
+          <section
+            className="application-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="application-modal-title"
+          >
+            <div className="application-modal-header">
+              <div>
+                <p className="application-modal-eyebrow">
+                  APPLY TO OPPORTUNITY
+                </p>
+
+                <h2 id="application-modal-title">
+                  {selectedOpportunity.title}
+                </h2>
+
+                <p>
+                  {selectedOpportunity.roleRequired} •{' '}
+                  {selectedOpportunity.location}
+                </p>
+              </div>
+
+              <button
+                className="application-modal-close"
+                type="button"
+                aria-label="Close application form"
+                onClick={closeApplication}
+              >
+                ×
+              </button>
+            </div>
+
+            {applicationSuccess ? (
+              <div className="application-success">
+                <div
+                  className="application-success-icon"
+                  aria-hidden="true"
+                >
+                  ✓
+                </div>
+
+                <h3>Application sent</h3>
+
+                <p>
+                  Your application for{' '}
+                  <strong>
+                    {selectedOpportunity.roleRequired}
+                  </strong>{' '}
+                  has been submitted successfully.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={closeApplication}
+                >
+                  Done
+                </button>
+              </div>
+            ) : (
+              <form
+                className="application-form"
+                onSubmit={submitApplication}
+              >
+                <div className="application-opportunity-summary">
+                  <span>
+                    Applying to {selectedOpportunity.creator}
+                  </span>
+
+                  <strong>
+                    {selectedOpportunity.roleRequired}
+                  </strong>
+                </div>
+
+                <label htmlFor="cover-message">
+                  Cover message
+                </label>
+
+                <textarea
+                  id="cover-message"
+                  rows={7}
+                  maxLength={600}
+                  placeholder="Introduce yourself, explain why you're interested and describe the relevant skills or experience you can bring to this collaboration."
+                  value={coverMessage}
+                  onChange={(event) => {
+                    setCoverMessage(event.target.value)
+
+                    if (applicationError) {
+                      setApplicationError('')
+                    }
+                  }}
+                />
+
+                <div className="cover-message-meta">
+                  <span>Minimum 30 characters</span>
+                  <span>{coverMessage.length}/600</span>
+                </div>
+
+                {applicationError && (
+                  <p
+                    className="application-error"
+                    role="alert"
+                  >
+                    {applicationError}
+                  </p>
+                )}
+
+                <div className="application-modal-actions">
+                  <button
+                    className="cancel-application-button"
+                    type="button"
+                    onClick={closeApplication}
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    className="submit-application-button"
+                    type="submit"
+                  >
+                    Send application
+                  </button>
+                </div>
+              </form>
+            )}
+          </section>
+        </div>
+      )}
     </div>
   )
 }
