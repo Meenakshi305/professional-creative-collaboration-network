@@ -10,6 +10,7 @@
   box-sizing: border-box;
   border: 2px solid transparent;
   border-radius: 0 0 22px 22px;
+
   background:
     linear-gradient(
       rgba(255, 255, 255, 0.94),
@@ -22,6 +23,7 @@
       #7567df,
       rgba(193, 117, 139, 0.85)
     ) border-box;
+
   backdrop-filter: blur(18px);
   box-shadow: 0 5px 20px rgba(41, 38, 95, 0.12);
 }
@@ -29,7 +31,6 @@
 .header-container {
   width: min(1450px, calc(100% - 48px));
   min-height: 76px;
-
   margin: 0 auto;
 
   display: flex;
@@ -37,7 +38,9 @@
   gap: 28px;
 }
 
-/* ---------------- BRAND ---------------- */
+/* =========================================================
+   BRAND
+========================================================= */
 
 .dashboard-brand {
   min-width: 285px;
@@ -63,17 +66,16 @@
   border-radius: 50%;
 
   background:
-  linear-gradient(#ffffff, #ffffff) padding-box,
-  linear-gradient(
-    135deg,
-    #29265f,
-    #514aa6,
-    #7567df,
-    rgba(193, 117, 139, 0.85)
-  ) border-box;
+    linear-gradient(#ffffff, #ffffff) padding-box,
+    linear-gradient(
+      135deg,
+      #29265f,
+      #514aa6,
+      #7567df,
+      rgba(193, 117, 139, 0.85)
+    ) border-box;
 
-  box-shadow:
-    0 5px 15px rgba(76, 61, 166, 0.18);
+  box-shadow: 0 5px 15px rgba(76, 61, 166, 0.18);
 }
 
 .brand-logo img {
@@ -83,7 +85,6 @@
   object-fit: contain;
 
   padding: 3px;
-
   box-sizing: border-box;
 }
 
@@ -94,20 +95,25 @@
 }
 
 .brand-text strong {
+  max-width: 215px;
+
   color: #29265f;
+
   font-size: 13px;
   font-weight: 800;
   line-height: 1.2;
-  max-width: 215px;
 }
 
 .brand-text span {
   color: #77738c;
+
   font-size: 10px;
   letter-spacing: 0.3px;
 }
 
-/* ---------------- NAVIGATION ---------------- */
+/* =========================================================
+   NAVIGATION
+========================================================= */
 
 .dashboard-navigation {
   margin-left: auto;
@@ -138,17 +144,23 @@
 
   cursor: pointer;
 
-  transition: 0.2s ease;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .nav-item > span {
   font-size: 20px;
+  line-height: 1;
 }
 
 .nav-item small {
   font-family: inherit;
   font-size: 11px;
   font-weight: 600;
+
+  white-space: nowrap;
 }
 
 .nav-item:hover {
@@ -160,39 +172,156 @@
   color: #5748c8;
   border-bottom-color: #7567df;
 }
+
+/* =========================================================
+   SMALL DESKTOP / TABLET
+========================================================= */
+
 @media (max-width: 1180px) {
   .brand-text {
     display: none;
   }
+
   .dashboard-brand {
     min-width: auto;
   }
 }
+
 @media (max-width: 850px) {
   .header-container {
     width: calc(100% - 24px);
+    min-height: 68px;
     gap: 12px;
   }
+
+  .dashboard-brand {
+    flex-shrink: 0;
+  }
+
+  .brand-logo {
+    width: 44px;
+    height: 44px;
+  }
+
   .dashboard-navigation {
     flex: 1;
+    min-width: 0;
+
     justify-content: flex-end;
+    gap: 2px;
   }
+
   .nav-item {
-    min-width: 55px;
+    min-width: 50px;
+    height: 54px;
+
+    padding: 5px 6px;
   }
+
   .nav-item small {
     display: none;
   }
-}
-@media (max-width: 520px) {
-  .header-container {
-    min-height: 64px;
-  }
-  .nav-item {
-    min-width: 42px;
-    padding: 5px;
-  }
+
   .nav-item > span {
-    font-size: 18px;
+    font-size: 19px;
+  }
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 520px) {
+  .dashboard-header {
+    border-radius: 0 0 16px 16px;
+  }
+
+  .header-container {
+    width: calc(100% - 16px);
+    min-height: 62px;
+    gap: 6px;
+  }
+
+  .dashboard-brand {
+    flex: 0 0 auto;
+  }
+
+  .brand-logo {
+    width: 40px;
+    height: 40px;
+
+    border-width: 1.5px;
+  }
+
+  .dashboard-navigation {
+    flex: 1;
+    min-width: 0;
+
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    align-items: stretch;
+
+    margin-left: 2px;
+    gap: 0;
+  }
+
+  .nav-item {
+    width: 100%;
+    min-width: 0;
+    height: 56px;
+
+    padding: 4px 1px;
+
+    gap: 2px;
+
+    border-bottom-width: 3px;
+    border-radius: 6px 6px 0 0;
+  }
+
+  .nav-item > span {
+    font-size: 17px;
+    line-height: 1;
+  }
+
+  .nav-item small {
+    display: none;
+  }
+
+  .nav-item:hover {
+    background: rgba(117, 103, 223, 0.05);
+  }
+
+  .nav-item.active {
+    background: rgba(117, 103, 223, 0.07);
+  }
+}
+
+/* =========================================================
+   VERY SMALL MOBILE
+========================================================= */
+
+@media (max-width: 380px) {
+  .header-container {
+    width: calc(100% - 10px);
+    gap: 3px;
+  }
+
+  .brand-logo {
+    width: 36px;
+    height: 36px;
+  }
+
+  .dashboard-navigation {
+    margin-left: 0;
+  }
+
+  .nav-item {
+    height: 54px;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .nav-item > span {
+    font-size: 16px;
   }
 }

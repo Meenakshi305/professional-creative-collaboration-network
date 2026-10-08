@@ -22,7 +22,7 @@ type CollaborationOpportunity = {
   status: 'OPEN' | 'CLOSED'
 }
 
-const collaborationOpportunities: CollaborationOpportunity[] = [
+const initialOpportunities: CollaborationOpportunity[] = [
   {
     id: 1,
     title: 'Brand Identity Designer for Creative Startup',
@@ -109,10 +109,14 @@ function Collaboration({
   onCollaborationClick,
   onEventsClick
 }: CollaborationProps) {
+  const [opportunities, setOpportunities] =
+    useState<CollaborationOpportunity[]>(initialOpportunities)
+
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [selectedLocation, setSelectedLocation] = useState('All')
 
+  // Application state
   const [selectedOpportunity, setSelectedOpportunity] =
     useState<CollaborationOpportunity | null>(null)
 
@@ -122,53 +126,58 @@ function Collaboration({
   const [appliedOpportunityIds, setAppliedOpportunityIds] =
     useState<number[]>([])
 
+  // Post opportunity state
+  const [showPostOpportunity, setShowPostOpportunity] = useState(false)
+
+  const [newTitle, setNewTitle] = useState('')
+  const [newRole, setNewRole] = useState('')
+  const [newCategory, setNewCategory] = useState('')
+  const [newLocation, setNewLocation] = useState('')
+  const [newDescription, setNewDescription] = useState('')
+  const [newSkills, setNewSkills] = useState('')
+  const [newClosingDate, setNewClosingDate] = useState('')
+
+  const [postOpportunityError, setPostOpportunityError] = useState('')
+  const [postOpportunitySuccess, setPostOpportunitySuccess] = useState('')
+
+  // Search/filter data
   const categories = [
     'All',
     ...Array.from(
-      new Set(
-        collaborationOpportunities.map(
-          (opportunity) => opportunity.category
-        )
-      )
+      new Set(opportunities.map((opportunity) => opportunity.category))
     )
   ]
 
   const locations = [
     'All',
     ...Array.from(
-      new Set(
-        collaborationOpportunities.map(
-          (opportunity) => opportunity.location
-        )
-      )
+      new Set(opportunities.map((opportunity) => opportunity.location))
     )
   ]
 
-  const filteredOpportunities = collaborationOpportunities.filter(
-    (opportunity) => {
-      const searchValue = searchTerm.toLowerCase().trim()
+  const filteredOpportunities = opportunities.filter((opportunity) => {
+    const searchValue = searchTerm.toLowerCase().trim()
 
-      const matchesSearch =
-        searchValue === '' ||
-        opportunity.title.toLowerCase().includes(searchValue) ||
-        opportunity.description.toLowerCase().includes(searchValue) ||
-        opportunity.roleRequired.toLowerCase().includes(searchValue) ||
-        opportunity.creator.toLowerCase().includes(searchValue) ||
-        opportunity.skills.some((skill) =>
-          skill.toLowerCase().includes(searchValue)
-        )
+    const matchesSearch =
+      searchValue === '' ||
+      opportunity.title.toLowerCase().includes(searchValue) ||
+      opportunity.description.toLowerCase().includes(searchValue) ||
+      opportunity.roleRequired.toLowerCase().includes(searchValue) ||
+      opportunity.creator.toLowerCase().includes(searchValue) ||
+      opportunity.skills.some((skill) =>
+        skill.toLowerCase().includes(searchValue)
+      )
 
-      const matchesCategory =
-        selectedCategory === 'All' ||
-        opportunity.category === selectedCategory
+    const matchesCategory =
+      selectedCategory === 'All' ||
+      opportunity.category === selectedCategory
 
-      const matchesLocation =
-        selectedLocation === 'All' ||
-        opportunity.location === selectedLocation
+    const matchesLocation =
+      selectedLocation === 'All' ||
+      opportunity.location === selectedLocation
 
-      return matchesSearch && matchesCategory && matchesLocation
-    }
-  )
+    return matchesSearch && matchesCategory && matchesLocation
+  })
 
   const hasActiveFilters =
     searchTerm.trim() !== '' ||
@@ -181,9 +190,8 @@ function Collaboration({
     setSelectedLocation('All')
   }
 
-  const openApplication = (
-    opportunity: CollaborationOpportunity
-  ) => {
+  // Application functions
+  const openApplication = (opportunity: CollaborationOpportunity) => {
     if (appliedOpportunityIds.includes(opportunity.id)) {
       return
     }
@@ -239,8 +247,133 @@ function Collaboration({
     ])
 
     setApplicationError('')
-    setApplicationSuccess(
-      'Application submitted successfully.'
+    setApplicationSuccess('Application submitted successfully.')
+  }
+
+  // Post opportunity functions
+  const openPostOpportunity = () => {
+    setShowPostOpportunity(true)
+    setPostOpportunityError('')
+    setPostOpportunitySuccess('')
+  }
+
+  const resetPostOpportunityForm = () => {
+    setNewTitle('')
+    setNewRole('')
+    setNewCategory('')
+    setNewLocation('')
+    setNewDescription('')
+    setNewSkills('')
+    setNewClosingDate('')
+    setPostOpportunityError('')
+  }
+
+  const closePostOpportunity = () => {
+    setShowPostOpportunity(false)
+    resetPostOpportunityForm()
+    setPostOpportunitySuccess('')
+  }
+
+  const submitOpportunity = (
+    event: React.FormEvent<HTMLFormElement>
+  ) => {
+    event.preventDefault()
+
+    const title = newTitle.trim()
+    const role = newRole.trim()
+    const category = newCategory.trim()
+    const location = newLocation.trim()
+    const description = newDescription.trim()
+
+    const skills = newSkills
+      .split(',')
+      .map((skill) => skill.trim())
+      .filter((skill) => skill !== '')
+
+    if (
+      !title ||
+      !role ||
+      !category ||
+      !location ||
+      !description ||
+      !newClosingDate
+    ) {
+      setPostOpportunityError(
+        'Please complete all required fields before publishing.'
+      )
+      return
+    }
+
+    if (title.length < 5) {
+      setPostOpportunityError(
+        'Opportunity title must be at least 5 characters.'
+      )
+      return
+    }
+
+    if (description.length < 30) {
+      setPostOpportunityError(
+        'Description must be at least 30 characters.'
+      )
+      return
+    }
+
+    if (skills.length === 0) {
+      setPostOpportunityError(
+        'Please enter at least one required skill.'
+      )
+      return
+    }
+
+    const closingDate = new Date(`${newClosingDate}T00:00:00`)
+
+    if (Number.isNaN(closingDate.getTime())) {
+      setPostOpportunityError(
+        'Please select a valid closing date.'
+      )
+      return
+    }
+
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    if (closingDate < today) {
+      setPostOpportunityError(
+        'Closing date cannot be in the past.'
+      )
+      return
+    }
+
+    const newOpportunity: CollaborationOpportunity = {
+      id:
+        opportunities.length > 0
+          ? Math.max(
+              ...opportunities.map((opportunity) => opportunity.id)
+            ) + 1
+          : 1,
+      title,
+      creator: 'You',
+      description,
+      roleRequired: role,
+      category,
+      location,
+      skills,
+      closingDate: closingDate.toLocaleDateString('en-AU', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      }),
+      status: 'OPEN'
+    }
+
+    setOpportunities((currentOpportunities) => [
+      newOpportunity,
+      ...currentOpportunities
+    ])
+
+    setPostOpportunityError('')
+    setPostOpportunitySuccess(
+      'Your collaboration opportunity has been published successfully.'
     )
   }
 
@@ -273,6 +406,7 @@ function Collaboration({
           <button
             className="post-opportunity-button"
             type="button"
+            onClick={openPostOpportunity}
           >
             + Post an Opportunity
           </button>
@@ -288,10 +422,7 @@ function Collaboration({
             </label>
 
             <div className="search-input-wrapper">
-              <span
-                className="search-icon"
-                aria-hidden="true"
-              >
+              <span className="search-icon" aria-hidden="true">
                 ⌕
               </span>
 
@@ -308,9 +439,7 @@ function Collaboration({
           </div>
 
           <div className="filter-control">
-            <label htmlFor="category-filter">
-              Category
-            </label>
+            <label htmlFor="category-filter">Category</label>
 
             <select
               id="category-filter"
@@ -320,10 +449,7 @@ function Collaboration({
               }
             >
               {categories.map((category) => (
-                <option
-                  value={category}
-                  key={category}
-                >
+                <option value={category} key={category}>
                   {category}
                 </option>
               ))}
@@ -331,9 +457,7 @@ function Collaboration({
           </div>
 
           <div className="filter-control">
-            <label htmlFor="location-filter">
-              Location
-            </label>
+            <label htmlFor="location-filter">Location</label>
 
             <select
               id="location-filter"
@@ -343,10 +467,7 @@ function Collaboration({
               }
             >
               {locations.map((location) => (
-                <option
-                  value={location}
-                  key={location}
-                >
+                <option value={location} key={location}>
                   {location}
                 </option>
               ))}
@@ -417,32 +538,23 @@ function Collaboration({
                         <span className="detail-label">
                           Role required
                         </span>
-                        <strong>
-                          {opportunity.roleRequired}
-                        </strong>
+                        <strong>{opportunity.roleRequired}</strong>
                       </div>
 
                       <div className="opportunity-detail">
                         <span className="detail-label">
                           Location
                         </span>
-                        <strong>
-                          {opportunity.location}
-                        </strong>
+                        <strong>{opportunity.location}</strong>
                       </div>
                     </div>
 
                     <div className="opportunity-skills">
-                      <span className="detail-label">
-                        Skills
-                      </span>
+                      <span className="detail-label">Skills</span>
 
                       <div className="skill-list">
                         {opportunity.skills.map((skill) => (
-                          <span
-                            className="skill-tag"
-                            key={skill}
-                          >
+                          <span className="skill-tag" key={skill}>
                             {skill}
                           </span>
                         ))}
@@ -452,9 +564,7 @@ function Collaboration({
                     <div className="opportunity-footer">
                       <div className="closing-date">
                         <span>Applications close</span>
-                        <strong>
-                          {opportunity.closingDate}
-                        </strong>
+                        <strong>{opportunity.closingDate}</strong>
                       </div>
 
                       <button
@@ -463,9 +573,7 @@ function Collaboration({
                         }`}
                         type="button"
                         disabled={hasApplied}
-                        onClick={() =>
-                          openApplication(opportunity)
-                        }
+                        onClick={() => openApplication(opportunity)}
                       >
                         {hasApplied ? 'Applied ✓' : 'Apply'}
                       </button>
@@ -490,16 +598,15 @@ function Collaboration({
                 matching your current search and filters.
               </p>
 
-              <button
-                type="button"
-                onClick={clearFilters}
-              >
+              <button type="button" onClick={clearFilters}>
                 Clear all filters
               </button>
             </div>
           )}
         </section>
       </main>
+
+      {/* Application Modal */}
 
       {selectedOpportunity && (
         <div
@@ -631,6 +738,256 @@ function Collaboration({
                     type="submit"
                   >
                     Send application
+                  </button>
+                </div>
+              </form>
+            )}
+          </section>
+        </div>
+      )}
+
+      {/* Post Opportunity Modal */}
+
+      {showPostOpportunity && (
+        <div
+          className="post-modal-backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              closePostOpportunity()
+            }
+          }}
+        >
+          <section
+            className="post-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="post-modal-title"
+          >
+            <div className="post-modal-header">
+              <div>
+                <p className="post-modal-eyebrow">
+                  CREATE OPPORTUNITY
+                </p>
+
+                <h2 id="post-modal-title">
+                  Post a Collaboration Opportunity
+                </h2>
+
+                <p>
+                  Share your project and find creative professionals
+                  with the skills you need.
+                </p>
+              </div>
+
+              <button
+                className="post-modal-close"
+                type="button"
+                aria-label="Close post opportunity form"
+                onClick={closePostOpportunity}
+              >
+                ×
+              </button>
+            </div>
+
+            {postOpportunitySuccess ? (
+              <div className="post-success">
+                <div
+                  className="post-success-icon"
+                  aria-hidden="true"
+                >
+                  ✓
+                </div>
+
+                <h3>Opportunity published</h3>
+
+                <p>{postOpportunitySuccess}</p>
+
+                <button
+                  type="button"
+                  onClick={closePostOpportunity}
+                >
+                  View opportunities
+                </button>
+              </div>
+            ) : (
+              <form
+                className="post-opportunity-form"
+                onSubmit={submitOpportunity}
+              >
+                <div className="post-form-field">
+                  <label htmlFor="new-opportunity-title">
+                    Opportunity title *
+                  </label>
+
+                  <input
+                    id="new-opportunity-title"
+                    type="text"
+                    maxLength={100}
+                    placeholder="e.g. Animator needed for short film"
+                    value={newTitle}
+                    onChange={(event) => {
+                      setNewTitle(event.target.value)
+
+                      if (postOpportunityError) {
+                        setPostOpportunityError('')
+                      }
+                    }}
+                  />
+                </div>
+
+                <div className="post-form-grid">
+                  <div className="post-form-field">
+                    <label htmlFor="new-opportunity-role">
+                      Role required *
+                    </label>
+
+                    <input
+                      id="new-opportunity-role"
+                      type="text"
+                      placeholder="e.g. 3D Animator"
+                      value={newRole}
+                      onChange={(event) =>
+                        setNewRole(event.target.value)
+                      }
+                    />
+                  </div>
+
+                  <div className="post-form-field">
+                    <label htmlFor="new-opportunity-category">
+                      Category *
+                    </label>
+
+                    <select
+                      id="new-opportunity-category"
+                      value={newCategory}
+                      onChange={(event) =>
+                        setNewCategory(event.target.value)
+                      }
+                    >
+                      <option value="">Select category</option>
+                      <option value="Design">Design</option>
+                      <option value="Photography">
+                        Photography
+                      </option>
+                      <option value="Music">Music</option>
+                      <option value="Film & Video">
+                        Film & Video
+                      </option>
+                      <option value="Digital Design">
+                        Digital Design
+                      </option>
+                      <option value="Illustration">
+                        Illustration
+                      </option>
+                      <option value="Animation">
+                        Animation
+                      </option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+
+                  <div className="post-form-field">
+                    <label htmlFor="new-opportunity-location">
+                      Location *
+                    </label>
+
+                    <input
+                      id="new-opportunity-location"
+                      type="text"
+                      placeholder="e.g. Adelaide, SA or Remote"
+                      value={newLocation}
+                      onChange={(event) =>
+                        setNewLocation(event.target.value)
+                      }
+                    />
+                  </div>
+
+                  <div className="post-form-field">
+                    <label htmlFor="new-opportunity-closing">
+                      Applications close *
+                    </label>
+
+                    <input
+                      id="new-opportunity-closing"
+                      type="date"
+                      value={newClosingDate}
+                      onChange={(event) =>
+                        setNewClosingDate(event.target.value)
+                      }
+                    />
+                  </div>
+                </div>
+
+                <div className="post-form-field">
+                  <label htmlFor="new-opportunity-skills">
+                    Required skills *
+                  </label>
+
+                  <input
+                    id="new-opportunity-skills"
+                    type="text"
+                    placeholder="e.g. Blender, Animation, Storyboarding"
+                    value={newSkills}
+                    onChange={(event) =>
+                      setNewSkills(event.target.value)
+                    }
+                  />
+
+                  <span className="post-field-hint">
+                    Separate multiple skills with commas.
+                  </span>
+                </div>
+
+                <div className="post-form-field">
+                  <label htmlFor="new-opportunity-description">
+                    Description *
+                  </label>
+
+                  <textarea
+                    id="new-opportunity-description"
+                    rows={6}
+                    maxLength={700}
+                    placeholder="Describe the project, what you are looking for and what the collaborator will be working on."
+                    value={newDescription}
+                    onChange={(event) => {
+                      setNewDescription(event.target.value)
+
+                      if (postOpportunityError) {
+                        setPostOpportunityError('')
+                      }
+                    }}
+                  />
+
+                  <div className="post-description-meta">
+                    <span>Minimum 30 characters</span>
+                    <span>{newDescription.length}/700</span>
+                  </div>
+                </div>
+
+                {postOpportunityError && (
+                  <p
+                    className="post-opportunity-error"
+                    role="alert"
+                  >
+                    {postOpportunityError}
+                  </p>
+                )}
+
+                <div className="post-modal-actions">
+                  <button
+                    className="cancel-post-button"
+                    type="button"
+                    onClick={closePostOpportunity}
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    className="publish-opportunity-button"
+                    type="submit"
+                  >
+                    Publish opportunity
                   </button>
                 </div>
               </form>
