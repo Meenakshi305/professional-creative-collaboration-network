@@ -22,6 +22,12 @@ import PublicProfile
 import Events
   from './pages/Events/Events'
 
+import AdminDashboard
+  from './pages/Admin/AdminDashboard'
+
+import SuperAdminDashboard
+  from './pages/SuperAdmin/SuperAdminDashboard'
+
 import {
 
   signupUser,
@@ -52,6 +58,10 @@ type Page =
   | 'publicProfile'
 
   | 'events'
+
+  | 'admin'
+
+  | 'superAdmin'
 
 
 function CreativeCollabNetwork() {
@@ -608,9 +618,32 @@ function CreativeCollabNetwork() {
       )
 
 
-      setCurrentPage(
-        'dashboard'
-      )
+      const user =
+        await loadCurrentUser()
+
+
+      if (
+        user?.role === 'SUPER_ADMIN'
+      ) {
+
+        setCurrentPage(
+          'superAdmin'
+        )
+
+      } else if (
+        user?.role === 'ADMIN'
+      ) {
+
+        setCurrentPage(
+          'admin'
+        )
+
+      } else {
+
+        setCurrentPage(
+          'dashboard'
+        )
+      }
 
 
       setSelectedUserId(
@@ -621,9 +654,6 @@ function CreativeCollabNetwork() {
       setUiMessages(
         ''
       )
-
-
-      await loadCurrentUser()
 
 
     } catch (error) {
@@ -789,6 +819,96 @@ function CreativeCollabNetwork() {
 
     </div>
   )
+
+
+  // ============================================
+  // SUPER ADMIN DASHBOARD
+  // ============================================
+
+  if (
+    isLogIn
+    &&
+    currentPage === 'superAdmin'
+  ) {
+
+    return (
+
+      <>
+
+        {logoutButton}
+
+        <SuperAdminDashboard />
+
+      </>
+
+    )
+  }
+
+
+  // ============================================
+  // ADMIN DASHBOARD
+  // ============================================
+
+  if (
+    isLogIn
+    &&
+    currentPage === 'admin'
+  ) {
+
+    return (
+
+      <>
+
+        {logoutButton}
+
+        <AdminDashboard />
+
+      </>
+
+    )
+  }
+
+
+  // ============================================
+  // TEMPORARY SUPER ADMIN PREVIEW
+  // Open: http://localhost:5174/?superAdminPreview=true
+  // Remove this block after real super admin login testing is complete.
+  // ============================================
+
+  const superAdminPreview =
+    new URLSearchParams(
+      window.location.search
+    ).get('superAdminPreview') === 'true'
+
+  if (superAdminPreview) {
+
+    return (
+
+      <SuperAdminDashboard />
+
+    )
+  }
+
+
+  // ============================================
+  // TEMPORARY ADMIN PREVIEW
+  // Open: http://localhost:5174/?adminPreview=true
+  // Remove this block after real admin login testing is complete.
+  // ============================================
+
+  const adminPreview =
+    new URLSearchParams(
+      window.location.search
+    ).get('adminPreview') === 'true'
+
+  if (adminPreview) {
+
+    return (
+
+      <AdminDashboard />
+
+    )
+  }
 
 
   // ============================================
