@@ -2,6 +2,7 @@
   min-height: 100vh;
   background: var(--creative-background);
 }
+
 .profile-page {
   min-height: 100vh;
   width: 100%;
@@ -17,6 +18,7 @@
 }
 
 .profile-card {
+  position: relative;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.91);
   border: 1px solid rgba(255, 255, 255, 0.7);
@@ -73,24 +75,50 @@
   display: flex;
   gap: 26px;
   padding: 0 34px 34px;
+
+  /*
+   * Keeps avatar positioned relative
+   * to profile content.
+   */
+  position: relative;
 }
 
 .profile-avatar {
   width: 125px;
   height: 125px;
-  margin-top: -55px;
+
+  /*
+   * Pull avatar upward so it overlaps
+   * the coloured banner.
+   */
+  margin-top: -68px;
+
+  position: relative;
+  z-index: 5;
+
   flex-shrink: 0;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   border: 6px solid rgba(255, 255, 255, 0.98);
   border-radius: 50%;
+
   background: linear-gradient(135deg, #29265f, #7567df);
+
   color: white;
   font-size: 34px;
   font-weight: 800;
   letter-spacing: 1px;
+
   box-shadow: 0 8px 22px rgba(50, 45, 100, 0.2);
+
+  /*
+   * Important when profile-avatar is an <img>
+   */
+  object-fit: cover;
+  object-position: center;
 }
 
 .profile-heading {
@@ -735,7 +763,12 @@
   .profile-avatar {
     width: 100px;
     height: 100px;
-    margin-top: -45px;
+
+    /*
+     * Same overlapping effect on mobile.
+     */
+    margin-top: -55px;
+
     font-size: 28px;
   }
 
