@@ -1,4 +1,4 @@
-package professional_creative_collaboration_network.entity;
+package com.creative.collaboration.entity;
 
 import jakarta.persistence.*;
 

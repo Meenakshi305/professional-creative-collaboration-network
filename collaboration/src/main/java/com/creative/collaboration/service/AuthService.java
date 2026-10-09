@@ -7,7 +7,6 @@ import com.creative.collaboration.dto.SignupRequest;
 
 import com.creative.collaboration.entity.User;
 import com.creative.collaboration.entity.UserProfile;
-import com.creative.collaboration.entity.enums.AccountType;
 
 import com.creative.collaboration.repository.UserProfileRepository;
 import com.creative.collaboration.repository.UserRepository;
@@ -97,52 +96,15 @@ public class AuthService {
         }
 
 
-        User user =
-                User
-                        .builder()
-
-                        .fullName(
-                                request
-                                        .fullName()
-                                        .trim()
-                        )
-
-                        .username(
-                                username
-                        )
-
-                        .email(
-                                email
-                        )
-
-                        .passwordHash(
-                                passwordEncoder
-                                        .encode(
-                                                request
-                                                        .password()
-                                        )
-                        )
-
-                        // Account type no longer comes
-                        // from the frontend.
-                        .accountType(
-                                AccountType.PERSON
-                        )
-
-                        .dateOfBirth(
-                                request
-                                        .dateOfBirth()
-                        )
-
-                        .role(
-                                "USER"
-                        )
-
-                        .active(
-                                true
-                        )
-
-                        .build();
+        User user = User.builder()
+                .fullName(request.fullName())
+                .username(username)
+                .email(email)
+                .passwordHash(passwordEncoder.encode(request.password()))
+                .dateOfBirth(request.dateOfBirth())
+                .role("USER")
+                .active(true)
+                .build();
 
 
         User savedUser =

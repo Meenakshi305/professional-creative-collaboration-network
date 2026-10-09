@@ -1,6 +1,5 @@
 package com.creative.collaboration.entity;
 
-import com.creative.collaboration.entity.enums.AccountType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -34,13 +33,9 @@ public class User {
 
     private LocalDate dateOfBirth;
 
-    @Enumerated(EnumType.STRING)
-    @Column(length = 30)
-    private AccountType accountType;
 
     @Column(nullable = false, length = 30)
-    @Builder.Default
-    private String role = "USER";
+    private String role;
 
     @Column(nullable = false)
     @Builder.Default
@@ -53,9 +48,6 @@ public class User {
     public void beforeInsert() {
         if (createdAt == null) {
             createdAt = LocalDateTime.now();
-        }
-        if (role == null) {
-            role = "USER";
         }
     }
 }
