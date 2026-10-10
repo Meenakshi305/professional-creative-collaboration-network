@@ -107,15 +107,17 @@ function Events({
   onEventsClick
 }: EventsProps) {
     const [eventSearch, setEventSearch] = useState('')
-    const [eventFilter, setEventFilter] = useState<'all' | 'in-person' | 'online'>('all')
+    const [eventFilter, setEventFilter] = useState<'all' | 'in-person' | 'online' | 'registered'>('all')
     const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null)
     const [registeredEvents, setRegisteredEvents] = useState<number[]>([])
     const [checkoutEvent, setCheckoutEvent] = useState<EventItem | null>(null)
+    const [cancelEvent, setCancelEvent] = useState<EventItem | null>(null)
     const filteredEvents = eventData.filter((event) => {
         const matchesSearch = event.title.toLowerCase().includes(eventSearch.toLowerCase()) || 
                                 event.category.toLowerCase().includes(eventSearch.toLowerCase()) || 
                                 event.location.toLowerCase().includes(eventSearch.toLowerCase())
-        const matchesFilter = eventFilter === 'all' || event.mode === eventFilter
+        const matchesFilter = eventFilter === 'all' ? true : eventFilter === 'registered' 
+                                ? registeredEvents.includes(event.id) : event.mode === eventFilter
         return matchesSearch && matchesFilter
     })
     const handleFreeRegistration = (eventId: number) => {
@@ -125,6 +127,11 @@ function Events({
             eventId
             ])
         }
+    }
+    const handleCancelRegistration = (eventId: number) => {
+        setRegisteredEvents((currentEvents) =>
+            currentEvents.filter((id) => id !== eventId)
+        )
     }
 
   return (
@@ -183,23 +190,58 @@ function Events({
                 >
                 💻 Online
                 </button>
+                <button
+                    type="button"
+                    className={eventFilter === 'registered' ? 'active' : ''}
+                    onClick={() => setEventFilter('registered')}
+                    >
+                    ✓ My Events
+                </button>
             </div>
             </section>
             <section className="events-results">
                 <div className="events-results-heading">
-                    <div>
-                    <h2>Upcoming Events</h2>
-                    <p>
-                        {filteredEvents.length} event{filteredEvents.length !== 1 ? 's' : ''} available
-                    </p>
+                    <div className="events-heading-content">
+                        <span className="events-heading-label">
+                        {eventFilter === 'registered'
+                            ? '★ YOUR CREATIVE CALENDAR'
+                            : '✦ EXPLORE WHAT’S HAPPENING'}
+                        </span>
+
+                        <h2>
+                        {eventFilter === 'registered'
+                            ? 'My Registered Events'
+                            : 'Upcoming Events'}
+                        </h2>
+
+                        <p>
+                        {eventFilter === 'registered'
+                            ? 'Keep track of the creative experiences you’ve registered for.'
+                            : 'Discover workshops, meetups and experiences from the creative community.'}
+                        </p>
                     </div>
-                </div>
+
+                    <div className="events-count-badge">
+                        <strong>{filteredEvents.length}</strong>
+
+                        <span>
+                        {eventFilter === 'registered'
+                            ? 'REGISTERED'
+                            : filteredEvents.length === 1
+                            ? 'EVENT'
+                            : 'EVENTS'}
+                        </span>
+                    </div>
+                    </div>
 
                 {filteredEvents.length > 0 ? (
                     <div className="events-grid">
                     {filteredEvents.map((event) => (
                         <article className="event-card" key={event.id}>
                         <div className="event-card-visual">
+                            <span className={`event-mode-badge ${event.mode}`}>
+                                {event.mode === 'online' ? '● ONLINE' : '● IN-PERSON'}
+                            </span>
                             <span className="event-card-icon">{event.icon}</span>
 
                             {registeredEvents.includes(event.id) && (
@@ -245,10 +287,20 @@ function Events({
                     </div>
                 ) : (
                     <div className="no-events">
-                    <span>📅</span>
-                    <h3>No events found</h3>
-                    <p>Try changing your search or event filter.</p>
-                    </div>
+                        <span>{eventFilter === 'registered' ? '🎟️' : '📅'}</span>
+
+                        <h3>
+                            {eventFilter === 'registered'
+                            ? 'No registered events yet'
+                            : 'No events found'}
+                        </h3>
+
+                        <p>
+                            {eventFilter === 'registered'
+                            ? 'Register for an event and it will appear here.'
+                            : 'Try changing your search or event filter.'}
+                        </p>
+                        </div>
                 )}
                 </section>
                 {selectedEvent && (
@@ -331,6 +383,15 @@ function Events({
                                     ? 'Register for Free'
                                     : `Register & Pay $${selectedEvent.price}`}
                                 </button>
+                                {registeredEvents.includes(selectedEvent.id) && (
+                                <button
+                                    type="button"
+                                    className="event-cancel-button"
+                                    onClick={() => setCancelEvent(selectedEvent)}
+                                >
+                                    Cancel Registration
+                                </button>
+                                )}
                         </div>
                         </div>
                     </div>
@@ -408,6 +469,50 @@ function Events({
                             </div>
                         </div>
                         )}
+                        {cancelEvent && (
+                            <div
+                                className="cancel-modal-overlay"
+                                onClick={() => setCancelEvent(null)}
+                            >
+                                <div
+                                className="cancel-modal"
+                                onClick={(e) => e.stopPropagation()}
+                                >
+                                <div className="cancel-modal-icon">
+                                    🎟️
+                                </div>
+
+                                <h2>Cancel Registration?</h2>
+
+                                <p>
+                                    Are you sure you want to cancel your registration for{' '}
+                                    <strong>{cancelEvent.title}</strong>?
+                                </p>
+
+                                <div className="cancel-modal-actions">
+                                    <button
+                                    type="button"
+                                    className="keep-registration-button"
+                                    onClick={() => setCancelEvent(null)}
+                                    >
+                                    Keep Registration
+                                    </button>
+
+                                    <button
+                                    type="button"
+                                    className="confirm-cancel-button"
+                                    onClick={() => {
+                                        handleCancelRegistration(cancelEvent.id)
+                                        setCancelEvent(null)
+                                        setSelectedEvent(null)
+                                    }}
+                                    >
+                                    Yes, Cancel
+                                    </button>
+                                </div>
+                                </div>
+                            </div>
+                            )}
       </main>
     </div>
   )
