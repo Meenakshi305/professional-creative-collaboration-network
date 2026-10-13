@@ -1045,7 +1045,7 @@ if (
       </section>
       <section className="auth-card">
         <div className="auth-tabs">
-          {!USE_DUMMY_LOGIN && <button
+          {<button
             type="button"
             className={
               authnMode
