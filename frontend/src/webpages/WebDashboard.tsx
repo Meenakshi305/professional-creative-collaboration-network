@@ -4,20 +4,13 @@ import { useEffect, useRef, useState } from 'react'
 import './WebDashboard.css'
 
 import NavigationBar from '../shared/NavigationBar/NavigationBar'
-import Footer from '../shared/Footer/Footer'
 
 import {
+  searchUsers,
+  getSuggestedUsers,
   type SearchUser,
   type SuggestedUser
 } from '../service/userService'
-
-
-import {
-  demoUsers,
-  searchDemoUsers
-} from '../service/demoUserService'
-
-
 
 type UserPost = {
   id: number
@@ -25,20 +18,13 @@ type UserPost = {
   image: string
 }
 
-
 type DashboardProps = {
   onHomeClick: () => void
   onProfileClick: () => void
   onCollaborationClick: () => void
   onEventsClick: () => void
-  onSettingsClick: () => void
   onUserClick: (userId: number) => void
-
-  currentUserName?: string
-  currentUsername?: string
-  onLogoutClick?: () => void
 }
-
 
 const collaborations = [
   {
@@ -66,19 +52,13 @@ const events = [
   }
 ]
 
-
 function Dashboard({
   onHomeClick,
   onProfileClick,
   onCollaborationClick,
   onEventsClick,
-  onSettingsClick,
-  onUserClick,
-  currentUserName,
-  currentUsername,
-  onLogoutClick
+  onUserClick
 }: DashboardProps) {
-
 
   // ============================================
   // SEARCH
@@ -168,9 +148,7 @@ function Dashboard({
 
       try {
 
-
-        const users = searchDemoUsers(query)
-
+        const users = await searchUsers(query)
 
         if (!cancelled) {
           setSearchedCreatives(users)
@@ -218,11 +196,7 @@ function Dashboard({
 
         setSuggestionsLoading(true)
 
-        const users: SuggestedUser[] = demoUsers.map(user => ({
-        ...user,
-        matchedSkills: [],
-        matchScore: 0
-        }))
+        const users = await getSuggestedUsers()
 
         if (!cancelled) {
           setSuggestedUsers(users)
@@ -269,34 +243,20 @@ function Dashboard({
   // USER INITIALS
   // ============================================
 
+  const getUserInitials = (
+    user: SearchUser | SuggestedUser
+  ) => {
 
-const getUserInitials = (
-  user: SearchUser | SuggestedUser
-) => {
-  const name = user.fullName || user.username
+    const name = user.fullName || user.username
 
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map(word => word.charAt(0))
-    .join('')
-    .toUpperCase()
-}
-
-// ============================================
-// LOGGED-IN USER NAME AND INITIALS
-// ============================================
-
-const loggedInUserName = currentUserName?.trim() || 'User'
-
-const loggedInUserInitials = loggedInUserName
-  .split(/\s+/)
-  .slice(0, 2)
-  .map(word => word.charAt(0))
-  .join('')
-  .toUpperCase()
-
+    return name
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+  }
 
   // ============================================
   // IMAGE SELECT
@@ -396,9 +356,9 @@ const loggedInUserInitials = loggedInUserName
         {(postComments[String(postId)] || []).map(
           (comment, index) => (
             <div className="comment-item" key={index}>
-              <div className="comment-avatar">{loggedInUserInitials}</div>
+              <div className="comment-avatar">PG</div>
               <div className="comment-content">
-                <strong>{loggedInUserName}</strong>
+                <strong>Creative User</strong>
                 <p>{comment}</p>
               </div>
             </div>
@@ -406,7 +366,7 @@ const loggedInUserInitials = loggedInUserName
         )}
 
         <div className="comment-input-row">
-          <div className="comment-avatar">{loggedInUserInitials}</div>
+          <div className="comment-avatar">PG</div>
 
           <input
             type="text"
@@ -479,19 +439,13 @@ const loggedInUserInitials = loggedInUserName
       {/* NAVIGATION BAR */}
       {/* ====================================== */}
 
-      
-        <NavigationBar
+      <NavigationBar
         activePage="home"
         onHomeClick={onHomeClick}
         onProfileClick={onProfileClick}
         onCollaborationClick={onCollaborationClick}
         onEventsClick={onEventsClick}
-        onSettingsClick={onSettingsClick}
-        currentUserName={currentUserName}
-        currentUsername={currentUsername}
-        onLogoutClick={onLogoutClick}
         searchArea={
-
 
           <div className="search-wrapper">
 
@@ -698,10 +652,10 @@ const loggedInUserInitials = loggedInUserName
             <div className="profile-details">
 
               <div className="profile-avatar">
-                <span>{loggedInUserInitials}</span>
+                <span>PG</span>
               </div>
 
-              <h2>{loggedInUserName}</h2>
+              <h2>Creative Professional</h2>
 
               <p className="profile-role">
                 Creative Network Member
@@ -772,7 +726,7 @@ const loggedInUserInitials = loggedInUserName
             <div className="create-post-top">
 
               <div className="small-avatar">
-                <span>{loggedInUserInitials}</span>
+                <span>PG</span>
               </div>
 
               <input
@@ -887,11 +841,11 @@ const loggedInUserInitials = loggedInUserName
               <div className="post-header">
 
                 <div className="post-avatar">
-                  <span>{loggedInUserInitials}</span>
+                  <span>PG</span>
                 </div>
 
                 <div className="post-author">
-                  <strong>{loggedInUserName}</strong>
+                  <strong>Creative User</strong>
                   <span>Creative Professional</span>
                   <small>Just now</small>
                 </div>
@@ -1149,11 +1103,25 @@ const loggedInUserInitials = loggedInUserName
 
       </section>
 
-    {/* ====================================== */}
-    {/* DASHBOARD FOOTER */}
-    {/* ====================================== */}
+      {/* ====================================== */}
+      {/* FOOTER */}
+      {/* ====================================== */}
 
-    <Footer />
+      <footer className="dashboard-footer">
+
+        <div className="footer-links">
+          <span>About</span>
+          <span>Privacy</span>
+          <span>Safety</span>
+          <span>Terms</span>
+          <span>Help</span>
+        </div>
+
+        <p>
+          © 2026 Professional Creative Collaboration Network
+        </p>
+
+      </footer>
 
     </main>
   )

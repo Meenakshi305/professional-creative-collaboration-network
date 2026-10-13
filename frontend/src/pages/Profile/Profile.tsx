@@ -78,32 +78,27 @@ type ExperienceForm = {
 
 }
 
-
 type ProfileProps = {
+
   onHomeClick: () => void
+
   onProfileClick: () => void
   onCollaborationClick: () => void
-  onEventsClick: () => void
-  onSettingsClick: () => void
 
-  currentUserName?: string
-  currentUsername?: string
-  onLogoutClick?: () => void
+  onEventsClick: () => void
+
 }
 
-
-
 function Profile({
+
   onHomeClick,
+
   onProfileClick,
   onCollaborationClick,
-  onEventsClick,
-  onSettingsClick,
-  currentUserName,
-  currentUsername,
-  onLogoutClick
-}: ProfileProps) {
 
+  onEventsClick
+
+}: ProfileProps) {
 
   // ============================================
 
@@ -403,13 +398,9 @@ function Profile({
 
           )
 
+          const user =
 
-          const storedDemoUser = localStorage.getItem('creative_collab_demo_user')
-
-          const user = storedDemoUser
-            ? JSON.parse(storedDemoUser) as CurrentUserResponse
-            : await getCurrentUser()
-
+            await getCurrentUser()
 
           setCurrentUser(
 
@@ -1761,19 +1752,30 @@ function Profile({
 
       <div className="profile-screen">
 
+        <NavigationBar
 
-      <NavigationBar
-        activePage="profile"
-        onHomeClick={onHomeClick}
-        onProfileClick={onProfileClick}
-        onCollaborationClick={onCollaborationClick}
-        onEventsClick={onEventsClick}
-        onSettingsClick={onSettingsClick}
-        currentUserName={currentUserName}
-        currentUsername={currentUsername}
-        onLogoutClick={onLogoutClick}
-      />
+          activePage="profile"
 
+          onHomeClick={
+
+            onHomeClick
+
+          }
+
+          onProfileClick={
+
+            onProfileClick
+
+          }
+          onCollaborationClick={onCollaborationClick}
+
+          onEventsClick={
+
+            onEventsClick
+
+          }
+
+        />
 
         <main className="profile-page">
 
@@ -1799,19 +1801,30 @@ function Profile({
 
     <div className="profile-screen">
 
+      <NavigationBar
 
-    <NavigationBar
-      activePage="profile"
-      onHomeClick={onHomeClick}
-      onProfileClick={onProfileClick}
-      onCollaborationClick={onCollaborationClick}
-      onEventsClick={onEventsClick}
-      onSettingsClick={onSettingsClick}
-      currentUserName={currentUserName}
-      currentUsername={currentUsername}
-      onLogoutClick={onLogoutClick}
-    />
+        activePage="profile"
 
+        onHomeClick={
+
+          onHomeClick
+
+        }
+
+        onProfileClick={
+
+          onProfileClick
+
+        }
+        onCollaborationClick={onCollaborationClick}
+
+        onEventsClick={
+
+          onEventsClick
+
+        }
+
+      />
 
       <main className="profile-page">
 
