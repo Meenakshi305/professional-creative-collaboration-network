@@ -1434,3 +1434,237 @@
     transform: none;
   }
 }
+
+
+/* ==========================================
+   SOFT GRADIENT REGISTRATION BUTTONS
+   ========================================== */
+
+.event-registration-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
+    margin-top: 20px;
+}
+
+/* Shared button styling */
+.event-registration-actions .event-register-button,
+.event-registration-actions .event-cancel-registration-button {
+    width: 100%;
+    min-height: 60px;
+    flex: none;
+    margin: 0;
+    padding: 16px 24px;
+
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.65);
+
+    font-family: inherit;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    text-align: center;
+
+    color: #ffffff;
+
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease,
+        filter 0.25s ease;
+}
+
+/* Registered - soft mint / teal gradient */
+.event-registration-actions .event-register-button.registered,
+.event-registration-actions .event-register-button.registered:disabled {
+    background: linear-gradient(
+        115deg,
+        rgba(63, 170, 158, 0.82) 0%,
+        rgba(93, 191, 163, 0.82) 55%,
+        rgba(153, 216, 170, 0.86) 100%
+    );
+
+    color: #ffffff;
+    opacity: 1;
+    cursor: default;
+
+    box-shadow:
+        0 6px 20px rgba(74, 169, 151, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+/* Cancel Registration - soft pink / coral gradient */
+.event-registration-actions .event-cancel-registration-button {
+    background: linear-gradient(
+        115deg,
+        rgba(224, 91, 135, 0.85) 0%,
+        rgba(235, 110, 139, 0.85) 55%,
+        rgba(247, 155, 150, 0.88) 100%
+    );
+
+    color: #ffffff;
+    cursor: pointer;
+
+    box-shadow:
+        0 6px 20px rgba(224, 91, 135, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+/* Gentle interactive glow */
+.event-registration-actions .event-cancel-registration-button:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.04);
+
+    box-shadow:
+        0 10px 26px rgba(224, 91, 135, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.event-registration-actions .event-cancel-registration-button:active {
+    transform: translateY(0);
+}
+
+/* Mobile layout */
+@media (max-width: 600px) {
+    .event-registration-actions {
+        gap: 12px;
+    }
+
+    .event-registration-actions .event-register-button,
+    .event-registration-actions .event-cancel-registration-button {
+        min-height: 54px;
+        font-size: 15px;
+        padding: 14px 16px;
+    }
+}
+
+
+/* ==========================================
+   EVENT CARD ALIGNMENT AND ACTION BUTTONS
+   ========================================== */
+
+/* Keep all cards consistently aligned */
+.events-grid .event-card {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.events-grid .event-card-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+
+/* Push actions to the bottom of every card */
+.events-grid .event-meta {
+    margin-top: auto;
+}
+
+/* Consistent sizing for both action states */
+.events-grid .event-details-button,
+.events-grid .event-card-registration-actions {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* Registration actions */
+.events-grid .event-card-registration-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 14px;
+    padding: 0;
+    min-width: 0;
+}
+
+/* Shared button dimensions and typography */
+.events-grid .event-card-registered-status,
+.events-grid .event-card-cancel-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+
+    font-family: inherit;
+    font-weight: 700;
+    text-align: center;
+    letter-spacing: 0.2px;
+
+    border-radius: 14px;
+}
+
+/* Registered - narrow, light mint gradient */
+.events-grid .event-card-registered-status {
+    min-height: 39px;
+    padding: 8px 12px;
+
+    background: linear-gradient(
+        115deg,
+        rgba(127, 209, 185, 0.18),
+        rgba(160, 225, 195, 0.36)
+    );
+
+    border: 1px solid rgba(73, 164, 132, 0.30);
+    color: #287e60;
+
+    font-size: 14px;
+}
+
+/* Cancel - soft dynamic coral gradient */
+.events-grid .event-card-cancel-button {
+    min-height: 52px;
+    padding: 12px 18px;
+
+    background: linear-gradient(
+        115deg,
+        rgba(226, 105, 142, 0.82),
+        rgba(244, 147, 155, 0.84),
+        rgba(248, 177, 160, 0.86)
+    );
+
+    background-size: 200% 200%;
+    border: 1px solid rgba(255, 255, 255, 0.55);
+
+    color: #ffffff;
+    font-size: 15px;
+    cursor: pointer;
+
+    box-shadow:
+        0 5px 15px rgba(220, 98, 130, 0.14),
+        inset 0 1px 0 rgba(255, 255, 255, 0.35);
+
+    transition:
+        transform 0.25s ease,
+        background-position 0.4s ease,
+        box-shadow 0.25s ease;
+}
+
+.events-grid .event-card-cancel-button:hover {
+    transform: translateY(-2px);
+    background-position: 100% 50%;
+    box-shadow: 0 9px 22px rgba(220, 98, 130, 0.24);
+}
+
+.events-grid .event-card-cancel-button:active {
+    transform: translateY(0);
+}
+
+.events-grid .event-card-cancel-button:focus-visible {
+    outline: 3px solid rgba(201, 61, 82, 0.45);
+    outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .events-grid .event-card-cancel-button {
+        transition: none;
+    }
+}
+
