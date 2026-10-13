@@ -856,60 +856,8 @@
   font-size: 10px;
   line-height: 1.4;
 }
-/* =========================================================
-   FOOTER
-========================================================= */
-.dashboard-footer {
-  width: 100%;
-  margin: 0;
 
-  padding: 8px 20px 7px;
 
-  box-sizing: border-box;
-  text-align: center;
-
-  background: rgba(37, 34, 83, 0.78);
-  backdrop-filter: blur(14px);
-
-  border-top: 1px solid rgba(255, 255, 255, 0.18);
-
-  flex-shrink: 0;
-}
-.footer-links {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
-  gap: 26px;
-
-  margin-bottom: 3px;
-}
-.footer-links button {
-  padding: 2px 0;
-
-  border: none;
-  background: transparent;
-
-  color: rgba(255, 255, 255, 0.88);
-
-  font-family: inherit;
-  font-size: 9px;
-  font-weight: 700;
-
-  cursor: pointer;
-}
-.footer-links button:hover {
-  background: rgba(255, 255, 255, 0.10);
-  color: #ffffff;
-  text-decoration: none;
-}
-.dashboard-footer p {
-  margin: 2px 0 0;
-
-  color: rgba(255, 255, 255, 0.72);
-
-  font-size: 8px;
-}
 /* =========================================================
    RESPONSIVE LAYOUT
 ========================================================= */

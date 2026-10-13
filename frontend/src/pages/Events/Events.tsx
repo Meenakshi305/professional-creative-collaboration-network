@@ -12,17 +12,19 @@ import {
 
 } from '../../service/eventService'
 
+
 type EventsProps = {
-
   onHomeClick: () => void
-
   onProfileClick: () => void
-
   onCollaborationClick: () => void
-
   onEventsClick: () => void
+  onSettingsClick: () => void
 
+  currentUserName?: string
+  currentUsername?: string
+  onLogoutClick?: () => void
 }
+
 
 type EventItem = {
 
@@ -215,17 +217,18 @@ const eventData: EventItem[] = [
 
 ]
 
+
 function Events({
-
   onHomeClick,
-
   onProfileClick,
-
   onCollaborationClick,
-
-  onEventsClick
-
+  onEventsClick,
+  onSettingsClick,
+  currentUserName,
+  currentUsername,
+  onLogoutClick
 }: EventsProps) {
+
 
     const [eventSearch, setEventSearch] = useState('')
 
@@ -323,19 +326,19 @@ function Events({
 
     <div className="events-screen">
 
-      <NavigationBar
+      
+    <NavigationBar
+    activePage="events"
+    onHomeClick={onHomeClick}
+    onProfileClick={onProfileClick}
+    onCollaborationClick={onCollaborationClick}
+    onEventsClick={onEventsClick}
+    onSettingsClick={onSettingsClick}
+    currentUserName={currentUserName}
+    currentUsername={currentUsername}
+    onLogoutClick={onLogoutClick}
+    />
 
-        activePage="events"
-
-        onHomeClick={onHomeClick}
-
-        onProfileClick={onProfileClick}
-
-        onCollaborationClick={onCollaborationClick}
-
-        onEventsClick={onEventsClick}
-
-      />
 
       <main className="events-page">
 

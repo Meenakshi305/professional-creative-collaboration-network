@@ -2,12 +2,19 @@ import { useState } from 'react'
 import './Collaboration.css'
 import NavigationBar from '../../shared/NavigationBar/NavigationBar'
 
+
 type CollaborationProps = {
   onHomeClick: () => void
   onProfileClick: () => void
   onCollaborationClick: () => void
   onEventsClick: () => void
+  onSettingsClick: () => void
+
+  currentUserName?: string
+  currentUsername?: string
+  onLogoutClick?: () => void
 }
+
 
 type CollaborationOpportunity = {
   id: number
@@ -103,12 +110,18 @@ const initialOpportunities: CollaborationOpportunity[] = [
   }
 ]
 
+
 function Collaboration({
   onHomeClick,
   onProfileClick,
   onCollaborationClick,
-  onEventsClick
+  onEventsClick,
+  onSettingsClick,
+  currentUserName,
+  currentUsername,
+  onLogoutClick
 }: CollaborationProps) {
+
   const [opportunities, setOpportunities] =
     useState<CollaborationOpportunity[]>(initialOpportunities)
 
@@ -379,13 +392,19 @@ function Collaboration({
 
   return (
     <div className="collaboration-screen">
-      <NavigationBar
-        activePage="collaborations"
-        onHomeClick={onHomeClick}
-        onProfileClick={onProfileClick}
-        onCollaborationClick={onCollaborationClick}
-        onEventsClick={onEventsClick}
-      />
+      
+    <NavigationBar
+      activePage="collaborations"
+      onHomeClick={onHomeClick}
+      onProfileClick={onProfileClick}
+      onCollaborationClick={onCollaborationClick}
+      onEventsClick={onEventsClick}
+      onSettingsClick={onSettingsClick}
+      currentUserName={currentUserName}
+      currentUsername={currentUsername}
+      onLogoutClick={onLogoutClick}
+    />
+
 
       <main className="collaboration-page">
         <section className="collaboration-hero">

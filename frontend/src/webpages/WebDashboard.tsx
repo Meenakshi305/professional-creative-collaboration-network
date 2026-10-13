@@ -4,13 +4,20 @@ import { useEffect, useRef, useState } from 'react'
 import './WebDashboard.css'
 
 import NavigationBar from '../shared/NavigationBar/NavigationBar'
+import Footer from '../shared/Footer/Footer'
 
 import {
-  searchUsers,
-  getSuggestedUsers,
   type SearchUser,
   type SuggestedUser
 } from '../service/userService'
+
+
+import {
+  demoUsers,
+  searchDemoUsers
+} from '../service/demoUserService'
+
+
 
 type UserPost = {
   id: number
@@ -18,13 +25,20 @@ type UserPost = {
   image: string
 }
 
+
 type DashboardProps = {
   onHomeClick: () => void
   onProfileClick: () => void
   onCollaborationClick: () => void
   onEventsClick: () => void
+  onSettingsClick: () => void
   onUserClick: (userId: number) => void
+
+  currentUserName?: string
+  currentUsername?: string
+  onLogoutClick?: () => void
 }
+
 
 const collaborations = [
   {
@@ -52,13 +66,19 @@ const events = [
   }
 ]
 
+
 function Dashboard({
   onHomeClick,
   onProfileClick,
   onCollaborationClick,
   onEventsClick,
-  onUserClick
+  onSettingsClick,
+  onUserClick,
+  currentUserName,
+  currentUsername,
+  onLogoutClick
 }: DashboardProps) {
+
 
   // ============================================
   // SEARCH
@@ -148,7 +168,9 @@ function Dashboard({
 
       try {
 
-        const users = await searchUsers(query)
+
+        const users = searchDemoUsers(query)
+
 
         if (!cancelled) {
           setSearchedCreatives(users)
@@ -196,7 +218,11 @@ function Dashboard({
 
         setSuggestionsLoading(true)
 
-        const users = await getSuggestedUsers()
+        const users: SuggestedUser[] = demoUsers.map(user => ({
+        ...user,
+        matchedSkills: [],
+        matchScore: 0
+        }))
 
         if (!cancelled) {
           setSuggestedUsers(users)
@@ -243,20 +269,34 @@ function Dashboard({
   // USER INITIALS
   // ============================================
 
-  const getUserInitials = (
-    user: SearchUser | SuggestedUser
-  ) => {
 
-    const name = user.fullName || user.username
+const getUserInitials = (
+  user: SearchUser | SuggestedUser
+) => {
+  const name = user.fullName || user.username
 
-    return name
-      .split(' ')
-      .filter(Boolean)
-      .slice(0, 2)
-      .map(word => word.charAt(0))
-      .join('')
-      .toUpperCase()
-  }
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(word => word.charAt(0))
+    .join('')
+    .toUpperCase()
+}
+
+// ============================================
+// LOGGED-IN USER NAME AND INITIALS
+// ============================================
+
+const loggedInUserName = currentUserName?.trim() || 'User'
+
+const loggedInUserInitials = loggedInUserName
+  .split(/\s+/)
+  .slice(0, 2)
+  .map(word => word.charAt(0))
+  .join('')
+  .toUpperCase()
+
 
   // ============================================
   // IMAGE SELECT
@@ -356,9 +396,9 @@ function Dashboard({
         {(postComments[String(postId)] || []).map(
           (comment, index) => (
             <div className="comment-item" key={index}>
-              <div className="comment-avatar">PG</div>
+              <div className="comment-avatar">{loggedInUserInitials}</div>
               <div className="comment-content">
-                <strong>Creative User</strong>
+                <strong>{loggedInUserName}</strong>
                 <p>{comment}</p>
               </div>
             </div>
@@ -366,7 +406,7 @@ function Dashboard({
         )}
 
         <div className="comment-input-row">
-          <div className="comment-avatar">PG</div>
+          <div className="comment-avatar">{loggedInUserInitials}</div>
 
           <input
             type="text"
@@ -439,13 +479,19 @@ function Dashboard({
       {/* NAVIGATION BAR */}
       {/* ====================================== */}
 
-      <NavigationBar
+      
+        <NavigationBar
         activePage="home"
         onHomeClick={onHomeClick}
         onProfileClick={onProfileClick}
         onCollaborationClick={onCollaborationClick}
         onEventsClick={onEventsClick}
+        onSettingsClick={onSettingsClick}
+        currentUserName={currentUserName}
+        currentUsername={currentUsername}
+        onLogoutClick={onLogoutClick}
         searchArea={
+
 
           <div className="search-wrapper">
 
@@ -652,10 +698,10 @@ function Dashboard({
             <div className="profile-details">
 
               <div className="profile-avatar">
-                <span>PG</span>
+                <span>{loggedInUserInitials}</span>
               </div>
 
-              <h2>Creative Professional</h2>
+              <h2>{loggedInUserName}</h2>
 
               <p className="profile-role">
                 Creative Network Member
@@ -726,7 +772,7 @@ function Dashboard({
             <div className="create-post-top">
 
               <div className="small-avatar">
-                <span>PG</span>
+                <span>{loggedInUserInitials}</span>
               </div>
 
               <input
@@ -841,11 +887,11 @@ function Dashboard({
               <div className="post-header">
 
                 <div className="post-avatar">
-                  <span>PG</span>
+                  <span>{loggedInUserInitials}</span>
                 </div>
 
                 <div className="post-author">
-                  <strong>Creative User</strong>
+                  <strong>{loggedInUserName}</strong>
                   <span>Creative Professional</span>
                   <small>Just now</small>
                 </div>
@@ -1103,25 +1149,11 @@ function Dashboard({
 
       </section>
 
-      {/* ====================================== */}
-      {/* FOOTER */}
-      {/* ====================================== */}
+    {/* ====================================== */}
+    {/* DASHBOARD FOOTER */}
+    {/* ====================================== */}
 
-      <footer className="dashboard-footer">
-
-        <div className="footer-links">
-          <span>About</span>
-          <span>Privacy</span>
-          <span>Safety</span>
-          <span>Terms</span>
-          <span>Help</span>
-        </div>
-
-        <p>
-          © 2026 Professional Creative Collaboration Network
-        </p>
-
-      </footer>
+    <Footer />
 
     </main>
   )

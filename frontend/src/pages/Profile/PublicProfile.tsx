@@ -17,6 +17,9 @@ import {
   type ProfileResponse
 } from '../../service/profileService'
 
+import { demoUsers } from '../../service/demoUserService'
+
+
 import {
   getExperiences,
   type Experience
@@ -31,34 +34,41 @@ import {
 } from '../../service/followService'
 
 
+
 type PublicProfileProps = {
-
   userId: number
-
   onHomeClick: () => void
-
   onProfileClick: () => void
-
   onEventsClick: () => void
-
   onBackClick: () => void
+  onCollaborationClick: () => void
+  currentUserName?: string
+  currentUsername?: string
+  onLogoutClick?: () => void
+  onSettingsClick?: () => void
 }
 
 
+
 function PublicProfile({
-
   userId,
-
   onHomeClick,
-
   onProfileClick,
-
   onEventsClick,
-
-  onBackClick
-
+  onBackClick,
+  onCollaborationClick,
+  currentUserName,
+  currentUsername,
+  onLogoutClick,
+  onSettingsClick
 }: PublicProfileProps) {
 
+
+const demoUser = demoUsers.find(
+  user => user.userId === userId
+)
+
+const isDemoProfile = Boolean(demoUser)
 
   // ============================================
   // PROFILE
@@ -193,6 +203,37 @@ function PublicProfile({
           setIsFollowing(
             false
           )
+
+          
+          if (demoUser) {
+            const demoProfile = {
+              userId: demoUser.userId,
+              fullName: demoUser.fullName,
+              username: demoUser.username,
+              bio: demoUser.bio,
+              skills: demoUser.skills,
+              profileImageUrl: demoUser.profileImageUrl,
+              achievements: null
+            } as ProfileResponse
+
+            if (!cancelled) {
+              setProfile(demoProfile)
+
+              setSkills(
+                demoUser.skills
+                  ? demoUser.skills
+                      .split(',')
+                      .map(skill => skill.trim())
+                      .filter(Boolean)
+                  : []
+              )
+
+              setExperiences([])
+              setIsOwnProfile(false)
+            }
+
+            return
+          }
 
 
           // ====================================
@@ -411,7 +452,9 @@ function PublicProfile({
         true
     }
 
-  }, [userId])
+
+}, [userId, demoUser])
+
 
 
   // ============================================
@@ -537,21 +580,33 @@ function PublicProfile({
   // INITIALS
   // ============================================
 
-  const getInitials = () => {
+  
+const getInitials = () => {
+  if (!profile) {
+    return 'U'
+  }
 
-    if (!profile?.username) {
+  // Use full name for frontend demo profiles
+  const selectedDemoUser = demoUsers.find(
+    user => user.userId === userId
+  )
 
-      return 'U'
-    }
-
-
-    return profile.username
-      .substring(
-        0,
-        2
-      )
+  if (selectedDemoUser) {
+    return selectedDemoUser.fullName
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map(name => name.charAt(0))
+      .join('')
       .toUpperCase()
   }
+
+  // Preserve existing behaviour for real users
+  return profile.username
+    .substring(0, 2)
+    .toUpperCase()
+}
+
 
 
   // ============================================
@@ -594,23 +649,17 @@ function PublicProfile({
       <div className="profile-screen">
 
 
-        <NavigationBar
-
-          activePage="profile"
-
-          onHomeClick={
-            onHomeClick
-          }
-
-          onProfileClick={
-            onProfileClick
-          }
-
-          onEventsClick={
-            onEventsClick
-          }
-
-        />
+      <NavigationBar
+        activePage="profile"
+        onHomeClick={onHomeClick}
+        onProfileClick={onProfileClick}
+        onEventsClick={onEventsClick}
+        onSettingsClick={onSettingsClick}
+        currentUserName={currentUserName}
+        currentUsername={currentUsername}
+        onLogoutClick={onLogoutClick}
+        onCollaborationClick={onCollaborationClick}
+      />
 
 
         <main className="profile-page">
@@ -648,23 +697,17 @@ function PublicProfile({
       <div className="profile-screen">
 
 
-        <NavigationBar
-
-          activePage="profile"
-
-          onHomeClick={
-            onHomeClick
-          }
-
-          onProfileClick={
-            onProfileClick
-          }
-
-          onEventsClick={
-            onEventsClick
-          }
-
-        />
+      <NavigationBar
+        activePage="profile"
+        onHomeClick={onHomeClick}
+        onProfileClick={onProfileClick}
+        onEventsClick={onEventsClick}
+        onSettingsClick={onSettingsClick}
+        currentUserName={currentUserName}
+        currentUsername={currentUsername}
+        onLogoutClick={onLogoutClick}
+        onCollaborationClick={onCollaborationClick}
+      />
 
 
         <main className="profile-page">
@@ -722,21 +765,15 @@ function PublicProfile({
       {/* ====================================== */}
 
       <NavigationBar
-
         activePage="profile"
-
-        onHomeClick={
-          onHomeClick
-        }
-
-        onProfileClick={
-          onProfileClick
-        }
-
-        onEventsClick={
-          onEventsClick
-        }
-
+        onHomeClick={onHomeClick}
+        onProfileClick={onProfileClick}
+        onEventsClick={onEventsClick}
+        onSettingsClick={onSettingsClick}
+        currentUserName={currentUserName}
+        currentUsername={currentUsername}
+        onLogoutClick={onLogoutClick}
+        onCollaborationClick={onCollaborationClick}
       />
 
 

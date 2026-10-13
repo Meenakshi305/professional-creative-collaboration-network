@@ -1,0 +1,453 @@
+/* ============================================
+   DASHBOARD FOOTER
+============================================ */
+
+.dashboard-footer {
+  position: relative;
+  width: 100%;
+  min-height: 54px;
+  margin: 0;
+  padding: 0 30px;
+  box-sizing: border-box;
+  overflow: hidden;
+
+  background: linear-gradient(
+    110deg,
+    #29265f 0%,
+    #484194 30%,
+    #6558c9 60%,
+    #7567df 80%,
+    #aa76b0 100%
+  );
+
+  background-size: 200% 200%;
+  animation: footerGradientFlow 12s ease infinite;
+
+  border-top: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 -5px 20px rgba(41, 38, 95, 0.15);
+}
+
+/* Soft lighting effect */
+.dashboard-footer::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.06),
+    transparent
+  );
+  pointer-events: none;
+}
+
+/* Single horizontal ribbon */
+.dashboard-footer-ribbon {
+  position: relative;
+  z-index: 1;
+  max-width: 1400px;
+  min-height: 54px;
+  margin: 0 auto;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+/* Footer labels */
+.dashboard-page .footer-links {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 0;
+}
+
+.dashboard-page .footer-links span {
+  display: inline-flex;
+  align-items: center;
+
+  padding: 7px 12px;
+  border-radius: 20px;
+
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 12px;
+  font-weight: 600;
+
+  transition:
+    background 0.25s ease,
+    color 0.25s ease,
+    transform 0.25s ease;
+}
+
+.dashboard-page .footer-links span:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.14);
+  transform: translateY(-2px);
+}
+
+/* Copyright */
+.dashboard-page .footer-copyright {
+  margin: 0;
+  flex-shrink: 0;
+
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1px;
+}
+
+/* Animated gradient */
+@keyframes footerGradientFlow {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Responsive */
+@media (max-width: 700px) {
+  .dashboard-footer {
+    padding: 10px 15px;
+  }
+
+  .dashboard-footer-ribbon {
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .dashboard-page .footer-links {
+    justify-content: center;
+  }
+
+  .dashboard-page .footer-links span {
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+
+  .dashboard-page .footer-copyright {
+    text-align: center;
+    font-size: 10px;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-footer {
+    animation: none;
+  }
+
+  .dashboard-page .footer-links span {
+    transition: none;
+  }
+
+  .dashboard-page .footer-links span:hover {
+    transform: none;
+  }
+}
+
+
+/* ============================================
+   PREMIUM ANIMATED FOOTER — FINAL REFINEMENT
+   ============================================ */
+
+.dashboard-footer {
+  position: relative;
+  isolation: isolate;
+  min-height: 54px;
+  padding: 0 30px;
+  overflow: hidden;
+
+  background: linear-gradient(
+    115deg,
+    #211f54 0%,
+    #393184 24%,
+    #5144ad 48%,
+    #7864dc 72%,
+    #a46cb6 100%
+  );
+  background-size: 220% 220%;
+  animation: footerGradientFlow 9s ease-in-out infinite;
+
+  border-top: none;
+  box-shadow: 0 -6px 22px rgba(41, 38, 95, 0.18);
+}
+
+/* Thin illuminated upper border */
+.dashboard-footer::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+
+  background: linear-gradient(
+    90deg,
+    #7567df,
+    #f0a6c4,
+    #a795ff,
+    #7567df
+  );
+  background-size: 200% 100%;
+  animation: footerShimmer 6s linear infinite;
+  pointer-events: none;
+}
+
+/* Subtle moving light */
+.dashboard-footer::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  top: -120px;
+  left: -180px;
+  width: 360px;
+  height: 260px;
+
+  border-radius: 50%;
+  background: rgba(255, 210, 240, 0.14);
+  filter: blur(55px);
+  animation: footerGlow 12s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+.dashboard-footer-ribbon {
+  position: relative;
+  z-index: 1;
+  min-height: 54px;
+}
+
+/* Stylish pill labels */
+.dashboard-page .footer-links {
+  gap: 6px;
+}
+
+.dashboard-page .footer-links span {
+  position: relative;
+  padding: 8px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+
+  background: rgba(255, 255, 255, 0.055);
+  color: rgba(255, 255, 255, 0.92);
+
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.15px;
+
+  transition:
+    background 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.25s ease;
+}
+
+.dashboard-page .footer-links span:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.35);
+  box-shadow: 0 4px 14px rgba(25, 20, 75, 0.18);
+  transform: translateY(-2px);
+}
+
+/* Copyright */
+.dashboard-page .footer-copyright {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 11px;
+  letter-spacing: 0.2px;
+}
+
+/* Gradient animation */
+@keyframes footerGradientFlow {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Top border shimmer */
+@keyframes footerShimmer {
+  from {
+    background-position: 0% 50%;
+  }
+  to {
+    background-position: 200% 50%;
+  }
+}
+
+/* Moving ambient glow */
+@keyframes footerGlow {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(100vw + 180px));
+  }
+}
+
+/* Mobile */
+@media (max-width: 700px) {
+  .dashboard-footer {
+    padding: 10px 15px;
+  }
+
+  .dashboard-page .footer-links {
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .dashboard-page .footer-links span {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-footer,
+  .dashboard-footer::before,
+  .dashboard-footer::after {
+    animation: none;
+  }
+
+  .dashboard-page .footer-links span {
+    transition: none;
+  }
+
+  .dashboard-page .footer-links span:hover {
+    transform: none;
+  }
+}
+
+/* Shared footer styling across all pages */
+
+.dashboard-footer {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  min-height: 54px;
+  padding: 0 30px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.dashboard-footer-ribbon {
+  position: relative;
+  z-index: 1;
+  max-width: 1400px;
+  min-height: 54px;
+  margin: 0 auto;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.dashboard-footer .footer-links {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+}
+
+.dashboard-footer .footer-links span {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.055);
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.15px;
+  transition: background 0.25s ease,
+              border-color 0.25s ease,
+              box-shadow 0.25s ease,
+              transform 0.25s ease;
+}
+
+.dashboard-footer .footer-links span:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.35);
+  box-shadow: 0 4px 14px rgba(25, 20, 75, 0.18);
+  transform: translateY(-2px);
+}
+
+.dashboard-footer .footer-copyright {
+  margin: 0;
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+}
+
+@media (max-width: 700px) {
+  .dashboard-footer {
+    padding: 10px 15px;
+  }
+
+  .dashboard-footer-ribbon {
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .dashboard-footer .footer-links {
+    justify-content: center;
+  }
+
+  .dashboard-footer .footer-copyright {
+    text-align: center;
+    font-size: 10px;
+  }
+}
+/* ============================================
+FOOTER POSITION AND ALIGNMENT
+   ============================================ */
+
+.dashboard-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+
+  transform: none;
+
+  width: 100%;
+  max-width: none;
+
+  margin: 0;
+  padding: 0 30px;
+
+  box-sizing: border-box;
+  z-index: 1000;
+}
+
+/* Align footer content with header content */
+.dashboard-footer-ribbon {
+  width: min(1450px, calc(100% - 48px));
+  max-width: none;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+@media (max-width: 700px) {
+  .dashboard-footer {
+    padding: 10px 0;
+  }
+
+  .dashboard-footer-ribbon {
+    width: calc(100% - 24px);
+  }
+}
