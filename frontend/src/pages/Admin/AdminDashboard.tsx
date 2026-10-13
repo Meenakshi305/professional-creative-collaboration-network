@@ -1,1297 +1,3420 @@
-import { useMemo, useState } from 'react'
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 
 import './AdminDashboard.css'
 
-import {
-  adminStats,
-  analyticsByPeriod,
-  mockReports,
-  mockUsers,
-  recentActivities,
-  type AdminReport,
-  type AdminUser,
-  type AnalyticsPeriod,
-  type EngagementPoint,
-  type TrendPoint,
-} from './adminMockData'
+import AnalyticsDashboard
+  from '../../shared/Analytics/AnalyticsDashboard'
 
-type AdminSection =
+
+type Section =
   | 'overview'
-  | 'analytics'
-  | 'users'
   | 'reports'
-  | 'content'
-  | 'audit'
+  | 'users'
+  | 'analytics'
+  | 'moderation'
+  | 'activity'
 
-interface SimpleLineChartProps {
-  data: TrendPoint[]
-  valueLabel: string
+
+type OverviewPeriod =
+  | 'today'
+  | '7d'
+  | '30d'
+  | '6m'
+  | '1y'
+
+
+type ReportStatus =
+  | 'OPEN'
+  | 'UNDER_REVIEW'
+  | 'RESOLVED'
+  | 'DISMISSED'
+
+
+type ReportPriority =
+  | 'LOW'
+  | 'MEDIUM'
+  | 'HIGH'
+  | 'URGENT'
+
+
+type AssignedReport = {
+  id: number
+  target: string
+  reason: string
+  priority: ReportPriority
+  status: ReportStatus
+  createdAt: string
+  ageHours: number
 }
 
-interface EngagementChartProps {
-  data: EngagementPoint[]
+
+type ManagedUser = {
+  id: number
+  name: string
+  email: string
+  role: string
+  status:
+    | 'ACTIVE'
+    | 'SUSPENDED'
+    | 'DEACTIVATED'
 }
 
-const formatNumber = (value: number) =>
-  new Intl.NumberFormat('en-AU', {
-    notation: value >= 10000 ? 'compact' : 'standard',
-    maximumFractionDigits: 1,
-  }).format(value)
 
-const formatChange = (value: number) =>
-  `${value >= 0 ? '↑' : '↓'} ${Math.abs(value).toFixed(1)}%`
+type ModerationItem = {
+  id: number
+  type:
+    | 'POST'
+    | 'PORTFOLIO'
+    | 'EVENT'
+    | 'OPPORTUNITY'
+  title: string
+  owner: string
+  status:
+    | 'VISIBLE'
+    | 'REMOVED'
+}
 
-function SimpleLineChart({
-  data,
-  valueLabel,
-}: SimpleLineChartProps) {
-  const width = 620
-  const height = 220
-  const left = 46
-  const right = 20
-  const top = 22
-  const bottom = 42
-  const plotWidth = width - left - right
-  const plotHeight = height - top - bottom
 
-  const values = data.map((item) => item.value)
-  const minValue = Math.min(...values)
-  const maxValue = Math.max(...values)
-  const spread = Math.max(maxValue - minValue, 1)
-  const paddedMin = Math.max(0, minValue - spread * 0.12)
-  const paddedMax = maxValue + spread * 0.12
-  const range = Math.max(paddedMax - paddedMin, 1)
+type ActivityLog = {
+  id: number
+  action: string
+  target: string
+  time: string
+}
 
-  const points = data.map((item, index) => {
-    const x =
-      left +
-      (data.length === 1
-        ? plotWidth / 2
-        : (index / (data.length - 1)) * plotWidth)
-    const y =
-      top +
-      plotHeight -
-      ((item.value - paddedMin) / range) * plotHeight
 
-    return {
-      ...item,
-      x,
-      y,
-    }
-  })
+type OverviewPoint = {
+  label: string
+  assigned: number
+  resolved: number
+  moderation: number
+}
 
-  const linePoints = points
-    .map((point) => `${point.x},${point.y}`)
-    .join(' ')
 
-  const gridValues = [0, 0.25, 0.5, 0.75, 1]
+type Toast = {
+  type:
+    | 'success'
+    | 'error'
+  message: string
+} | null
 
-  return (
-    <div className="admin-svg-chart-wrap">
-      <svg
-        className="admin-svg-chart"
-        viewBox={`0 0 ${width} ${height}`}
-        role="img"
-        aria-label={valueLabel}
-      >
-        {gridValues.map((step) => {
-          const y = top + plotHeight * step
-          const labelValue = paddedMax - range * step
 
-          return (
-            <g key={step}>
-              <line
-                x1={left}
-                x2={width - right}
-                y1={y}
-                y2={y}
-                className="admin-chart-grid-line"
-              />
-              <text
-                x={left - 9}
-                y={y + 4}
-                textAnchor="end"
-                className="admin-chart-axis-text"
-              >
-                {formatNumber(Math.round(labelValue))}
-              </text>
-            </g>
+const initialReports: AssignedReport[] = [
+  {
+    id: 105,
+    target: 'User #58',
+    reason: 'Spam',
+    priority: 'MEDIUM',
+    status: 'UNDER_REVIEW',
+    createdAt: 'Today 10:45 PM',
+    ageHours: 7,
+  },
+  {
+    id: 109,
+    target: 'Post #284',
+    reason: 'Harassment',
+    priority: 'HIGH',
+    status: 'OPEN',
+    createdAt: 'Today 9:24 PM',
+    ageHours: 10,
+  },
+  {
+    id: 112,
+    target: 'Portfolio #81',
+    reason: 'Inappropriate content',
+    priority: 'URGENT',
+    status: 'OPEN',
+    createdAt: 'Today 7:52 PM',
+    ageHours: 15,
+  },
+  {
+    id: 116,
+    target: 'Event #44',
+    reason: 'Misleading information',
+    priority: 'LOW',
+    status: 'OPEN',
+    createdAt: 'Yesterday',
+    ageHours: 29,
+  },
+]
+
+
+const initialUsers: ManagedUser[] = [
+  {
+    id: 21,
+    name: 'Ravi Kumar',
+    email: 'ravi@example.com',
+    role: 'CREATIVE_PROFESSIONAL',
+    status: 'ACTIVE',
+  },
+  {
+    id: 22,
+    name: 'Priya Sharma',
+    email: 'priya@example.com',
+    role: 'CREATIVE_PROFESSIONAL',
+    status: 'ACTIVE',
+  },
+  {
+    id: 23,
+    name: 'James Brown',
+    email: 'james@example.com',
+    role: 'ORGANISATION',
+    status: 'ACTIVE',
+  },
+  {
+    id: 24,
+    name: 'Emily Carter',
+    email: 'emily@example.com',
+    role: 'CREATIVE_PROFESSIONAL',
+    status: 'SUSPENDED',
+  },
+]
+
+
+const initialModerationItems: ModerationItem[] = [
+  {
+    id: 240,
+    type: 'POST',
+    title: 'Photography Showcase',
+    owner: 'Ravi Kumar',
+    status: 'VISIBLE',
+  },
+  {
+    id: 76,
+    type: 'PORTFOLIO',
+    title: 'Brand Identity Project',
+    owner: 'Priya Sharma',
+    status: 'VISIBLE',
+  },
+  {
+    id: 31,
+    type: 'EVENT',
+    title: 'Creative Networking Night',
+    owner: 'Adelaide Creatives',
+    status: 'VISIBLE',
+  },
+  {
+    id: 51,
+    type: 'OPPORTUNITY',
+    title: 'Short Film Collaboration',
+    owner: 'Daniel Lee',
+    status: 'REMOVED',
+  },
+]
+
+
+const initialActivity: ActivityLog[] = [
+  {
+    id: 1,
+    action: 'RESOLVE_REPORT',
+    target: 'Report #98',
+    time: 'Today 5:14 PM',
+  },
+  {
+    id: 2,
+    action: 'SUSPEND_USER',
+    target: 'User #61',
+    time: 'Today 4:46 PM',
+  },
+  {
+    id: 3,
+    action: 'REMOVE_CONTENT',
+    target: 'Post #232',
+    time: 'Today 3:12 PM',
+  },
+  {
+    id: 4,
+    action: 'START_REVIEW',
+    target: 'Report #105',
+    time: 'Today 2:39 PM',
+  },
+]
+
+
+const periodLabels: Record<
+  OverviewPeriod,
+  string
+> = {
+  today: 'Today',
+  '7d': '7 Days',
+  '30d': '30 Days',
+  '6m': '6 Months',
+  '1y': '1 Year',
+}
+
+
+function buildOverviewData(
+  period: OverviewPeriod,
+): OverviewPoint[] {
+
+  let labels: string[] = []
+  let multiplier = 1
+
+  if (period === 'today') {
+    labels = [
+      '12 AM',
+      '4 AM',
+      '8 AM',
+      '12 PM',
+      '4 PM',
+      '8 PM',
+      'Now',
+    ]
+    multiplier = 0.35
+  }
+
+  if (period === '7d') {
+    labels = [
+      'Mon',
+      'Tue',
+      'Wed',
+      'Thu',
+      'Fri',
+      'Sat',
+      'Sun',
+    ]
+    multiplier = 1
+  }
+
+  if (period === '30d') {
+    labels = [
+      '1 Oct',
+      '5 Oct',
+      '10 Oct',
+      '15 Oct',
+      '20 Oct',
+      '25 Oct',
+      '30 Oct',
+    ]
+    multiplier = 3.4
+  }
+
+  if (period === '6m') {
+    labels = [
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+    ]
+    multiplier = 15
+  }
+
+  if (period === '1y') {
+    labels = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ]
+    multiplier = 28
+  }
+
+  return labels.map(
+    (
+      label,
+      index,
+    ) => {
+
+      const assigned =
+        Math.max(
+          1,
+          Math.round(
+            (
+              2.5
+              +
+              index * 0.45
+              +
+              Math.sin(index) * 0.8
+            )
+            *
+            multiplier
           )
-        })}
+        )
 
-        <polyline
-          points={linePoints}
-          className="admin-chart-line-primary"
-        />
+      const resolved =
+        Math.max(
+          0,
+          Math.round(
+            assigned * 0.72
+          )
+        )
 
-        {points.map((point) => (
-          <g key={point.label}>
-            <circle
-              cx={point.x}
-              cy={point.y}
-              r="5"
-              className="admin-chart-point-primary"
-            />
-            <text
-              x={point.x}
-              y={height - 14}
-              textAnchor="middle"
-              className="admin-chart-axis-text"
-            >
-              {point.label}
-            </text>
-          </g>
-        ))}
-      </svg>
-    </div>
-  )
-}
-
-function EngagementChart({ data }: EngagementChartProps) {
-  const width = 620
-  const height = 235
-  const left = 48
-  const right = 20
-  const top = 22
-  const bottom = 48
-  const plotWidth = width - left - right
-  const plotHeight = height - top - bottom
-
-  const allValues = data.flatMap((item) => [
-    item.likes,
-    item.comments,
-    item.follows,
-  ])
-  const maxValue = Math.max(...allValues, 1)
-  const paddedMax = maxValue * 1.12
-
-  const makePoints = (
-    key: 'likes' | 'comments' | 'follows'
-  ) =>
-    data.map((item, index) => {
-      const x =
-        left +
-        (data.length === 1
-          ? plotWidth / 2
-          : (index / (data.length - 1)) * plotWidth)
-      const y =
-        top +
-        plotHeight -
-        (item[key] / paddedMax) * plotHeight
+      const moderation =
+        Math.max(
+          1,
+          Math.round(
+            (
+              3
+              +
+              index * 0.6
+              +
+              Math.cos(index) * 0.7
+            )
+            *
+            multiplier
+          )
+        )
 
       return {
-        x,
-        y,
-        label: item.label,
+        label,
+        assigned,
+        resolved,
+        moderation,
       }
-    })
+    }
+  )
+}
 
-  const series = [
-    {
-      key: 'likes' as const,
-      label: 'Likes',
-      className: 'admin-chart-line-primary',
-      pointClass: 'admin-chart-point-primary',
-    },
-    {
-      key: 'comments' as const,
-      label: 'Comments',
-      className: 'admin-chart-line-secondary',
-      pointClass: 'admin-chart-point-secondary',
-    },
-    {
-      key: 'follows' as const,
-      label: 'Follows',
-      className: 'admin-chart-line-tertiary',
-      pointClass: 'admin-chart-point-tertiary',
-    },
-  ]
+
+function LineChart({
+  data,
+  dataKey,
+}: {
+  data: OverviewPoint[]
+  dataKey:
+    | 'assigned'
+    | 'resolved'
+    | 'moderation'
+}) {
+
+  const width = 620
+  const height = 210
+  const padding = 28
+
+  const values =
+    data.map(
+      item =>
+        Number(
+          item[dataKey]
+        )
+    )
+
+  const maximum =
+    Math.max(
+      ...values,
+      1,
+    )
+
+  const minimum =
+    Math.min(
+      ...values,
+      0,
+    )
+
+  const range =
+    maximum
+    -
+    minimum
+    ||
+    1
+
+  const points =
+    data.map(
+      (
+        item,
+        index,
+      ) => {
+
+        const x =
+          padding
+          +
+          (
+            index
+            /
+            Math.max(
+              data.length - 1,
+              1,
+            )
+          )
+          *
+          (
+            width
+            -
+            padding * 2
+          )
+
+        const y =
+          height
+          -
+          padding
+          -
+          (
+            (
+              Number(
+                item[dataKey]
+              )
+              -
+              minimum
+            )
+            /
+            range
+          )
+          *
+          (
+            height
+            -
+            padding * 2
+          )
+
+        return `${x},${y}`
+      }
+    ).join(' ')
 
   return (
-    <div>
-      <div className="admin-chart-legend">
-        <span><i className="legend-primary" /> Likes</span>
-        <span><i className="legend-secondary" /> Comments</span>
-        <span><i className="legend-tertiary" /> Follows</span>
-      </div>
+    <div className="admin-overview-chart-wrapper">
 
-      <div className="admin-svg-chart-wrap">
-        <svg
-          className="admin-svg-chart"
-          viewBox={`0 0 ${width} ${height}`}
-          role="img"
-          aria-label="Engagement trend"
-        >
-          {[0, 0.25, 0.5, 0.75, 1].map((step) => {
-            const y = top + plotHeight * step
-            const labelValue = paddedMax * (1 - step)
+      <svg
+        className="admin-overview-chart"
+        viewBox={
+          `0 0 ${width} ${height}`
+        }
+        role="img"
+        aria-label="Admin overview trend chart"
+      >
 
-            return (
-              <g key={step}>
-                <line
-                  x1={left}
-                  x2={width - right}
-                  y1={y}
-                  y2={y}
-                  className="admin-chart-grid-line"
-                />
-                <text
-                  x={left - 9}
-                  y={y + 4}
-                  textAnchor="end"
-                  className="admin-chart-axis-text"
+        <line
+          x1={padding}
+          y1={height - padding}
+          x2={width - padding}
+          y2={height - padding}
+          className="admin-chart-axis"
+        />
+
+        <polyline
+          points={points}
+          fill="none"
+          className="admin-chart-line"
+          strokeWidth="4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+
+        {
+          data.map(
+            (
+              item,
+              index,
+            ) => {
+
+              const x =
+                padding
+                +
+                (
+                  index
+                  /
+                  Math.max(
+                    data.length - 1,
+                    1,
+                  )
+                )
+                *
+                (
+                  width
+                  -
+                  padding * 2
+                )
+
+              const y =
+                height
+                -
+                padding
+                -
+                (
+                  (
+                    Number(
+                      item[dataKey]
+                    )
+                    -
+                    minimum
+                  )
+                  /
+                  range
+                )
+                *
+                (
+                  height
+                  -
+                  padding * 2
+                )
+
+              return (
+                <g
+                  key={
+                    `${item.label}-${index}`
+                  }
                 >
-                  {formatNumber(Math.round(labelValue))}
-                </text>
-              </g>
-            )
-          })}
-
-          {series.map((item) => {
-            const points = makePoints(item.key)
-            const linePoints = points
-              .map((point) => `${point.x},${point.y}`)
-              .join(' ')
-
-            return (
-              <g key={item.key}>
-                <polyline
-                  points={linePoints}
-                  className={item.className}
-                />
-                {points.map((point) => (
                   <circle
-                    key={`${item.key}-${point.label}`}
-                    cx={point.x}
-                    cy={point.y}
-                    r="4"
-                    className={item.pointClass}
+                    cx={x}
+                    cy={y}
+                    r="5"
+                    className="admin-chart-dot"
                   />
-                ))}
-              </g>
-            )
-          })}
 
-          {data.map((item, index) => {
-            const x =
-              left +
-              (data.length === 1
-                ? plotWidth / 2
-                : (index / (data.length - 1)) * plotWidth)
+                  <text
+                    x={x}
+                    y={height - 8}
+                    textAnchor="middle"
+                    className="admin-chart-label"
+                  >
+                    {
+                      item.label
+                    }
+                  </text>
+                </g>
+              )
+            }
+          )
+        }
 
-            return (
-              <text
-                key={item.label}
-                x={x}
-                y={height - 16}
-                textAnchor="middle"
-                className="admin-chart-axis-text"
-              >
-                {item.label}
-              </text>
-            )
-          })}
-        </svg>
-      </div>
+      </svg>
+
     </div>
   )
 }
 
+
 function AdminDashboard() {
-  const [activeSection, setActiveSection] =
-    useState<AdminSection>('overview')
 
-  const [users, setUsers] =
-    useState<AdminUser[]>(mockUsers)
+  const [
+    section,
+    setSection,
+  ] =
+    useState<Section>(
+      'overview'
+    )
 
-  const [reports, setReports] =
-    useState<AdminReport[]>(mockReports)
+  const [
+    overviewPeriod,
+    setOverviewPeriod,
+  ] =
+    useState<OverviewPeriod>(
+      '7d'
+    )
 
-  const [searchText, setSearchText] =
+  const [
+    reports,
+    setReports,
+  ] =
+    useState<AssignedReport[]>(
+      initialReports
+    )
+
+  const [
+    users,
+    setUsers,
+  ] =
+    useState<ManagedUser[]>(
+      initialUsers
+    )
+
+  const [
+    moderationItems,
+    setModerationItems,
+  ] =
+    useState<ModerationItem[]>(
+      initialModerationItems
+    )
+
+  const [
+    activity,
+    setActivity,
+  ] =
+    useState<ActivityLog[]>(
+      initialActivity
+    )
+
+  const [
+    selectedReport,
+    setSelectedReport,
+  ] =
+    useState<AssignedReport | null>(
+      null
+    )
+
+  const [
+    searchTerm,
+    setSearchTerm,
+  ] =
     useState('')
 
-  const [analyticsPeriod, setAnalyticsPeriod] =
-    useState<AnalyticsPeriod>('30d')
+  const [
+    userStatusFilter,
+    setUserStatusFilter,
+  ] =
+    useState('ALL')
 
-  const analytics = analyticsByPeriod[analyticsPeriod]
+  const [
+    lastUpdated,
+    setLastUpdated,
+  ] =
+    useState(
+      new Date()
+    )
 
-  const filteredUsers = useMemo(() => {
-    const search = searchText.trim().toLowerCase()
+  const [
+    toast,
+    setToast,
+  ] =
+    useState<Toast>(
+      null
+    )
 
-    if (!search) {
-      return users
+
+  useEffect(
+    () => {
+
+      if (!toast) {
+        return
+      }
+
+      const timer =
+        window.setTimeout(
+          () =>
+            setToast(
+              null
+            ),
+          3000,
+        )
+
+      return () =>
+        window.clearTimeout(
+          timer
+        )
+
+    },
+    [
+      toast,
+    ],
+  )
+
+
+  const overviewData =
+    useMemo(
+      () =>
+        buildOverviewData(
+          overviewPeriod
+        ),
+      [
+        overviewPeriod,
+      ],
+    )
+
+
+  const overviewTotals =
+    useMemo(
+      () => {
+
+        return overviewData.reduce(
+          (
+            result,
+            point,
+          ) => {
+
+            result.assigned +=
+              point.assigned
+
+            result.resolved +=
+              point.resolved
+
+            result.moderation +=
+              point.moderation
+
+            return result
+          },
+          {
+            assigned: 0,
+            resolved: 0,
+            moderation: 0,
+          },
+        )
+
+      },
+      [
+        overviewData,
+      ],
+    )
+
+
+  const openReports =
+    reports.filter(
+      report =>
+        report.status
+        ===
+        'OPEN'
+        ||
+        report.status
+        ===
+        'UNDER_REVIEW',
+    ).length
+
+
+  const urgentReports =
+    reports.filter(
+      report =>
+        report.priority
+        ===
+        'URGENT'
+        &&
+        report.status
+        !==
+        'RESOLVED'
+        &&
+        report.status
+        !==
+        'DISMISSED',
+    ).length
+
+
+  const underReviewReports =
+    reports.filter(
+      report =>
+        report.status
+        ===
+        'UNDER_REVIEW',
+    ).length
+
+
+  const resolvedReports =
+    reports.filter(
+      report =>
+        report.status
+        ===
+        'RESOLVED',
+    ).length
+
+
+  const overdueReports =
+    reports.filter(
+      report =>
+        report.ageHours
+        >=
+        24
+        &&
+        report.status
+        !==
+        'RESOLVED'
+        &&
+        report.status
+        !==
+        'DISMISSED',
+    ).length
+
+
+  const activeUsers =
+    users.filter(
+      user =>
+        user.status
+        ===
+        'ACTIVE',
+    ).length
+
+
+  const removedContent =
+    moderationItems.filter(
+      item =>
+        item.status
+        ===
+        'REMOVED',
+    ).length
+
+
+  const workloadCompletion =
+    Math.round(
+      (
+        resolvedReports
+        /
+        Math.max(
+          reports.length,
+          1,
+        )
+      )
+      *
+      100
+    )
+
+
+  const filteredUsers =
+    useMemo(
+      () =>
+        users.filter(
+          user => {
+
+            const search =
+              searchTerm
+                .trim()
+                .toLowerCase()
+
+            const matchesSearch =
+              !search
+              ||
+              user.name
+                .toLowerCase()
+                .includes(
+                  search
+                )
+              ||
+              user.email
+                .toLowerCase()
+                .includes(
+                  search
+                )
+              ||
+              user.role
+                .toLowerCase()
+                .includes(
+                  search
+                )
+
+            const matchesStatus =
+              userStatusFilter
+              ===
+              'ALL'
+              ||
+              user.status
+              ===
+              userStatusFilter
+
+            return (
+              matchesSearch
+              &&
+              matchesStatus
+            )
+          }
+        ),
+      [
+        users,
+        searchTerm,
+        userStatusFilter,
+      ],
+    )
+
+
+  const reportReasonCounts =
+    useMemo(
+      () => {
+
+        const counts: Record<
+          string,
+          number
+        > = {}
+
+        reports.forEach(
+          report => {
+
+            counts[
+              report.reason
+            ] =
+              (
+                counts[
+                  report.reason
+                ]
+                ||
+                0
+              )
+              +
+              1
+
+          }
+        )
+
+        return Object.entries(
+          counts
+        )
+          .map(
+            (
+              [
+                reason,
+                count,
+              ]
+            ) => ({
+              reason,
+              count,
+            })
+          )
+          .sort(
+            (
+              first,
+              second,
+            ) =>
+              second.count
+              -
+              first.count
+          )
+
+      },
+      [
+        reports,
+      ],
+    )
+
+
+  const showToast =
+    (
+      type:
+        | 'success'
+        | 'error',
+      message: string,
+    ) => {
+
+      setToast({
+        type,
+        message,
+      })
+
     }
 
-    return users.filter((user) =>
-      user.name.toLowerCase().includes(search)
-      ||
-      user.email.toLowerCase().includes(search)
-      ||
-      user.accountType.toLowerCase().includes(search)
-      ||
-      user.status.toLowerCase().includes(search)
-    )
-  }, [searchText, users])
 
-  const handleUserStatusChange = (
-    userId: number
-  ) => {
-    setUsers((currentUsers) =>
-      currentUsers.map((user) => {
-        if (user.id !== userId) {
-          return user
-        }
+  const addActivity =
+    (
+      action: string,
+      target: string,
+    ) => {
 
-        return {
-          ...user,
-          status:
-            user.status === 'SUSPENDED'
-              ? 'ACTIVE'
-              : 'SUSPENDED',
-        }
-      })
-    )
-  }
+      const now =
+        new Date()
 
-  const handleReportStatusChange = (
-    reportId: number,
-    status: AdminReport['status']
-  ) => {
-    setReports((currentReports) =>
-      currentReports.map((report) =>
-        report.id === reportId
-          ? {
-              ...report,
-              status,
-            }
-          : report
+      setActivity(
+        previous => [
+          {
+            id: Date.now(),
+            action,
+            target,
+            time:
+              now.toLocaleTimeString(
+                [],
+                {
+                  hour:
+                    '2-digit',
+                  minute:
+                    '2-digit',
+                },
+              ),
+          },
+          ...previous,
+        ]
       )
-    )
-  }
+    }
 
-  const renderOverview = () => (
-    <>
-      <section className="admin-welcome-section">
-        <div>
-          <p className="admin-eyebrow">
-            ADMINISTRATION
-          </p>
 
-          <h1>Admin Dashboard</h1>
+  const updateReportStatus =
+    (
+      reportId: number,
+      status: ReportStatus,
+    ) => {
 
-          <p className="admin-welcome-text">
-            Monitor users, review reports, moderate platform
-            content and keep track of recent activity.
-          </p>
-        </div>
+      setReports(
+        previous =>
+          previous.map(
+            report =>
+              report.id
+              ===
+              reportId
+                ? {
+                    ...report,
+                    status,
+                  }
+                : report
+          )
+      )
 
-        <div className="admin-role-badge">
-          Administrator
-        </div>
-      </section>
+      const action =
+        status
+        ===
+        'UNDER_REVIEW'
+          ? 'START_REVIEW'
+          : status
+            ===
+            'RESOLVED'
+              ? 'RESOLVE_REPORT'
+              : status
+                ===
+                'DISMISSED'
+                  ? 'DISMISS_REPORT'
+                  : 'UPDATE_REPORT'
 
-      <section className="admin-stats-grid">
-        <div className="admin-stat-card">
-          <div className="admin-stat-icon">👥</div>
-          <div>
-            <span>Total Users</span>
-            <strong>{adminStats.totalUsers.toLocaleString()}</strong>
-          </div>
-        </div>
+      addActivity(
+        action,
+        `Report #${reportId}`,
+      )
 
-        <div className="admin-stat-card">
-          <div className="admin-stat-icon">✅</div>
-          <div>
-            <span>Active Users</span>
-            <strong>{adminStats.activeUsers.toLocaleString()}</strong>
-          </div>
-        </div>
+      showToast(
+        'success',
+        `Report #${reportId} updated to ${status.replace('_', ' ')}.`,
+      )
 
-        <div className="admin-stat-card">
-          <div className="admin-stat-icon">⛔</div>
-          <div>
-            <span>Suspended Users</span>
-            <strong>{adminStats.suspendedUsers}</strong>
-          </div>
-        </div>
-
-        <div className="admin-stat-card">
-          <div className="admin-stat-icon">🏢</div>
-          <div>
-            <span>Organisations</span>
-            <strong>{adminStats.organisations}</strong>
-          </div>
-        </div>
-
-        <div className="admin-stat-card">
-          <div className="admin-stat-icon">🚩</div>
-          <div>
-            <span>Open Reports</span>
-            <strong>{adminStats.openReports}</strong>
-          </div>
-        </div>
-
-        <div className="admin-stat-card">
-          <div className="admin-stat-icon">📅</div>
-          <div>
-            <span>Active Events</span>
-            <strong>{adminStats.activeEvents}</strong>
-          </div>
-        </div>
-
-        <div className="admin-stat-card">
-          <div className="admin-stat-icon">🤝</div>
-          <div>
-            <span>Open Opportunities</span>
-            <strong>{adminStats.openOpportunities}</strong>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          className="admin-stat-card admin-analytics-shortcut"
-          onClick={() => setActiveSection('analytics')}
-        >
-          <div className="admin-stat-icon">📈</div>
-          <div>
-            <span>Analytics</span>
-            <strong>View Trends</strong>
-          </div>
-        </button>
-      </section>
-
-      <section className="admin-overview-grid">
-        <div className="admin-panel">
-          <div className="admin-panel-header">
-            <div>
-              <h2>Recent Users</h2>
-              <p>Latest accounts created on the platform.</p>
-            </div>
-
-            <button
-              className="admin-text-button"
-              onClick={() => setActiveSection('users')}
-            >
-              View all
-            </button>
-          </div>
-
-          <div className="admin-table-wrapper">
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>User</th>
-                  <th>Type</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {users.slice(0, 4).map((user) => (
-                  <tr key={user.id}>
-                    <td>
-                      <div className="admin-user-cell">
-                        <strong>{user.name}</strong>
-                        <span>{user.email}</span>
-                      </div>
-                    </td>
-                    <td>{user.accountType}</td>
-                    <td>
-                      <span
-                        className={`admin-status admin-status-${user.status.toLowerCase()}`}
-                      >
-                        {user.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div className="admin-panel">
-          <div className="admin-panel-header">
-            <div>
-              <h2>Reports Requiring Attention</h2>
-              <p>Review recent safety and moderation reports.</p>
-            </div>
-
-            <button
-              className="admin-text-button"
-              onClick={() => setActiveSection('reports')}
-            >
-              View all
-            </button>
-          </div>
-
-          <div className="admin-report-list">
-            {reports
-              .filter(
-                (report) =>
-                  report.status === 'OPEN'
-                  || report.status === 'UNDER_REVIEW'
-              )
-              .slice(0, 3)
-              .map((report) => (
-                <div
-                  key={report.id}
-                  className="admin-report-item"
-                >
-                  <div>
-                    <strong>
-                      {report.targetType} · {report.targetName}
-                    </strong>
-                    <span>{report.reason}</span>
-                  </div>
-
-                  <span
-                    className={`admin-status admin-status-${report.status.toLowerCase()}`}
-                  >
-                    {report.status.replace('_', ' ')}
-                  </span>
-                </div>
-              ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="admin-panel">
-        <div className="admin-panel-header">
-          <div>
-            <h2>Recent Activity</h2>
-            <p>Latest activity across the platform.</p>
-          </div>
-        </div>
-
-        <div className="admin-activity-list">
-          {recentActivities.map((activity) => (
-            <div
-              key={activity.id}
-              className="admin-activity-item"
-            >
-              <div className="admin-activity-dot" />
-              <div className="admin-activity-content">
-                <strong>{activity.action}</strong>
-                <span>{activity.description}</span>
-              </div>
-              <small>{activity.time}</small>
-            </div>
-          ))}
-        </div>
-      </section>
-    </>
-  )
-
-  const renderAnalytics = () => {
-    const maxCreatorInteractions = Math.max(
-      ...analytics.topCreators.map((creator) => creator.interactions),
-      1
-    )
-    const maxPostLikes = Math.max(
-      ...analytics.topPosts.map((post) => post.likes),
-      1
-    )
-    const maxProfileViews = Math.max(
-      ...analytics.mostViewedProfiles.map((profile) => profile.views),
-      1
-    )
-    const maxFunnelValue = Math.max(
-      ...analytics.collaborationFunnel.map((item) => item.value),
-      1
-    )
-
-    return (
-      <>
-        <section className="admin-analytics-header admin-panel">
-          <div>
-            <p className="admin-eyebrow">PLATFORM ANALYTICS</p>
-            <h1>Performance & Engagement</h1>
-            <p>
-              Analyse growth, engagement, top creators, popular
-              content, collaborations, events and moderation trends.
-            </p>
-          </div>
-
-          <div className="admin-analytics-controls">
-            <label htmlFor="analytics-period">Period</label>
-            <select
-              id="analytics-period"
-              value={analyticsPeriod}
-              onChange={(event) =>
-                setAnalyticsPeriod(
-                  event.target.value as AnalyticsPeriod
-                )
+      setSelectedReport(
+        current =>
+          current?.id
+          ===
+          reportId
+            ? {
+                ...current,
+                status,
               }
-            >
-              <option value="7d">Last 7 Days</option>
-              <option value="30d">Last 30 Days</option>
-              <option value="90d">Last 90 Days</option>
-              <option value="1y">Last 1 Year</option>
-            </select>
-          </div>
-        </section>
+            : current
+      )
+    }
 
-        <div className="admin-preview-banner">
-          <span>ℹ️</span>
-          <div>
-            <strong>Analytics preview data</strong>
-            <p>
-              These figures are frontend mock data for the current
-              prototype. They will be replaced with live API data after
-              backend analytics endpoints are connected. Profile-view
-              analytics will also require view-tracking in the backend.
-            </p>
-          </div>
-        </div>
 
-        <section className="admin-analytics-kpi-grid">
-          <div className="admin-analytics-kpi">
-            <span>New Users</span>
-            <strong>{formatNumber(analytics.summary.newUsers)}</strong>
-            <small className="positive-change">
-              {formatChange(analytics.summary.newUsersChange)} vs previous period
-            </small>
-          </div>
+  const updateUserStatus =
+    (
+      userId: number,
+      status:
+        | 'ACTIVE'
+        | 'SUSPENDED'
+        | 'DEACTIVATED',
+    ) => {
 
-          <div className="admin-analytics-kpi">
-            <span>Active Users</span>
-            <strong>{formatNumber(analytics.summary.activeUsers)}</strong>
-            <small className="positive-change">
-              {formatChange(analytics.summary.activeUsersChange)} vs previous period
-            </small>
-          </div>
+      const user =
+        users.find(
+          candidate =>
+            candidate.id
+            ===
+            userId,
+        )
 
-          <div className="admin-analytics-kpi">
-            <span>Total Likes</span>
-            <strong>{formatNumber(analytics.summary.totalLikes)}</strong>
-            <small className="positive-change">
-              {formatChange(analytics.summary.totalLikesChange)} vs previous period
-            </small>
-          </div>
+      if (!user) {
+        return
+      }
 
-          <div className="admin-analytics-kpi">
-            <span>Followers Gained</span>
-            <strong>{formatNumber(analytics.summary.followersGained)}</strong>
-            <small className="positive-change">
-              {formatChange(analytics.summary.followersChange)} vs previous period
-            </small>
-          </div>
+      if (
+        status
+        ===
+        'SUSPENDED'
+        ||
+        status
+        ===
+        'DEACTIVATED'
+      ) {
 
-          <div className="admin-analytics-kpi">
-            <span>Event Registrations</span>
-            <strong>{formatNumber(analytics.summary.eventRegistrations)}</strong>
-            <small>{analytics.label}</small>
-          </div>
+        const confirmed =
+          window.confirm(
+            status
+            ===
+            'SUSPENDED'
+              ? `Suspend ${user.name}?`
+              : `Deactivate ${user.name}? This should preserve the account record and email.`,
+          )
 
-          <div className="admin-analytics-kpi">
-            <span>Applications</span>
-            <strong>{formatNumber(analytics.summary.applications)}</strong>
-            <small>{analytics.label}</small>
-          </div>
+        if (!confirmed) {
+          return
+        }
+      }
 
-          <div className="admin-analytics-kpi">
-            <span>Reports Created</span>
-            <strong>{formatNumber(analytics.summary.reportsCreated)}</strong>
-            <small>{analytics.label}</small>
-          </div>
-        </section>
+      setUsers(
+        previous =>
+          previous.map(
+            candidate =>
+              candidate.id
+              ===
+              userId
+                ? {
+                    ...candidate,
+                    status,
+                  }
+                : candidate
+          )
+      )
 
-        <section className="admin-analytics-two-column">
-          <div className="admin-panel admin-chart-panel">
-            <div className="admin-panel-header">
-              <div>
-                <h2>User Growth</h2>
-                <p>Total registered users over {analytics.label.toLowerCase()}.</p>
-              </div>
-              <span className="admin-chart-value">
-                {adminStats.totalUsers.toLocaleString()} users
-              </span>
-            </div>
-            <SimpleLineChart
-              data={analytics.userGrowth}
-              valueLabel="User growth"
-            />
-          </div>
+      const action =
+        status
+        ===
+        'SUSPENDED'
+          ? 'SUSPEND_USER'
+          : status
+            ===
+            'DEACTIVATED'
+              ? 'DEACTIVATE_USER'
+              : 'REACTIVATE_USER'
 
-          <div className="admin-panel admin-chart-panel">
-            <div className="admin-panel-header">
-              <div>
-                <h2>Active Users</h2>
-                <p>User activity trend for the selected period.</p>
-              </div>
-              <span className="admin-chart-value">
-                {formatNumber(analytics.summary.activeUsers)} active
-              </span>
-            </div>
-            <SimpleLineChart
-              data={analytics.activeUsersTrend}
-              valueLabel="Active users"
-            />
-          </div>
-        </section>
+      addActivity(
+        action,
+        `${user.name} (#${user.id})`,
+      )
 
-        <section className="admin-panel admin-chart-panel">
-          <div className="admin-panel-header">
-            <div>
-              <h2>Platform Engagement</h2>
-              <p>Likes, comments and new follows over time.</p>
-            </div>
-            <span className="admin-chart-value">{analytics.label}</span>
-          </div>
-          <EngagementChart data={analytics.engagement} />
-        </section>
+      showToast(
+        'success',
+        `${user.name} is now ${status.toLowerCase()}.`,
+      )
+    }
 
-        <section className="admin-analytics-two-column">
-          <div className="admin-panel">
-            <div className="admin-panel-header">
-              <div>
-                <h2>Top Creators</h2>
-                <p>Ranked by total engagement.</p>
-              </div>
-              <span className="admin-chart-value">{analytics.label}</span>
-            </div>
 
-            <div className="admin-ranking-list">
-              {analytics.topCreators.map((creator, index) => (
-                <div className="admin-ranking-row" key={creator.id}>
-                  <div className="admin-ranking-number">{index + 1}</div>
-                  <div className="admin-ranking-details">
-                    <div className="admin-ranking-heading">
-                      <div>
-                        <strong>{creator.name}</strong>
-                        <span>{creator.category}</span>
-                      </div>
-                      <b>{formatNumber(creator.interactions)}</b>
-                    </div>
-                    <div className="admin-horizontal-track">
-                      <div
-                        className="admin-horizontal-fill"
-                        style={{
-                          width: `${
-                            (creator.interactions / maxCreatorInteractions) * 100
-                          }%`,
-                        }}
-                      />
-                    </div>
-                    <div className="admin-ranking-meta">
-                      <span>{formatNumber(creator.likes)} likes</span>
-                      <span>+{formatNumber(creator.followersGained)} followers</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+  const toggleContentStatus =
+    (
+      itemId: number,
+    ) => {
 
-          <div className="admin-panel">
-            <div className="admin-panel-header">
-              <div>
-                <h2>Most Liked Posts</h2>
-                <p>Posts receiving the most reactions.</p>
-              </div>
-              <span className="admin-chart-value">{analytics.label}</span>
-            </div>
+      const item =
+        moderationItems.find(
+          candidate =>
+            candidate.id
+            ===
+            itemId,
+        )
 
-            <div className="admin-ranking-list compact-ranking-list">
-              {analytics.topPosts.map((post, index) => (
-                <div className="admin-ranking-row" key={post.id}>
-                  <div className="admin-ranking-number">{index + 1}</div>
-                  <div className="admin-ranking-details">
-                    <div className="admin-ranking-heading">
-                      <div>
-                        <strong>{post.title}</strong>
-                        <span>{post.creator}</span>
-                      </div>
-                      <b>♥ {formatNumber(post.likes)}</b>
-                    </div>
-                    <div className="admin-horizontal-track">
-                      <div
-                        className="admin-horizontal-fill admin-horizontal-fill-alt"
-                        style={{
-                          width: `${(post.likes / maxPostLikes) * 100}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+      if (!item) {
+        return
+      }
 
-        <section className="admin-analytics-three-column">
-          <div className="admin-panel admin-donut-panel">
-            <div className="admin-panel-header">
-              <div>
-                <h2>Account Status</h2>
-                <p>Current user account distribution.</p>
-              </div>
-            </div>
+      const nextStatus =
+        item.status
+        ===
+        'VISIBLE'
+          ? 'REMOVED'
+          : 'VISIBLE'
 
-            <div className="admin-donut-content">
-              <div
-                className="admin-donut"
-                style={{
-                  background: `conic-gradient(
-                    #7567df 0 ${analytics.accountDistribution.active}%,
-                    #d34a57 ${analytics.accountDistribution.active}% ${analytics.accountDistribution.active + analytics.accountDistribution.suspended}%,
-                    #e2a12b ${analytics.accountDistribution.active + analytics.accountDistribution.suspended}% 100%
-                  )`,
-                }}
-              >
-                <div className="admin-donut-hole">
-                  <strong>{adminStats.totalUsers.toLocaleString()}</strong>
-                  <span>Users</span>
-                </div>
-              </div>
+      if (
+        nextStatus
+        ===
+        'REMOVED'
+      ) {
 
-              <div className="admin-donut-legend">
-                <span><i className="dot-active" /> Active {analytics.accountDistribution.active}%</span>
-                <span><i className="dot-suspended" /> Suspended {analytics.accountDistribution.suspended}%</span>
-                <span><i className="dot-pending" /> Pending {analytics.accountDistribution.pending}%</span>
-              </div>
-            </div>
-          </div>
+        const confirmed =
+          window.confirm(
+            `Remove "${item.title}" from public visibility?`,
+          )
 
-          <div className="admin-panel admin-donut-panel">
-            <div className="admin-panel-header">
-              <div>
-                <h2>Account Types</h2>
-                <p>Individual and organisation accounts.</p>
-              </div>
-            </div>
+        if (!confirmed) {
+          return
+        }
+      }
 
-            <div className="admin-donut-content">
-              <div
-                className="admin-donut"
-                style={{
-                  background: `conic-gradient(
-                    #514aa6 0 ${analytics.accountTypes.people}%,
-                    #c1758b ${analytics.accountTypes.people}% 100%
-                  )`,
-                }}
-              >
-                <div className="admin-donut-hole">
-                  <strong>{analytics.accountTypes.people}%</strong>
-                  <span>People</span>
-                </div>
-              </div>
+      setModerationItems(
+        previous =>
+          previous.map(
+            candidate =>
+              candidate.id
+              ===
+              itemId
+                ? {
+                    ...candidate,
+                    status:
+                      nextStatus,
+                  }
+                : candidate
+          )
+      )
 
-              <div className="admin-donut-legend">
-                <span><i className="dot-people" /> Individuals {analytics.accountTypes.people}%</span>
-                <span><i className="dot-org" /> Organisations {analytics.accountTypes.organisations}%</span>
-              </div>
-            </div>
-          </div>
+      addActivity(
+        nextStatus
+        ===
+        'REMOVED'
+          ? 'REMOVE_CONTENT'
+          : 'RESTORE_CONTENT',
+        `${item.type} #${item.id}`,
+      )
 
-          <div className="admin-panel">
-            <div className="admin-panel-header">
-              <div>
-                <h2>Report Categories</h2>
-                <p>Why content and accounts are reported.</p>
-              </div>
-            </div>
+      showToast(
+        'success',
+        `${item.title} ${
+          nextStatus
+          ===
+          'REMOVED'
+            ? 'removed'
+            : 'restored'
+        }.`,
+      )
+    }
 
-            <div className="admin-category-bars">
-              {analytics.reportCategories.map((category) => (
-                <div key={category.name} className="admin-category-row">
-                  <div>
-                    <span>{category.name}</span>
-                    <strong>{category.value}%</strong>
-                  </div>
-                  <div className="admin-horizontal-track">
-                    <div
-                      className="admin-horizontal-fill admin-report-fill"
-                      style={{ width: `${category.value}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
 
-        <section className="admin-analytics-two-column">
-          <div className="admin-panel">
-            <div className="admin-panel-header">
-              <div>
-                <h2>Collaboration Funnel</h2>
-                <p>From opportunity creation to project team formation.</p>
-              </div>
-            </div>
+  const handleRefresh =
+    () => {
 
-            <div className="admin-funnel-list">
-              {analytics.collaborationFunnel.map((item) => (
-                <div className="admin-funnel-item" key={item.label}>
-                  <div className="admin-funnel-heading">
-                    <span>{item.label}</span>
-                    <strong>{formatNumber(item.value)}</strong>
-                  </div>
-                  <div
-                    className="admin-funnel-bar"
-                    style={{
-                      width: `${Math.max(
-                        28,
-                        (item.value / maxFunnelValue) * 100
-                      )}%`,
-                    }}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
+      setLastUpdated(
+        new Date()
+      )
 
-          <div className="admin-panel admin-chart-panel">
-            <div className="admin-panel-header">
-              <div>
-                <h2>Event Registrations</h2>
-                <p>Registration activity for platform events.</p>
-              </div>
-              <span className="admin-chart-value">
-                {formatNumber(analytics.summary.eventRegistrations)} registrations
-              </span>
-            </div>
-            <SimpleLineChart
-              data={analytics.eventRegistrationsTrend}
-              valueLabel="Event registrations"
-            />
-          </div>
-        </section>
+      showToast(
+        'success',
+        'Dashboard refreshed successfully.',
+      )
+    }
 
-        <section className="admin-panel">
-          <div className="admin-panel-header">
-            <div>
-              <h2>Most Viewed Profiles</h2>
-              <p>
-                Preview of profile-view analytics. Real values require
-                backend profile-view tracking.
-              </p>
-            </div>
-            <span className="admin-tracking-badge">Tracking needed</span>
-          </div>
 
-          <div className="admin-profile-view-grid">
-            {analytics.mostViewedProfiles.map((profile, index) => (
-              <div className="admin-profile-view-card" key={profile.id}>
-                <div className="admin-profile-rank">#{index + 1}</div>
-                <div className="admin-profile-view-info">
-                  <strong>{profile.name}</strong>
-                  <span>{profile.category}</span>
-                  <div className="admin-horizontal-track">
-                    <div
-                      className="admin-horizontal-fill admin-profile-fill"
-                      style={{
-                        width: `${(profile.views / maxProfileViews) * 100}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-                <div className="admin-profile-view-number">
-                  <strong>{formatNumber(profile.views)}</strong>
-                  <span>views</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      </>
-    )
-  }
+  const pageTitle = {
+    overview:
+      'Admin Overview',
+    reports:
+      'My Assigned Reports',
+    users:
+      'Manage Users',
+    analytics:
+      'Analytics',
+    moderation:
+      'Content Moderation',
+    activity:
+      'My Activity',
+  }[section]
 
-  const renderUsers = () => (
-    <section className="admin-panel">
-      <div className="admin-page-heading">
-        <div>
-          <p className="admin-eyebrow">USER MANAGEMENT</p>
-          <h1>Platform Users</h1>
-          <p>
-            View user accounts and manage their current account status.
-          </p>
-        </div>
-      </div>
-
-      <div className="admin-toolbar">
-        <input
-          type="text"
-          value={searchText}
-          onChange={(event) => setSearchText(event.target.value)}
-          placeholder="Search users by name, email, type or status..."
-          className="admin-search-input"
-        />
-        <span className="admin-result-count">
-          {filteredUsers.length} users
-        </span>
-      </div>
-
-      <div className="admin-table-wrapper">
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Account Type</th>
-              <th>Status</th>
-              <th>Joined</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredUsers.map((user) => (
-              <tr key={user.id}>
-                <td><strong>{user.name}</strong></td>
-                <td>{user.email}</td>
-                <td>{user.accountType}</td>
-                <td>
-                  <span
-                    className={`admin-status admin-status-${user.status.toLowerCase()}`}
-                  >
-                    {user.status}
-                  </span>
-                </td>
-                <td>{user.joinedDate}</td>
-                <td>
-                  <button
-                    className={
-                      user.status === 'SUSPENDED'
-                        ? 'admin-action-button admin-action-enable'
-                        : 'admin-action-button admin-action-danger'
-                    }
-                    onClick={() => handleUserStatusChange(user.id)}
-                  >
-                    {user.status === 'SUSPENDED'
-                      ? 'Reactivate'
-                      : 'Suspend'}
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </section>
-  )
-
-  const renderReports = () => (
-    <section className="admin-panel">
-      <div className="admin-page-heading">
-        <div>
-          <p className="admin-eyebrow">SAFETY & MODERATION</p>
-          <h1>Reports</h1>
-          <p>
-            Review reported users, posts, portfolio items and events.
-          </p>
-        </div>
-      </div>
-
-      <div className="admin-table-wrapper">
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Reported By</th>
-              <th>Target</th>
-              <th>Reason</th>
-              <th>Created</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {reports.map((report) => (
-              <tr key={report.id}>
-                <td>#{report.id}</td>
-                <td>{report.reportedBy}</td>
-                <td>
-                  <strong>{report.targetType}</strong>
-                  <div className="admin-table-secondary">
-                    {report.targetName}
-                  </div>
-                </td>
-                <td>{report.reason}</td>
-                <td>{report.createdDate}</td>
-                <td>
-                  <span
-                    className={`admin-status admin-status-${report.status.toLowerCase()}`}
-                  >
-                    {report.status.replace('_', ' ')}
-                  </span>
-                </td>
-                <td>
-                  <select
-                    className="admin-status-select"
-                    value={report.status}
-                    onChange={(event) =>
-                      handleReportStatusChange(
-                        report.id,
-                        event.target.value as AdminReport['status']
-                      )
-                    }
-                  >
-                    <option value="OPEN">Open</option>
-                    <option value="UNDER_REVIEW">Under Review</option>
-                    <option value="RESOLVED">Resolved</option>
-                    <option value="DISMISSED">Dismissed</option>
-                  </select>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </section>
-  )
-
-  const renderContent = () => (
-    <section className="admin-panel">
-      <div className="admin-page-heading">
-        <div>
-          <p className="admin-eyebrow">CONTENT MODERATION</p>
-          <h1>Content Management</h1>
-          <p>Review platform content that may require moderation.</p>
-        </div>
-      </div>
-
-      <div className="admin-content-grid">
-        <div className="admin-content-card">
-          <span>📝</span>
-          <h3>Posts</h3>
-          <p>Review reported or removed community posts.</p>
-          <button>Manage Posts</button>
-        </div>
-
-        <div className="admin-content-card">
-          <span>🎨</span>
-          <h3>Portfolio Items</h3>
-          <p>Review reported portfolio content and media.</p>
-          <button>Manage Portfolio</button>
-        </div>
-
-        <div className="admin-content-card">
-          <span>🤝</span>
-          <h3>Opportunities</h3>
-          <p>Review collaboration opportunities and status.</p>
-          <button>Manage Opportunities</button>
-        </div>
-
-        <div className="admin-content-card">
-          <span>📅</span>
-          <h3>Events</h3>
-          <p>Review event listings and moderation status.</p>
-          <button>Manage Events</button>
-        </div>
-      </div>
-    </section>
-  )
-
-  const renderAudit = () => (
-    <section className="admin-panel">
-      <div className="admin-page-heading">
-        <div>
-          <p className="admin-eyebrow">ACCOUNTABILITY</p>
-          <h1>Audit Logs</h1>
-          <p>View recent administrative and platform activity.</p>
-        </div>
-      </div>
-
-      <div className="admin-activity-list">
-        {recentActivities.map((activity) => (
-          <div
-            key={activity.id}
-            className="admin-activity-item"
-          >
-            <div className="admin-activity-dot" />
-            <div className="admin-activity-content">
-              <strong>{activity.action}</strong>
-              <span>{activity.description}</span>
-            </div>
-            <small>{activity.time}</small>
-          </div>
-        ))}
-      </div>
-    </section>
-  )
 
   return (
-    <div className="admin-dashboard">
+    <div className="admin-layout">
+
       <aside className="admin-sidebar">
-        <div className="admin-sidebar-heading">
-          <div className="admin-shield">🛡️</div>
-          <div>
-            <strong>Admin Panel</strong>
-            <span>Creative Collab</span>
+
+        <div className="admin-sidebar-brand">
+
+          <div className="admin-brand-badge">
+            A
           </div>
+
+          <div>
+            <h2>
+              Admin
+            </h2>
+
+            <p>
+              Creative Collab
+            </p>
+          </div>
+
         </div>
 
-        <nav className="admin-sidebar-nav">
+
+        <nav className="admin-navigation">
+
           <button
-            className={activeSection === 'overview' ? 'active' : ''}
-            onClick={() => setActiveSection('overview')}
+            className={
+              section
+              ===
+              'overview'
+                ? 'active'
+                : ''
+            }
+            onClick={
+              () =>
+                setSection(
+                  'overview'
+                )
+            }
           >
-            <span>📊</span>
             Overview
           </button>
 
+
           <button
-            className={activeSection === 'analytics' ? 'active' : ''}
-            onClick={() => setActiveSection('analytics')}
+            className={
+              section
+              ===
+              'reports'
+                ? 'active'
+                : ''
+            }
+            onClick={
+              () =>
+                setSection(
+                  'reports'
+                )
+            }
           >
-            <span>📈</span>
+            My Assigned Reports
+
+            {
+              openReports > 0
+              &&
+              (
+                <span className="admin-nav-count">
+                  {
+                    openReports
+                  }
+                </span>
+              )
+            }
+          </button>
+
+
+          <button
+            className={
+              section
+              ===
+              'users'
+                ? 'active'
+                : ''
+            }
+            onClick={
+              () =>
+                setSection(
+                  'users'
+                )
+            }
+          >
+            Manage Users
+          </button>
+
+
+          <button
+            className={
+              section
+              ===
+              'analytics'
+                ? 'active'
+                : ''
+            }
+            onClick={
+              () =>
+                setSection(
+                  'analytics'
+                )
+            }
+          >
             Analytics
           </button>
 
-          <button
-            className={activeSection === 'users' ? 'active' : ''}
-            onClick={() => setActiveSection('users')}
-          >
-            <span>👥</span>
-            User Management
-          </button>
 
           <button
-            className={activeSection === 'reports' ? 'active' : ''}
-            onClick={() => setActiveSection('reports')}
+            className={
+              section
+              ===
+              'moderation'
+                ? 'active'
+                : ''
+            }
+            onClick={
+              () =>
+                setSection(
+                  'moderation'
+                )
+            }
           >
-            <span>🚩</span>
-            Reports
+            Content Moderation
           </button>
 
-          <button
-            className={activeSection === 'content' ? 'active' : ''}
-            onClick={() => setActiveSection('content')}
-          >
-            <span>🛡️</span>
-            Content
-          </button>
 
           <button
-            className={activeSection === 'audit' ? 'active' : ''}
-            onClick={() => setActiveSection('audit')}
+            className={
+              section
+              ===
+              'activity'
+                ? 'active'
+                : ''
+            }
+            onClick={
+              () =>
+                setSection(
+                  'activity'
+                )
+            }
           >
-            <span>📋</span>
-            Audit Logs
+            My Activity
           </button>
+
         </nav>
 
-        <div className="admin-sidebar-footer">
-          <div className="admin-avatar">A</div>
-          <div>
-            <strong>Administrator</strong>
-            <span>ADMIN</span>
-          </div>
-        </div>
       </aside>
 
+
       <main className="admin-main">
-        {activeSection === 'overview' && renderOverview()}
-        {activeSection === 'analytics' && renderAnalytics()}
-        {activeSection === 'users' && renderUsers()}
-        {activeSection === 'reports' && renderReports()}
-        {activeSection === 'content' && renderContent()}
-        {activeSection === 'audit' && renderAudit()}
+
+        <header className="admin-header">
+
+          <div>
+            <h1>
+              {
+                pageTitle
+              }
+            </h1>
+
+            <p>
+              Review reports, manage users,
+              moderate content and monitor
+              platform activity.
+            </p>
+          </div>
+
+
+          {
+            section
+            !==
+            'analytics'
+            &&
+            (
+              <div className="admin-live-status">
+
+                <span className="admin-live-dot" />
+
+                <div>
+                  <strong>
+                    Live
+                  </strong>
+
+                  <small>
+                    Updated
+                    {' '}
+                    {
+                      lastUpdated
+                        .toLocaleTimeString(
+                          [],
+                          {
+                            hour:
+                              '2-digit',
+                            minute:
+                              '2-digit',
+                            second:
+                              '2-digit',
+                          },
+                        )
+                    }
+                  </small>
+                </div>
+
+                <button
+                  type="button"
+                  className="admin-refresh-button"
+                  onClick={
+                    handleRefresh
+                  }
+                >
+                  Refresh
+                </button>
+
+              </div>
+            )
+          }
+
+        </header>
+
+
+        {
+          toast
+          &&
+          (
+            <div
+              className={
+                `admin-toast ${toast.type}`
+              }
+            >
+              {
+                toast.message
+              }
+            </div>
+          )
+        }
+
+
+        {
+          section
+          ===
+          'overview'
+          &&
+          (
+            <>
+
+              <div className="admin-period-selector">
+
+                {
+                  (
+                    [
+                      'today',
+                      '7d',
+                      '30d',
+                      '6m',
+                      '1y',
+                    ] as OverviewPeriod[]
+                  ).map(
+                    period => (
+                      <button
+                        key={
+                          period
+                        }
+                        className={
+                          overviewPeriod
+                          ===
+                          period
+                            ? 'active'
+                            : ''
+                        }
+                        onClick={
+                          () =>
+                            setOverviewPeriod(
+                              period
+                            )
+                        }
+                      >
+                        {
+                          periodLabels[
+                            period
+                          ]
+                        }
+                      </button>
+                    )
+                  )
+                }
+
+              </div>
+
+
+              <section className="admin-metric-grid">
+
+                <article className="admin-metric-card">
+                  <span>
+                    Assigned
+                  </span>
+
+                  <strong>
+                    {
+                      overviewTotals
+                        .assigned
+                        .toLocaleString()
+                    }
+                  </strong>
+
+                  <small>
+                    Assigned during {
+                      periodLabels[
+                        overviewPeriod
+                      ].toLowerCase()
+                    }
+                  </small>
+                </article>
+
+
+                <article className="admin-metric-card">
+                  <span>
+                    Open
+                  </span>
+
+                  <strong>
+                    {
+                      openReports
+                    }
+                  </strong>
+
+                  <small>
+                    Current unresolved queue
+                  </small>
+                </article>
+
+
+                <article className="admin-metric-card">
+                  <span>
+                    Urgent
+                  </span>
+
+                  <strong>
+                    {
+                      urgentReports
+                    }
+                  </strong>
+
+                  <small>
+                    Immediate attention
+                  </small>
+                </article>
+
+
+                <article className="admin-metric-card">
+                  <span>
+                    Under Review
+                  </span>
+
+                  <strong>
+                    {
+                      underReviewReports
+                    }
+                  </strong>
+
+                  <small>
+                    Currently being reviewed
+                  </small>
+                </article>
+
+
+                <article className="admin-metric-card">
+                  <span>
+                    Resolved
+                  </span>
+
+                  <strong>
+                    {
+                      overviewTotals
+                        .resolved
+                        .toLocaleString()
+                    }
+                  </strong>
+
+                  <small className="admin-positive-copy">
+                    +9.1% vs previous period
+                  </small>
+                </article>
+
+
+                <article className="admin-metric-card">
+                  <span>
+                    Avg. Resolution
+                  </span>
+
+                  <strong>
+                    2.1h
+                  </strong>
+
+                  <small className="admin-positive-copy">
+                    Within moderation target
+                  </small>
+                </article>
+
+              </section>
+
+
+              <section className="admin-dashboard-grid">
+
+                <article className="admin-card">
+
+                  <div className="admin-card-heading">
+
+                    <div>
+                      <h3>
+                        My Workload Trend
+                      </h3>
+
+                      <p>
+                        Assigned moderation work across {
+                          periodLabels[
+                            overviewPeriod
+                          ].toLowerCase()
+                        }.
+                      </p>
+                    </div>
+
+                    <span className="admin-trend-positive">
+                      +7.8%
+                    </span>
+
+                  </div>
+
+                  <LineChart
+                    data={
+                      overviewData
+                    }
+                    dataKey="assigned"
+                  />
+
+                </article>
+
+
+                <article className="admin-card">
+
+                  <div className="admin-card-heading">
+                    <div>
+                      <h3>
+                        My Workload
+                      </h3>
+
+                      <p>
+                        Current assigned-report status.
+                      </p>
+                    </div>
+                  </div>
+
+
+                  <div className="admin-workload-summary">
+
+                    <div>
+                      <span>
+                        Assigned
+                      </span>
+
+                      <strong>
+                        {
+                          reports.length
+                        }
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span>
+                        Open
+                      </span>
+
+                      <strong>
+                        {
+                          reports.filter(
+                            report =>
+                              report.status
+                              ===
+                              'OPEN'
+                          ).length
+                        }
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span>
+                        Under Review
+                      </span>
+
+                      <strong>
+                        {
+                          underReviewReports
+                        }
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span>
+                        Resolved
+                      </span>
+
+                      <strong>
+                        {
+                          resolvedReports
+                        }
+                      </strong>
+                    </div>
+
+                  </div>
+
+
+                  <div className="admin-completion-block">
+
+                    <div>
+                      <span>
+                        Completion
+                      </span>
+
+                      <strong>
+                        {
+                          workloadCompletion
+                        }
+                        %
+                      </strong>
+                    </div>
+
+                    <div className="admin-completion-bar">
+                      <span
+                        style={{
+                          width:
+                            `${workloadCompletion}%`,
+                        }}
+                      />
+                    </div>
+
+                  </div>
+
+                </article>
+
+              </section>
+
+
+              <section className="admin-dashboard-grid">
+
+                <article className="admin-card">
+
+                  <div className="admin-card-heading">
+
+                    <div>
+                      <h3>
+                        Priority Report Queue
+                      </h3>
+
+                      <p>
+                        Highest-priority assigned reports.
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="admin-primary-button"
+                      onClick={
+                        () =>
+                          setSection(
+                            'reports'
+                          )
+                      }
+                    >
+                      View All Reports
+                    </button>
+
+                  </div>
+
+
+                  <div className="admin-list">
+
+                    {
+                      reports
+                        .filter(
+                          report =>
+                            report.status
+                            !==
+                            'RESOLVED'
+                            &&
+                            report.status
+                            !==
+                            'DISMISSED'
+                        )
+                        .sort(
+                          (
+                            first,
+                            second,
+                          ) => {
+
+                            const priorityOrder = {
+                              URGENT: 4,
+                              HIGH: 3,
+                              MEDIUM: 2,
+                              LOW: 1,
+                            }
+
+                            return (
+                              priorityOrder[
+                                second.priority
+                              ]
+                              -
+                              priorityOrder[
+                                first.priority
+                              ]
+                            )
+                          }
+                        )
+                        .slice(
+                          0,
+                          4,
+                        )
+                        .map(
+                          report => (
+                            <button
+                              type="button"
+                              className="admin-list-row admin-list-row-button"
+                              key={
+                                report.id
+                              }
+                              onClick={
+                                () =>
+                                  setSelectedReport(
+                                    report
+                                  )
+                              }
+                            >
+                              <div>
+                                <strong>
+                                  Report #
+                                  {
+                                    report.id
+                                  }
+                                </strong>
+
+                                <span>
+                                  {
+                                    report.target
+                                  }
+                                  {' • '}
+                                  {
+                                    report.reason
+                                  }
+                                </span>
+
+                                <small
+                                  className={
+                                    report.ageHours
+                                    >=
+                                    24
+                                      ? 'admin-sla-overdue'
+                                      : 'admin-sla-normal'
+                                  }
+                                >
+                                  {
+                                    report.ageHours
+                                  }
+                                  h old
+                                </small>
+                              </div>
+
+                              <span
+                                className={
+                                  `admin-priority ${
+                                    report.priority
+                                      .toLowerCase()
+                                  }`
+                                }
+                              >
+                                {
+                                  report.priority
+                                }
+                              </span>
+                            </button>
+                          )
+                        )
+                    }
+
+                  </div>
+
+                </article>
+
+
+                <article className="admin-card">
+
+                  <div className="admin-card-heading">
+                    <div>
+                      <h3>
+                        Alerts & SLA
+                      </h3>
+
+                      <p>
+                        Items requiring attention.
+                      </p>
+                    </div>
+                  </div>
+
+
+                  <div className="admin-alert-list">
+
+                    {
+                      urgentReports > 0
+                      &&
+                      (
+                        <button
+                          type="button"
+                          className="admin-alert danger"
+                          onClick={
+                            () =>
+                              setSection(
+                                'reports'
+                              )
+                          }
+                        >
+                          <span>
+                            !
+                          </span>
+
+                          <div>
+                            <strong>
+                              {
+                                urgentReports
+                              }
+                              {' '}
+                              urgent report
+                              {
+                                urgentReports
+                                ===
+                                1
+                                  ? ''
+                                  : 's'
+                              }
+                            </strong>
+
+                            <small>
+                              Prioritise these reports first.
+                            </small>
+                          </div>
+                        </button>
+                      )
+                    }
+
+
+                    {
+                      overdueReports > 0
+                      &&
+                      (
+                        <button
+                          type="button"
+                          className="admin-alert warning"
+                          onClick={
+                            () =>
+                              setSection(
+                                'reports'
+                              )
+                          }
+                        >
+                          <span>
+                            ⏱
+                          </span>
+
+                          <div>
+                            <strong>
+                              {
+                                overdueReports
+                              }
+                              {' '}
+                              overdue report
+                              {
+                                overdueReports
+                                ===
+                                1
+                                  ? ''
+                                  : 's'
+                              }
+                            </strong>
+
+                            <small>
+                              Older than 24 hours.
+                            </small>
+                          </div>
+                        </button>
+                      )
+                    }
+
+
+                    <div className="admin-alert healthy">
+
+                      <span>
+                        ✓
+                      </span>
+
+                      <div>
+                        <strong>
+                          Moderation tools available
+                        </strong>
+
+                        <small>
+                          User and content actions are operational.
+                        </small>
+                      </div>
+
+                    </div>
+
+                  </div>
+
+                </article>
+
+              </section>
+
+
+              <section className="admin-dashboard-grid">
+
+                <article className="admin-card">
+
+                  <div className="admin-card-heading">
+                    <div>
+                      <h3>
+                        Top Report Reasons
+                      </h3>
+
+                      <p>
+                        Common reasons in your assigned queue.
+                      </p>
+                    </div>
+                  </div>
+
+
+                  <div className="admin-reason-list">
+
+                    {
+                      reportReasonCounts.map(
+                        item => {
+
+                          const percentage =
+                            Math.round(
+                              (
+                                item.count
+                                /
+                                Math.max(
+                                  reports.length,
+                                  1,
+                                )
+                              )
+                              *
+                              100
+                            )
+
+                          return (
+                            <div
+                              key={
+                                item.reason
+                              }
+                            >
+                              <div>
+                                <span>
+                                  {
+                                    item.reason
+                                  }
+                                </span>
+
+                                <strong>
+                                  {
+                                    percentage
+                                  }
+                                  %
+                                </strong>
+                              </div>
+
+                              <div className="admin-reason-bar">
+                                <span
+                                  style={{
+                                    width:
+                                      `${percentage}%`,
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          )
+                        }
+                      )
+                    }
+
+                  </div>
+
+                </article>
+
+
+                <article className="admin-card">
+
+                  <div className="admin-card-heading">
+                    <div>
+                      <h3>
+                        Moderation Summary
+                      </h3>
+
+                      <p>
+                        Current content and user moderation snapshot.
+                      </p>
+                    </div>
+                  </div>
+
+
+                  <div className="admin-summary-grid">
+
+                    <button
+                      type="button"
+                      onClick={
+                        () =>
+                          setSection(
+                            'users'
+                          )
+                      }
+                    >
+                      <span>
+                        Active Users
+                      </span>
+
+                      <strong>
+                        {
+                          activeUsers
+                        }
+                      </strong>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={
+                        () =>
+                          setSection(
+                            'users'
+                          )
+                      }
+                    >
+                      <span>
+                        Suspended
+                      </span>
+
+                      <strong>
+                        {
+                          users.filter(
+                            user =>
+                              user.status
+                              ===
+                              'SUSPENDED'
+                          ).length
+                        }
+                      </strong>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={
+                        () =>
+                          setSection(
+                            'moderation'
+                          )
+                      }
+                    >
+                      <span>
+                        Removed Content
+                      </span>
+
+                      <strong>
+                        {
+                          removedContent
+                        }
+                      </strong>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={
+                        () =>
+                          setSection(
+                            'moderation'
+                          )
+                      }
+                    >
+                      <span>
+                        Visible Content
+                      </span>
+
+                      <strong>
+                        {
+                          moderationItems.filter(
+                            item =>
+                              item.status
+                              ===
+                              'VISIBLE'
+                          ).length
+                        }
+                      </strong>
+                    </button>
+
+                  </div>
+
+                </article>
+
+              </section>
+
+
+              <section className="admin-dashboard-grid">
+
+                <article className="admin-card">
+
+                  <div className="admin-card-heading">
+                    <div>
+                      <h3>
+                        Moderation Activity Trend
+                      </h3>
+
+                      <p>
+                        Moderation actions for the selected period.
+                      </p>
+                    </div>
+
+                    <span className="admin-trend-neutral">
+                      {
+                        overviewTotals
+                          .moderation
+                      }
+                      {' '}
+                      actions
+                    </span>
+                  </div>
+
+                  <LineChart
+                    data={
+                      overviewData
+                    }
+                    dataKey="moderation"
+                  />
+
+                </article>
+
+
+                <article className="admin-card">
+
+                  <div className="admin-card-heading">
+                    <div>
+                      <h3>
+                        Quick Actions
+                      </h3>
+
+                      <p>
+                        Common administrator tasks.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="admin-quick-actions">
+
+                    <button
+                      type="button"
+                      onClick={
+                        () =>
+                          setSection(
+                            'reports'
+                          )
+                      }
+                    >
+                      Review Reports
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={
+                        () =>
+                          setSection(
+                            'users'
+                          )
+                      }
+                    >
+                      Manage Users
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={
+                        () =>
+                          setSection(
+                            'moderation'
+                          )
+                      }
+                    >
+                      Moderate Content
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={
+                        () =>
+                          setSection(
+                            'analytics'
+                          )
+                      }
+                    >
+                      View Analytics
+                    </button>
+
+                  </div>
+
+                </article>
+
+              </section>
+
+
+              <section className="admin-card">
+
+                <div className="admin-card-heading">
+
+                  <div>
+                    <h3>
+                      Recent Actions
+                    </h3>
+
+                    <p>
+                      Your latest recorded moderation actions.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="admin-secondary-button"
+                    onClick={
+                      () =>
+                        setSection(
+                          'activity'
+                        )
+                    }
+                  >
+                    View All Activity
+                  </button>
+
+                </div>
+
+
+                <div className="admin-table-wrapper">
+
+                  <table className="admin-table">
+
+                    <thead>
+                      <tr>
+                        <th>
+                          Action
+                        </th>
+                        <th>
+                          Target
+                        </th>
+                        <th>
+                          Time
+                        </th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+
+                      {
+                        activity
+                          .slice(
+                            0,
+                            5,
+                          )
+                          .map(
+                            log => (
+                              <tr
+                                key={
+                                  log.id
+                                }
+                              >
+                                <td>
+                                  <span className="admin-activity-action">
+                                    {
+                                      log.action
+                                    }
+                                  </span>
+                                </td>
+
+                                <td>
+                                  {
+                                    log.target
+                                  }
+                                </td>
+
+                                <td>
+                                  {
+                                    log.time
+                                  }
+                                </td>
+                              </tr>
+                            )
+                          )
+                      }
+
+                    </tbody>
+
+                  </table>
+
+                </div>
+
+              </section>
+
+            </>
+          )
+        }
+
+
+        {
+          section
+          ===
+          'reports'
+          &&
+          (
+            <>
+
+              <section className="admin-metric-grid compact">
+
+                <article className="admin-metric-card">
+                  <span>
+                    Open
+                  </span>
+
+                  <strong>
+                    {
+                      reports.filter(
+                        report =>
+                          report.status
+                          ===
+                          'OPEN',
+                      ).length
+                    }
+                  </strong>
+                </article>
+
+                <article className="admin-metric-card">
+                  <span>
+                    Under Review
+                  </span>
+
+                  <strong>
+                    {
+                      underReviewReports
+                    }
+                  </strong>
+                </article>
+
+                <article className="admin-metric-card">
+                  <span>
+                    Resolved
+                  </span>
+
+                  <strong>
+                    {
+                      resolvedReports
+                    }
+                  </strong>
+                </article>
+
+                <article className="admin-metric-card">
+                  <span>
+                    Urgent
+                  </span>
+
+                  <strong>
+                    {
+                      urgentReports
+                    }
+                  </strong>
+                </article>
+
+              </section>
+
+
+              <section className="admin-card">
+
+                <div className="admin-card-heading">
+                  <div>
+                    <h3>
+                      My Assigned Reports
+                    </h3>
+
+                    <p>
+                      Only reports assigned to this administrator should be returned by the backend.
+                    </p>
+                  </div>
+                </div>
+
+
+                <div className="admin-table-wrapper">
+
+                  <table className="admin-table">
+
+                    <thead>
+                      <tr>
+                        <th>
+                          Report
+                        </th>
+                        <th>
+                          Target
+                        </th>
+                        <th>
+                          Reason
+                        </th>
+                        <th>
+                          Priority
+                        </th>
+                        <th>
+                          Age
+                        </th>
+                        <th>
+                          Status
+                        </th>
+                        <th>
+                          Created
+                        </th>
+                        <th>
+                          Action
+                        </th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+
+                      {
+                        reports.map(
+                          report => (
+                            <tr
+                              key={
+                                report.id
+                              }
+                            >
+                              <td>
+                                <strong>
+                                  #
+                                  {
+                                    report.id
+                                  }
+                                </strong>
+                              </td>
+
+                              <td>
+                                {
+                                  report.target
+                                }
+                              </td>
+
+                              <td>
+                                {
+                                  report.reason
+                                }
+                              </td>
+
+                              <td>
+                                <span
+                                  className={
+                                    `admin-priority ${
+                                      report.priority
+                                        .toLowerCase()
+                                    }`
+                                  }
+                                >
+                                  {
+                                    report.priority
+                                  }
+                                </span>
+                              </td>
+
+                              <td>
+                                <span
+                                  className={
+                                    report.ageHours
+                                    >=
+                                    24
+                                      ? 'admin-sla-overdue'
+                                      : 'admin-sla-normal'
+                                  }
+                                >
+                                  {
+                                    report.ageHours
+                                  }
+                                  h
+                                </span>
+                              </td>
+
+                              <td>
+                                <span
+                                  className={
+                                    `admin-status ${
+                                      report.status
+                                        .toLowerCase()
+                                    }`
+                                  }
+                                >
+                                  {
+                                    report.status
+                                      .replace(
+                                        '_',
+                                        ' ',
+                                      )
+                                  }
+                                </span>
+                              </td>
+
+                              <td>
+                                {
+                                  report.createdAt
+                                }
+                              </td>
+
+                              <td>
+                                <button
+                                  type="button"
+                                  className="admin-primary-button small"
+                                  onClick={
+                                    () =>
+                                      setSelectedReport(
+                                        report
+                                      )
+                                  }
+                                >
+                                  Review
+                                </button>
+                              </td>
+                            </tr>
+                          )
+                        )
+                      }
+
+                    </tbody>
+
+                  </table>
+
+                </div>
+
+              </section>
+
+            </>
+          )
+        }
+
+
+        {
+          section
+          ===
+          'users'
+          &&
+          (
+            <section className="admin-card">
+
+              <div className="admin-card-heading">
+                <div>
+                  <h3>
+                    Manage Users
+                  </h3>
+
+                  <p>
+                    Suspend, reactivate or deactivate platform accounts.
+                  </p>
+                </div>
+              </div>
+
+
+              <div className="admin-warning">
+                Deactivated accounts should remain in the database.
+                Keeping the original email and account record prevents
+                the same account from simply registering again and
+                preserves moderation history.
+              </div>
+
+
+              <div className="admin-filter-bar">
+
+                <input
+                  type="search"
+                  placeholder="Search users..."
+                  value={
+                    searchTerm
+                  }
+                  onChange={
+                    event =>
+                      setSearchTerm(
+                        event.target.value,
+                      )
+                  }
+                />
+
+                <select
+                  value={
+                    userStatusFilter
+                  }
+                  onChange={
+                    event =>
+                      setUserStatusFilter(
+                        event.target.value,
+                      )
+                  }
+                >
+                  <option value="ALL">
+                    All Statuses
+                  </option>
+
+                  <option value="ACTIVE">
+                    Active
+                  </option>
+
+                  <option value="SUSPENDED">
+                    Suspended
+                  </option>
+
+                  <option value="DEACTIVATED">
+                    Deactivated
+                  </option>
+                </select>
+
+              </div>
+
+
+              <div className="admin-table-wrapper">
+
+                <table className="admin-table">
+
+                  <thead>
+                    <tr>
+                      <th>
+                        User
+                      </th>
+                      <th>
+                        Email
+                      </th>
+                      <th>
+                        Role
+                      </th>
+                      <th>
+                        Status
+                      </th>
+                      <th>
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+
+                    {
+                      filteredUsers.map(
+                        user => (
+                          <tr
+                            key={
+                              user.id
+                            }
+                          >
+                            <td>
+                              <strong>
+                                {
+                                  user.name
+                                }
+                              </strong>
+
+                              <small>
+                                User #
+                                {
+                                  user.id
+                                }
+                              </small>
+                            </td>
+
+                            <td>
+                              {
+                                user.email
+                              }
+                            </td>
+
+                            <td>
+                              {
+                                user.role
+                              }
+                            </td>
+
+                            <td>
+                              <span
+                                className={
+                                  `admin-status ${
+                                    user.status
+                                      .toLowerCase()
+                                  }`
+                                }
+                              >
+                                {
+                                  user.status
+                                }
+                              </span>
+                            </td>
+
+                            <td>
+                              <div className="admin-action-buttons">
+
+                                {
+                                  user.status
+                                  ===
+                                  'ACTIVE'
+                                  &&
+                                  (
+                                    <button
+                                      type="button"
+                                      className="admin-secondary-button"
+                                      onClick={
+                                        () =>
+                                          updateUserStatus(
+                                            user.id,
+                                            'SUSPENDED',
+                                          )
+                                      }
+                                    >
+                                      Suspend
+                                    </button>
+                                  )
+                                }
+
+                                {
+                                  user.status
+                                  ===
+                                  'SUSPENDED'
+                                  &&
+                                  (
+                                    <button
+                                      type="button"
+                                      className="admin-secondary-button"
+                                      onClick={
+                                        () =>
+                                          updateUserStatus(
+                                            user.id,
+                                            'ACTIVE',
+                                          )
+                                      }
+                                    >
+                                      Reactivate
+                                    </button>
+                                  )
+                                }
+
+                                {
+                                  user.status
+                                  !==
+                                  'DEACTIVATED'
+                                  &&
+                                  (
+                                    <button
+                                      type="button"
+                                      className="admin-danger-button"
+                                      onClick={
+                                        () =>
+                                          updateUserStatus(
+                                            user.id,
+                                            'DEACTIVATED',
+                                          )
+                                      }
+                                    >
+                                      Deactivate
+                                    </button>
+                                  )
+                                }
+
+                                {
+                                  user.status
+                                  ===
+                                  'DEACTIVATED'
+                                  &&
+                                  (
+                                    <span className="admin-protected-label">
+                                      Account deactivated
+                                    </span>
+                                  )
+                                }
+
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      )
+                    }
+
+                  </tbody>
+
+                </table>
+
+              </div>
+
+            </section>
+          )
+        }
+
+
+        {
+          section
+          ===
+          'analytics'
+          &&
+          (
+            <AnalyticsDashboard
+              mode="admin"
+            />
+          )
+        }
+
+
+        {
+          section
+          ===
+          'moderation'
+          &&
+          (
+            <section className="admin-card">
+
+              <div className="admin-card-heading">
+                <div>
+                  <h3>
+                    Content Moderation
+                  </h3>
+
+                  <p>
+                    Remove inappropriate content or restore content after review.
+                  </p>
+                </div>
+              </div>
+
+
+              <div className="admin-table-wrapper">
+
+                <table className="admin-table">
+
+                  <thead>
+                    <tr>
+                      <th>
+                        Type
+                      </th>
+                      <th>
+                        Content
+                      </th>
+                      <th>
+                        Owner
+                      </th>
+                      <th>
+                        Status
+                      </th>
+                      <th>
+                        Action
+                      </th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+
+                    {
+                      moderationItems.map(
+                        item => (
+                          <tr
+                            key={
+                              `${item.type}-${item.id}`
+                            }
+                          >
+                            <td>
+                              <span className="admin-type-badge">
+                                {
+                                  item.type
+                                }
+                              </span>
+                            </td>
+
+                            <td>
+                              <strong>
+                                {
+                                  item.title
+                                }
+                              </strong>
+
+                              <small>
+                                #
+                                {
+                                  item.id
+                                }
+                              </small>
+                            </td>
+
+                            <td>
+                              {
+                                item.owner
+                              }
+                            </td>
+
+                            <td>
+                              <span
+                                className={
+                                  `admin-status ${
+                                    item.status
+                                      .toLowerCase()
+                                  }`
+                                }
+                              >
+                                {
+                                  item.status
+                                }
+                              </span>
+                            </td>
+
+                            <td>
+                              <button
+                                type="button"
+                                className={
+                                  item.status
+                                  ===
+                                  'VISIBLE'
+                                    ? 'admin-danger-button'
+                                    : 'admin-secondary-button'
+                                }
+                                onClick={
+                                  () =>
+                                    toggleContentStatus(
+                                      item.id,
+                                    )
+                                }
+                              >
+                                {
+                                  item.status
+                                  ===
+                                  'VISIBLE'
+                                    ? 'Remove'
+                                    : 'Restore'
+                                }
+                              </button>
+                            </td>
+                          </tr>
+                        )
+                      )
+                    }
+
+                  </tbody>
+
+                </table>
+
+              </div>
+
+            </section>
+          )
+        }
+
+
+        {
+          section
+          ===
+          'activity'
+          &&
+          (
+            <section className="admin-card">
+
+              <div className="admin-card-heading">
+                <div>
+                  <h3>
+                    My Administrative Activity
+                  </h3>
+
+                  <p>
+                    Actions performed by this administrator.
+                  </p>
+                </div>
+              </div>
+
+
+              <div className="admin-table-wrapper">
+
+                <table className="admin-table">
+
+                  <thead>
+                    <tr>
+                      <th>
+                        Action
+                      </th>
+                      <th>
+                        Target
+                      </th>
+                      <th>
+                        Time
+                      </th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+
+                    {
+                      activity.map(
+                        log => (
+                          <tr
+                            key={
+                              log.id
+                            }
+                          >
+                            <td>
+                              <span className="admin-activity-action">
+                                {
+                                  log.action
+                                }
+                              </span>
+                            </td>
+
+                            <td>
+                              {
+                                log.target
+                              }
+                            </td>
+
+                            <td>
+                              {
+                                log.time
+                              }
+                            </td>
+                          </tr>
+                        )
+                      )
+                    }
+
+                  </tbody>
+
+                </table>
+
+              </div>
+
+            </section>
+          )
+        }
+
       </main>
+
+
+      {
+        selectedReport
+        &&
+        (
+          <div className="admin-modal-overlay">
+
+            <div className="admin-modal">
+
+              <div className="admin-modal-heading">
+
+                <div>
+                  <h2>
+                    Review Report #
+                    {
+                      selectedReport.id
+                    }
+                  </h2>
+
+                  <p>
+                    Review the report before changing its moderation status.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  className="admin-modal-close"
+                  onClick={
+                    () =>
+                      setSelectedReport(
+                        null
+                      )
+                  }
+                >
+                  ×
+                </button>
+
+              </div>
+
+
+              <div className="admin-report-details">
+
+                <div>
+                  <span>
+                    Target
+                  </span>
+
+                  <strong>
+                    {
+                      selectedReport.target
+                    }
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    Reason
+                  </span>
+
+                  <strong>
+                    {
+                      selectedReport.reason
+                    }
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    Priority
+                  </span>
+
+                  <strong>
+                    {
+                      selectedReport.priority
+                    }
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    Status
+                  </span>
+
+                  <strong>
+                    {
+                      selectedReport.status
+                        .replace(
+                          '_',
+                          ' ',
+                        )
+                    }
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    Age
+                  </span>
+
+                  <strong>
+                    {
+                      selectedReport.ageHours
+                    }
+                    h
+                  </strong>
+                </div>
+
+              </div>
+
+
+              <div className="admin-modal-actions">
+
+                {
+                  selectedReport.status
+                  ===
+                  'OPEN'
+                  &&
+                  (
+                    <button
+                      type="button"
+                      className="admin-secondary-button"
+                      onClick={
+                        () =>
+                          updateReportStatus(
+                            selectedReport.id,
+                            'UNDER_REVIEW',
+                          )
+                      }
+                    >
+                      Start Review
+                    </button>
+                  )
+                }
+
+                {
+                  selectedReport.status
+                  !==
+                  'RESOLVED'
+                  &&
+                  (
+                    <button
+                      type="button"
+                      className="admin-primary-button"
+                      onClick={
+                        () => {
+                          updateReportStatus(
+                            selectedReport.id,
+                            'RESOLVED',
+                          )
+
+                          setSelectedReport(
+                            null
+                          )
+                        }
+                      }
+                    >
+                      Resolve
+                    </button>
+                  )
+                }
+
+                {
+                  selectedReport.status
+                  !==
+                  'DISMISSED'
+                  &&
+                  (
+                    <button
+                      type="button"
+                      className="admin-danger-button"
+                      onClick={
+                        () => {
+                          updateReportStatus(
+                            selectedReport.id,
+                            'DISMISSED',
+                          )
+
+                          setSelectedReport(
+                            null
+                          )
+                        }
+                      }
+                    >
+                      Dismiss
+                    </button>
+                  )
+                }
+
+                <button
+                  type="button"
+                  className="admin-secondary-button"
+                  onClick={
+                    () =>
+                      setSelectedReport(
+                        null
+                      )
+                  }
+                >
+                  Close
+                </button>
+
+              </div>
+
+            </div>
+
+          </div>
+        )
+      }
+
     </div>
   )
 }
+
 
 export default AdminDashboard
