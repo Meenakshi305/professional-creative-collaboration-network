@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+
 import './Events.css'
 
 import NavigationBar from '../../shared/NavigationBar/NavigationBar'
@@ -22,7 +23,6 @@ type EventsProps = {
   currentUserName?: string
   currentUsername?: string
   onLogoutClick?: () => void
-  initialFilter?: 'all' | 'my'
 }
 
 
@@ -219,8 +219,7 @@ const eventData: EventItem[] = [
 
 
 function Events({
-    initialFilter = 'all',
-    onHomeClick,
+  onHomeClick,
   onProfileClick,
   onCollaborationClick,
   onEventsClick,
@@ -232,12 +231,8 @@ function Events({
 
 
     const [eventSearch, setEventSearch] = useState('')
-    
-    const [eventFilter, setEventFilter] = useState<'all' | 'free' | 'paid' | 'my'>(initialFilter)
-    
-useEffect(() => {
-    setEventFilter(initialFilter)
-}, [initialFilter])
+
+    const [eventFilter, setEventFilter] = useState<'all' | 'free' | 'paid'>('all')
 
     const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null)
 
@@ -283,14 +278,8 @@ useEffect(() => {
     const filteredEvents = eventData.filter((event) => {
         const matchesSearch = [event.title, event.category, event.location]
             .some((value) => value.toLowerCase().includes(eventSearch.toLowerCase()))
-        const matchesPrice =
-            eventFilter === 'all' ||
-            eventFilter === 'my' ||
-            (eventFilter === 'free' && event.price === 0) ||
-            (eventFilter === 'paid' && event.price > 0)
-
-        const matchesMyEvents =
-            eventFilter !== 'my' || registeredEvents.includes(event.id)
+        const matchesPrice = eventFilter === 'all' ||
+            (eventFilter === 'free' ? event.price === 0 : event.price > 0)
         const matchesCategory = categoryFilter === 'all' || event.category === categoryFilter
 
         const eventDate = new Date(`${event.dateISO}T00:00:00`)
@@ -300,8 +289,7 @@ useEffect(() => {
             (dateFilter === 'next30' && daysAway >= 0 && daysAway <= 30) ||
             (dateFilter === 'custom' && customDate !== '' && event.dateISO === customDate)
 
-        return matchesSearch && matchesPrice && matchesMyEvents && matchesCategory && matchesDate
-
+        return matchesSearch && matchesPrice && matchesCategory && matchesDate
     }).sort((a, b) => {
         if (sortBy === 'priceLow') return a.price - b.price || a.dateISO.localeCompare(b.dateISO)
         if (sortBy === 'priceHigh') return b.price - a.price || a.dateISO.localeCompare(b.dateISO)
@@ -318,33 +306,21 @@ useEffect(() => {
         setSortBy('soonest')
     }
 
-    
-const handleFreeRegistration = (eventId: number) => {
-    setRegisteredEvents((currentEvents) => {
-        if (currentEvents.includes(eventId)) {
-            return currentEvents
+    const handleFreeRegistration = (eventId: number) => {
+
+        if (!registeredEvents.includes(eventId)) {
+
+            setRegisteredEvents((currentEvents) => [
+
+            ...currentEvents,
+
+            eventId
+
+            ])
+
         }
 
-        return [...currentEvents, eventId]
-    })
-
-    // Close the Event Details popup after successful registration
-    setSelectedEvent(null)
-}
-
-    
-const handleCancelRegistration = (eventId: number) => {
-    const confirmed = window.confirm(
-        'Are you sure you want to cancel your registration for this event?'
-    )
-
-    if (!confirmed) return
-
-    setRegisteredEvents((currentEvents) =>
-        currentEvents.filter((id) => id !== eventId)
-    )
-}
-
+    }
 
   return (
 
@@ -447,16 +423,6 @@ const handleCancelRegistration = (eventId: number) => {
                 💳 Paid Events
 
                 </button>
-
-                
-                <button
-                    type="button"
-                    className={eventFilter === 'my' ? 'active' : ''}
-                    onClick={() => setEventFilter('my')}
-                >
-                    📅 My Events
-                </button>
-
 
             </div>
 
@@ -633,34 +599,19 @@ const handleCancelRegistration = (eventId: number) => {
 
                             </div>
 
-                            
-                        {registeredEvents.includes(event.id) ? (
-                            <div className="event-card-registration-actions">
-
-                                <div className="event-card-registered-status">
-                                    <span>✓</span>
-                                    Registered
-                                </div>
-
-                                <button
-                                    type="button"
-                                    className="event-card-cancel-button"
-                                    onClick={() => handleCancelRegistration(event.id)}
-                                >
-                                    ✕ Cancel Registration
-                                </button>
-
-                            </div>
-                        ) : (
                             <button
-                                type="button"
-                                className="event-details-button"
-                                onClick={() => setSelectedEvent(event)}
-                            >
-                                View Details
-                            </button>
-                        )}
 
+                                type="button"
+
+                                className="event-details-button"
+
+                                onClick={() => setSelectedEvent(event)}
+
+                                >
+
+                                View Details
+
+                            </button>
 
                         </div>
 
@@ -1244,48 +1195,51 @@ const handleCancelRegistration = (eventId: number) => {
 
                             </div>
 
+                            <button
 
-                                
-                            {registeredEvents.includes(selectedEvent.id) ? (
-                                <div className="event-registration-actions">
-                                    <button
-                                        type="button"
-                                        className="event-register-button registered"
-                                        disabled
-                                    >
-                                        ✓ Registered
-                                    </button>
+                                type="button"
 
-                                    <button
-                                        type="button"
-                                        className="event-cancel-registration-button"
-                                        onClick={() =>
-                                            handleCancelRegistration(selectedEvent.id)
-                                        }
-                                    >
-                                        ✕ Cancel Registration
-                                    </button>
-                                </div>
-                            ) : (
-                                <button
-                                    type="button"
-                                    className="event-register-button"
-                                    onClick={() => {
-                                        if (selectedEvent.price === 0) {
-                                            handleFreeRegistration(selectedEvent.id)
-                                        } else {
-                                            setCheckoutEvent(selectedEvent)
-                                            setSelectedEvent(null)
-                                        }
-                                    }}
+                                className={`event-register-button ${
+
+                                    registeredEvents.includes(selectedEvent.id)
+
+                                    ? 'registered'
+
+                                    : ''
+
+                                }`}
+
+                                onClick={() => {
+
+                                    if (selectedEvent.price === 0) {
+
+                                        handleFreeRegistration(selectedEvent.id)
+
+                                    } else {
+
+                                        setCheckoutEvent(selectedEvent)
+
+                                        setSelectedEvent(null)
+
+                                    }
+
+                                }}
+
+                                disabled={registeredEvents.includes(selectedEvent.id)}
+
                                 >
-                                    {selectedEvent.price === 0
-                                        ? 'Register for Free'
-                                        : `Register & Pay $${selectedEvent.price}`}
+
+                                {registeredEvents.includes(selectedEvent.id)
+
+                                    ? '✓ Registered'
+
+                                    : selectedEvent.price === 0
+
+                                    ? 'Register for Free'
+
+                                    : `Register & Pay $${selectedEvent.price}`}
+
                                 </button>
-                            )}
-
-
 
                         </div>
 

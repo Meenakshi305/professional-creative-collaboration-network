@@ -607,24 +607,14 @@ function CreativeCollabNetwork() {
         null
       )
     }
-  
-const goEvents = () => {
-    setEventsInitialFilter('all')
-    setCurrentPage('events')
-    setSelectedUserId(null)
-}
-
-  
-  const [eventsInitialFilter, setEventsInitialFilter] = useState<
-      'all' | 'my'
-  >('all')
-
-  const goMyEvents = () => {
-      setEventsInitialFilter('my')
-      setCurrentPage('events')
-      setSelectedUserId(null)
+  const goEvents = () => {
+    setCurrentPage(
+      'events'
+    )
+    setSelectedUserId(
+      null
+    )
   }
-
   const goSettings = () => {
   setCurrentPage('settings')
   setSelectedUserId(null)
@@ -810,7 +800,6 @@ if (
           onEventsClick={
             goEvents
           }
-          initialFilter={eventsInitialFilter}
           onSettingsClick={goSettings}          
           currentUserName={
             currentUser.fullName
@@ -979,7 +968,7 @@ if (
             goCollaboration
           }
           onEventsClick={
-            goMyEvents
+            goEvents
           }
           onSettingsClick={
             goSettings
