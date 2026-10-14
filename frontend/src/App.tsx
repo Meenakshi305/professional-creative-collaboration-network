@@ -1,138 +1,70 @@
-import {
 
-  useEffect,
 
-  useState
-
-} from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 
 
 
 import './App.css'
 
-
-
 import './webpages/WebDashboard.css'
 
 
 
-import logoWebsite
-
-  from './assets/logoWebsite.png'
+import logoWebsite from './assets/logoWebsite.png'
 
 
 
-import Dashboard
+import Dashboard from './webpages/WebDashboard'
+import AdminDashboard from './pages/Admin/AdminDashboard'
+import SuperAdminDashboard from './pages/SuperAdmin/SuperAdminDashboard'
 
-  from './webpages/WebDashboard'
+import Profile from './pages/Profile/Profile'
 
+import PublicProfile from './pages/Profile/PublicProfile'
 
+import Events from './pages/Events/Events'
 
-import Profile
-
-  from './pages/Profile/Profile'
-
-
-
-import PublicProfile
-
-  from './pages/Profile/PublicProfile'
-
-
-
-import Events
-
-  from './pages/Events/Events'
-
-
-
-import AdminDashboard
-
-  from './pages/Admin/AdminDashboard'
-
-
-
-import SuperAdminDashboard
-
-  from './pages/SuperAdmin/SuperAdminDashboard'
+import Collaboration from './pages/Collaboration/Collaboration'
 
 
 
 import {
 
-
-
   signupUser,
-
-
 
   loginUser,
 
-
-
   logoutUser,
-
-
 
   saveLoginSession,
 
-
-
   hasLoginSession,
-
-
 
   getCurrentUser,
 
-
-
   clearLoginSession,
 
-
-
   type CurrentUserResponse
-
-
 
 } from './service/authService'
 
 
 
-
-
 type Page =
-
-
 
   | 'dashboard'
 
-
-
   | 'profile'
-
-
 
   | 'publicProfile'
 
-
+  | 'collaboration'
 
   | 'events'
 
 
 
-  | 'admin'
-
-
-
-  | 'superAdmin'
-
-
-
-
-
 function CreativeCollabNetwork() {
-
-
 
 
 
@@ -144,217 +76,81 @@ function CreativeCollabNetwork() {
 
 
 
-  const [
+  const [currentPage, setCurrentPage] =
 
-    currentPage,
-
-    setCurrentPage
-
-  ] = useState<Page>(
-
-    'dashboard'
-
-  )
+    useState<Page>('dashboard')
 
 
 
+  const [selectedUserId, setSelectedUserId] =
 
-
-  const [
-
-    selectedUserId,
-
-    setSelectedUserId
-
-  ] = useState<number | null>(
-
-    null
-
-  )
-
-
+    useState<number | null>(null)
 
 
 
   // ============================================
 
-  // AUTH MODE
+  // AUTHENTICATION
 
   // ============================================
 
 
 
-  const [
+  const [authnMode, setAuthnMode] =
 
-    authnMode,
-
-    setAuthnMode
-
-  ] = useState<
-
-    'login' |
-
-    'signup'
-
-  >('signup')
-
-
+    useState<'login' | 'signup'>('signup')
 
 
 
   // ============================================
 
-  // SIGNUP
+  // SIGNUP FIELDS
 
   // ============================================
 
 
 
-  const [
+  const [fullName, setFullName] = useState('')
 
-    fullName,
+  const [username, setUsername] = useState('')
 
-    setFullName
+  const [email, setEmail] = useState('')
 
-  ] = useState('')
+  const [dofBirth, setDofBirth] = useState('')
 
+  const [password, setPassword] = useState('')
 
+  const [confirmPassword, setConfirmPassword] = useState('')
 
-
-
-  const [
-
-    username,
-
-    setUsername
-
-  ] = useState('')
-
-
-
-
-
-  const [
-
-    email,
-
-    setEmail
-
-  ] = useState('')
-
-
-
-
-
-  const [
-
-    dofBirth,
-
-    setDofBirth
-
-  ] = useState('')
-
-
-
-
-
-  const [
-
-    password,
-
-    setPassword
-
-  ] = useState('')
-
-
-
-
-
-  const [
-
-    confirmPassword,
-
-    setConfirmPassword
-
-  ] = useState('')
-
-
-
-
-
-  const [
-
-    emailOfGuardian,
-
-    setEmailOfGuardian
-
-  ] = useState('')
-
-
+  const [emailOfGuardian, setEmailOfGuardian] = useState('')
 
 
 
   // ============================================
 
-  // LOGIN
+  // LOGIN FIELDS
 
   // ============================================
 
 
 
-  const [
+  const [loginEmail, setLoginEmail] = useState('')
 
-    loginEmail,
-
-    setLoginEmail
-
-  ] = useState('')
-
-
-
-
-
-  const [
-
-    loginPassword,
-
-    setLoginPassword
-
-  ] = useState('')
-
-
+  const [loginPassword, setLoginPassword] = useState('')
 
 
 
   // ============================================
 
-  // UI
+  // UI STATES
 
   // ============================================
 
 
 
-  const [
+  const [uiMessages, setUiMessages] = useState('')
 
-    uiMessages,
-
-    setUiMessages
-
-  ] = useState('')
-
-
-
-
-
-  const [
-
-    isLoading,
-
-    setIsLoading
-
-  ] = useState(false)
-
-
+  const [isLoading, setIsLoading] = useState(false)
 
 
 
@@ -366,129 +162,81 @@ function CreativeCollabNetwork() {
 
 
 
-  const [
+  const [isLogIn, setIsLogIn] = useState(
 
-    isLogIn,
-
-    setIsLogIn
-
-  ] = useState(
-
-    () =>
-
-      hasLoginSession()
+    () => hasLoginSession()
 
   )
 
 
 
+  const [currentUser, setCurrentUser] =
 
-
-  const [
-
-    currentUser,
-
-    setCurrentUser
-
-  ] = useState<CurrentUserResponse | null>(
-
-    null
-
-  )
-
-
+    useState<CurrentUserResponse | null>(null)
 
 
 
   // ============================================
 
-  // AGE
+  // AGE CALCULATION
 
   // ============================================
 
 
 
-  const ageCalculator = (
-
-    dob: string
-
-  ) => {
+  const ageCalculator = (dob: string): number => {
 
 
 
-    const birthDate =
+    const birthDate = new Date(`${dob}T00:00:00`)
 
-      new Date(
-
-        dob
-
-      )
-
-
-
-
-
-    const today =
-
-      new Date()
-
-
-
-
-
-    let age =
-
-      today.getFullYear()
-
-      -
-
-      birthDate.getFullYear()
-
-
-
-
-
-    const monthDifference =
-
-      today.getMonth()
-
-      -
-
-      birthDate.getMonth()
-
-
+    const today = new Date()
 
 
 
     if (
 
-      monthDifference < 0
+      Number.isNaN(birthDate.getTime()) ||
 
-      ||
+      birthDate > today
+
+    ) {
+
+      return -1
+
+    }
+
+
+
+    let age =
+
+      today.getFullYear() - birthDate.getFullYear()
+
+
+
+    const monthDifference =
+
+      today.getMonth() - birthDate.getMonth()
+
+
+
+    if (
+
+      monthDifference < 0 ||
 
       (
 
-        monthDifference === 0
+        monthDifference === 0 &&
 
-        &&
-
-        today.getDate()
-
-        <
-
-        birthDate.getDate()
+        today.getDate() < birthDate.getDate()
 
       )
 
     ) {
 
-
-
       age--
 
     }
-
-
 
 
 
@@ -498,27 +246,13 @@ function CreativeCollabNetwork() {
 
 
 
-
-
   const isUnder18 =
 
+    dofBirth !== '' &&
 
+    ageCalculator(dofBirth) >= 0 &&
 
-    dofBirth !== ''
-
-
-
-    &&
-
-
-
-    ageCalculator(
-
-      dofBirth
-
-    ) < 18
-
-
+    ageCalculator(dofBirth) < 18
 
 
 
@@ -530,109 +264,55 @@ function CreativeCollabNetwork() {
 
 
 
-  const loadCurrentUser =
+  const loadCurrentUser = async () => {
 
-    async () => {
 
 
+    try {
 
-      try {
 
 
+      const user = await getCurrentUser()
 
-        const user =
 
-          await getCurrentUser()
 
+      setCurrentUser(user)
 
+      return user
 
 
 
-        setCurrentUser(
+    } catch (error) {
 
-          user
 
-        )
 
+      console.error('Current user error:', error)
 
 
 
+      clearLoginSession()
 
-        return user
+      setCurrentUser(null)
 
+      setIsLogIn(false)
 
+      setAuthnMode('login')
 
 
 
-      } catch (error) {
+      setUiMessages(
 
+        'Your session has expired. Please login again.'
 
+      )
 
-        console.error(
 
-          'Current user error:',
 
-          error
-
-        )
-
-
-
-
-
-        clearLoginSession()
-
-
-
-
-
-        setCurrentUser(
-
-          null
-
-        )
-
-
-
-
-
-        setIsLogIn(
-
-          false
-
-        )
-
-
-
-
-
-        setAuthnMode(
-
-          'login'
-
-        )
-
-
-
-
-
-        setUiMessages(
-
-          'Your session has expired. Please login again.'
-
-        )
-
-
-
-
-
-        return null
-
-      }
+      return null
 
     }
 
-
+  }
 
 
 
@@ -648,19 +328,9 @@ function CreativeCollabNetwork() {
 
 
 
-    if (
+    if (hasLoginSession()) {
 
-      hasLoginSession()
-
-      &&
-
-      !currentUser
-
-    ) {
-
-
-
-      loadCurrentUser()
+      void loadCurrentUser()
 
     }
 
@@ -670,11 +340,9 @@ function CreativeCollabNetwork() {
 
 
 
-
-
   // ============================================
 
-  // CLEAR SIGNUP
+  // CLEAR SIGNUP FORM
 
   // ============================================
 
@@ -684,63 +352,21 @@ function CreativeCollabNetwork() {
 
 
 
-    setFullName(
+    setFullName('')
 
-      ''
+    setUsername('')
 
-    )
+    setEmail('')
 
+    setDofBirth('')
 
+    setPassword('')
 
-    setUsername(
+    setConfirmPassword('')
 
-      ''
-
-    )
-
-
-
-    setEmail(
-
-      ''
-
-    )
-
-
-
-    setDofBirth(
-
-      ''
-
-    )
-
-
-
-    setPassword(
-
-      ''
-
-    )
-
-
-
-    setConfirmPassword(
-
-      ''
-
-    )
-
-
-
-    setEmailOfGuardian(
-
-      ''
-
-    )
+    setEmailOfGuardian('')
 
   }
-
-
 
 
 
@@ -754,9 +380,7 @@ function CreativeCollabNetwork() {
 
   const handleSignup = async (
 
-    event:
-
-      React.FormEvent<HTMLFormElement>
+    event: FormEvent<HTMLFormElement>
 
   ) => {
 
@@ -764,41 +388,21 @@ function CreativeCollabNetwork() {
 
     event.preventDefault()
 
-
-
-
-
-    setUiMessages(
-
-      ''
-
-    )
-
-
+    setUiMessages('')
 
 
 
     if (
 
-      !fullName.trim()
+      !fullName.trim() ||
 
-      ||
+      !username.trim() ||
 
-      !username.trim()
+      !email.trim() ||
 
-      ||
+      !dofBirth ||
 
-      !email.trim()
-
-      ||
-
-      !dofBirth
-
-      ||
-
-      !password
-
-      ||
+      !password ||
 
       !confirmPassword
 
@@ -806,13 +410,7 @@ function CreativeCollabNetwork() {
 
 
 
-      setUiMessages(
-
-        'Please fill all required fields.'
-
-      )
-
-
+      setUiMessages('Please fill all required fields.')
 
       return
 
@@ -820,17 +418,19 @@ function CreativeCollabNetwork() {
 
 
 
+    if (ageCalculator(dofBirth) < 0) {
 
 
-    if (
 
-      isUnder18
+      setUiMessages('Please enter a valid date of birth.')
 
-      &&
+      return
 
-      !emailOfGuardian.trim()
+    }
 
-    ) {
+
+
+    if (isUnder18 && !emailOfGuardian.trim()) {
 
 
 
@@ -840,7 +440,17 @@ function CreativeCollabNetwork() {
 
       )
 
+      return
 
+    }
+
+
+
+    if (!email.includes('@')) {
+
+
+
+      setUiMessages('Please enter a valid email address.')
 
       return
 
@@ -848,11 +458,19 @@ function CreativeCollabNetwork() {
 
 
 
-
-
     if (
 
-      !email.includes('@')
+      isUnder18 &&
+
+      (
+
+        !emailOfGuardian.includes('@') ||
+
+        emailOfGuardian.trim().toLowerCase() ===
+
+          email.trim().toLowerCase()
+
+      )
 
     ) {
 
@@ -860,11 +478,9 @@ function CreativeCollabNetwork() {
 
       setUiMessages(
 
-        'Please enter a valid email address.'
+        'Please enter a valid, separate guardian email.'
 
       )
-
-
 
       return
 
@@ -872,13 +488,7 @@ function CreativeCollabNetwork() {
 
 
 
-
-
-    if (
-
-      username.trim().length < 3
-
-    ) {
+    if (username.trim().length < 3) {
 
 
 
@@ -888,21 +498,13 @@ function CreativeCollabNetwork() {
 
       )
 
-
-
       return
 
     }
 
 
 
-
-
-    if (
-
-      password.length < 8
-
-    ) {
+    if (password.length < 8) {
 
 
 
@@ -912,37 +514,21 @@ function CreativeCollabNetwork() {
 
       )
 
-
-
       return
 
     }
 
 
 
-
-
-    if (
-
-      password !== confirmPassword
-
-    ) {
+    if (password !== confirmPassword) {
 
 
 
-      setUiMessages(
-
-        'Passwords do not match.'
-
-      )
-
-
+      setUiMessages('Passwords do not match.')
 
       return
 
     }
-
-
 
 
 
@@ -950,63 +536,31 @@ function CreativeCollabNetwork() {
 
 
 
-      setIsLoading(
-
-        true
-
-      )
+      setIsLoading(true)
 
 
 
-
-
-      const response =
-
-        await signupUser({
+      const response = await signupUser({
 
 
 
-          fullName:
+        fullName: fullName.trim(),
 
-            fullName.trim(),
+        username: username.trim(),
 
+        email: email.trim(),
 
+        password,
 
-          username:
-
-            username.trim(),
-
-
-
-          email:
-
-            email.trim(),
+        dateOfBirth: dofBirth
 
 
 
-          password,
+      })
 
 
 
-          dateOfBirth:
-
-            dofBirth
-
-
-
-        })
-
-
-
-
-
-      setLoginEmail(
-
-        email.trim()
-
-      )
-
-
+      setLoginEmail(email.trim())
 
 
 
@@ -1014,33 +568,17 @@ function CreativeCollabNetwork() {
 
 
 
-
-
-      setAuthnMode(
-
-        'login'
-
-      )
-
-
+      setAuthnMode('login')
 
 
 
       setUiMessages(
 
-
-
-        response.message
-
-        ||
+        response.message ||
 
         'Account created successfully. Please login.'
 
-
-
       )
-
-
 
 
 
@@ -1048,15 +586,7 @@ function CreativeCollabNetwork() {
 
 
 
-      console.error(
-
-        'Signup error:',
-
-        error
-
-      )
-
-
+      console.error('Signup error:', error)
 
 
 
@@ -1072,23 +602,15 @@ function CreativeCollabNetwork() {
 
 
 
-
-
     } finally {
 
 
 
-      setIsLoading(
-
-        false
-
-      )
+      setIsLoading(false)
 
     }
 
   }
-
-
 
 
 
@@ -1102,9 +624,7 @@ function CreativeCollabNetwork() {
 
   const handleLoginPage = async (
 
-    event:
-
-      React.FormEvent<HTMLFormElement>
+    event: FormEvent<HTMLFormElement>
 
   ) => {
 
@@ -1112,39 +632,15 @@ function CreativeCollabNetwork() {
 
     event.preventDefault()
 
+    setUiMessages('')
 
 
 
-
-    setUiMessages(
-
-      ''
-
-    )
+    if (!loginEmail.trim() || !loginPassword) {
 
 
 
-
-
-    if (
-
-      !loginEmail.trim()
-
-      ||
-
-      !loginPassword
-
-    ) {
-
-
-
-      setUiMessages(
-
-        'Please enter email and password.'
-
-      )
-
-
+      setUiMessages('Please enter email and password.')
 
       return
 
@@ -1152,43 +648,25 @@ function CreativeCollabNetwork() {
 
 
 
-
-
     try {
 
 
 
-      setIsLoading(
-
-        true
-
-      )
+      setIsLoading(true)
 
 
 
-
-
-      const response =
-
-        await loginUser({
+      const response = await loginUser({
 
 
 
-          email:
+        email: loginEmail.trim(),
 
-            loginEmail.trim(),
-
-
-
-          password:
-
-            loginPassword
+        password: loginPassword
 
 
 
-        })
-
-
+      })
 
 
 
@@ -1206,111 +684,27 @@ function CreativeCollabNetwork() {
 
 
 
+      saveLoginSession(response)
 
 
-      saveLoginSession(
 
-        response
+      // Verify session before displaying protected pages.
 
-      )
+      const user = await getCurrentUser()
 
 
 
+      setCurrentUser(user)
 
+      setIsLogIn(true)
 
-      setIsLogIn(
+      setLoginPassword('')
 
-        true
+      setCurrentPage('dashboard')
 
-      )
+      setSelectedUserId(null)
 
-
-
-
-
-      setLoginPassword(
-
-        ''
-
-      )
-
-
-
-
-
-      const user =
-
-        await loadCurrentUser()
-
-
-
-
-
-      if (
-
-        user?.role === 'SUPER_ADMIN'
-
-      ) {
-
-
-
-        setCurrentPage(
-
-          'superAdmin'
-
-        )
-
-
-
-      } else if (
-
-        user?.role === 'ADMIN'
-
-      ) {
-
-
-
-        setCurrentPage(
-
-          'admin'
-
-        )
-
-
-
-      } else {
-
-
-
-        setCurrentPage(
-
-          'dashboard'
-
-        )
-
-      }
-
-
-
-
-
-      setSelectedUserId(
-
-        null
-
-      )
-
-
-
-
-
-      setUiMessages(
-
-        ''
-
-      )
-
-
+      setUiMessages('')
 
 
 
@@ -1318,41 +712,15 @@ function CreativeCollabNetwork() {
 
 
 
-      console.error(
-
-        'Login error:',
-
-        error
-
-      )
-
-
+      console.error('Login error:', error)
 
 
 
       clearLoginSession()
 
+      setIsLogIn(false)
 
-
-
-
-      setIsLogIn(
-
-        false
-
-      )
-
-
-
-
-
-      setCurrentUser(
-
-        null
-
-      )
-
-
+      setCurrentUser(null)
 
 
 
@@ -1368,23 +736,15 @@ function CreativeCollabNetwork() {
 
 
 
-
-
     } finally {
 
 
 
-      setIsLoading(
-
-        false
-
-      )
+      setIsLoading(false)
 
     }
 
   }
-
-
 
 
 
@@ -1396,35 +756,27 @@ function CreativeCollabNetwork() {
 
 
 
-  const handleLogout =
-
-    async () => {
+  const handleLogout = async () => {
 
 
 
-      try {
+    try {
 
 
 
-        await logoutUser()
+      await logoutUser()
 
 
 
-      } catch (error) {
+    } catch (error) {
 
 
 
-        console.error(
-
-          'Logout error:',
-
-          error
-
-        )
-
-      }
+      console.error('Logout error:', error)
 
 
+
+    } finally {
 
 
 
@@ -1432,75 +784,25 @@ function CreativeCollabNetwork() {
 
 
 
+      setCurrentUser(null)
 
-
-      setCurrentUser(
-
-        null
-
-      )
+      setIsLogIn(false)
 
 
 
+      setCurrentPage('dashboard')
 
-
-      setIsLogIn(
-
-        false
-
-      )
+      setSelectedUserId(null)
 
 
 
-
-
-      setCurrentPage(
-
-        'dashboard'
-
-      )
+      setAuthnMode('login')
 
 
 
+      setLoginEmail('')
 
-
-      setSelectedUserId(
-
-        null
-
-      )
-
-
-
-
-
-      setAuthnMode(
-
-        'login'
-
-      )
-
-
-
-
-
-      setLoginEmail(
-
-        ''
-
-      )
-
-
-
-
-
-      setLoginPassword(
-
-        ''
-
-      )
-
-
+      setLoginPassword('')
 
 
 
@@ -1512,51 +814,81 @@ function CreativeCollabNetwork() {
 
     }
 
-
+  }
 
 
 
   // ============================================
 
-  // OPEN SEARCHED USER
+  // NAVIGATION
 
   // ============================================
 
 
 
-  const openPublicProfile = (
+  const goHome = () => {
 
-    userId: number
+    setCurrentPage('dashboard')
 
-  ) => {
+    setSelectedUserId(null)
+
+  }
+
+
+
+  const goProfile = () => {
+
+    setCurrentPage('profile')
+
+    setSelectedUserId(null)
+
+  }
+
+
+
+  const goCollaboration = () => {
+
+    setCurrentPage('collaboration')
+
+    setSelectedUserId(null)
+
+  }
+
+
+
+  const goEvents = () => {
+
+    setCurrentPage('events')
+
+    setSelectedUserId(null)
+
+  }
+
+
+
+  // ============================================
+
+  // PUBLIC PROFILE
+
+  // ============================================
+
+
+
+  const openPublicProfile = (userId: number) => {
 
 
 
     if (
 
-      currentUser
+      currentUser &&
 
-      &&
-
-      currentUser.userId
-
-      ===
-
-      userId
+      currentUser.userId === userId
 
     ) {
 
 
 
-      setCurrentPage(
-
-        'profile'
-
-      )
-
-
-
-
+      goProfile()
 
       return
 
@@ -1564,33 +896,17 @@ function CreativeCollabNetwork() {
 
 
 
+    setSelectedUserId(userId)
 
-
-    setSelectedUserId(
-
-      userId
-
-    )
-
-
-
-
-
-    setCurrentPage(
-
-      'publicProfile'
-
-    )
+    setCurrentPage('publicProfile')
 
   }
 
 
 
-
-
   // ============================================
 
-  // SHARED LOGOUT
+  // SHARED LOGOUT BUTTON
 
   // ============================================
 
@@ -1606,31 +922,15 @@ function CreativeCollabNetwork() {
 
       <button
 
-
-
         type="button"
-
-
 
         className="logout-button"
 
-
-
-        onClick={
-
-          handleLogout
-
-        }
-
-
+        onClick={handleLogout}
 
       >
 
-
-
         Logout
-
-
 
       </button>
 
@@ -1642,59 +942,9 @@ function CreativeCollabNetwork() {
 
 
 
-
-
   // ============================================
 
-  // SUPER ADMIN DASHBOARD
-
-  // ============================================
-
-
-
-  if (
-
-    isLogIn
-
-    &&
-
-    currentPage === 'superAdmin'
-
-  ) {
-
-
-
-    return (
-
-
-
-      <>
-
-
-
-        {logoutButton}
-
-
-
-        <SuperAdminDashboard />
-
-
-
-      </>
-
-
-
-    )
-
-  }
-
-
-
-
-
-  // ============================================
-
-  // ADMIN DASHBOARD
+  // PUBLIC PROFILE PAGE
 
   // ============================================
 
@@ -1702,108 +952,11 @@ function CreativeCollabNetwork() {
 
   if (
 
-    isLogIn
+    isLogIn &&
 
-    &&
+    currentUser &&
 
-    currentPage === 'admin'
-
-  ) {
-
-
-
-    return (
-
-
-
-      <>
-
-
-
-        {logoutButton}
-
-
-
-        <AdminDashboard />
-
-
-
-      </>
-
-
-
-    )
-
-  }
-
-
-
-
-
-  // ============================================
-
-  // TEMPORARY ADMIN / SUPER ADMIN PREVIEW
-  // Admin: http://localhost:5176/?adminPreview=true
-  // Super Admin: http://localhost:5176/?superAdminPreview=true
-  // Remove this block after real role-based login testing is complete.
-  // ============================================
-
-  const previewParams =
-    new URLSearchParams(
-      window.location.search
-    )
-
-
-  const superAdminPreview =
-    previewParams.get('superAdminPreview') === 'true'
-    ||
-    previewParams.get('superadminPreview') === 'true'
-
-
-  const adminPreview =
-    previewParams.get('adminPreview') === 'true'
-
-
-  if (superAdminPreview) {
-
-    return (
-
-      <SuperAdminDashboard />
-
-    )
-  }
-
-
-  if (adminPreview) {
-
-    return (
-
-      <AdminDashboard />
-
-    )
-  }
-
-
-
-
-
-  // ============================================
-
-  // PUBLIC PROFILE
-
-  // ============================================
-
-
-
-  if (
-
-    isLogIn
-
-    &&
-
-    currentPage === 'publicProfile'
-
-    &&
+    currentPage === 'publicProfile' &&
 
     selectedUserId !== null
 
@@ -1823,75 +976,17 @@ function CreativeCollabNetwork() {
 
 
 
-
-
         <PublicProfile
 
+          userId={selectedUserId}
 
+          onHomeClick={goHome}
 
-          userId={
+          onProfileClick={goProfile}
 
-            selectedUserId
+          onEventsClick={goEvents}
 
-          }
-
-
-
-          onHomeClick={
-
-            () =>
-
-              setCurrentPage(
-
-                'dashboard'
-
-              )
-
-          }
-
-
-
-          onProfileClick={
-
-            () =>
-
-              setCurrentPage(
-
-                'profile'
-
-              )
-
-          }
-
-
-
-          onEventsClick={
-
-            () =>
-
-              setCurrentPage(
-
-                'events'
-
-              )
-
-          }
-
-
-
-          onBackClick={
-
-            () =>
-
-              setCurrentPage(
-
-                'dashboard'
-
-              )
-
-          }
-
-
+          onBackClick={goHome}
 
         />
 
@@ -1907,11 +1002,9 @@ function CreativeCollabNetwork() {
 
 
 
-
-
   // ============================================
 
-  // OWN PROFILE
+  // OWN PROFILE PAGE
 
   // ============================================
 
@@ -1919,9 +1012,9 @@ function CreativeCollabNetwork() {
 
   if (
 
-    isLogIn
+    isLogIn &&
 
-    &&
+    currentUser &&
 
     currentPage === 'profile'
 
@@ -1941,53 +1034,15 @@ function CreativeCollabNetwork() {
 
 
 
-
-
         <Profile
 
+          onHomeClick={goHome}
 
+          onProfileClick={goProfile}
 
-          onHomeClick={
+          onCollaborationClick={goCollaboration}
 
-            () =>
-
-              setCurrentPage(
-
-                'dashboard'
-
-              )
-
-          }
-
-
-
-          onProfileClick={
-
-            () =>
-
-              setCurrentPage(
-
-                'profile'
-
-              )
-
-          }
-
-
-
-          onEventsClick={
-
-            () =>
-
-              setCurrentPage(
-
-                'events'
-
-              )
-
-          }
-
-
+          onEventsClick={goEvents}
 
         />
 
@@ -2003,11 +1058,9 @@ function CreativeCollabNetwork() {
 
 
 
-
-
   // ============================================
 
-  // EVENTS
+  // COLLABORATION PAGE
 
   // ============================================
 
@@ -2015,9 +1068,65 @@ function CreativeCollabNetwork() {
 
   if (
 
-    isLogIn
+    isLogIn &&
 
-    &&
+    currentUser &&
+
+    currentPage === 'collaboration'
+
+  ) {
+
+
+
+    return (
+
+
+
+      <>
+
+
+
+        {logoutButton}
+
+
+
+        <Collaboration
+
+          onHomeClick={goHome}
+
+          onProfileClick={goProfile}
+
+          onCollaborationClick={goCollaboration}
+
+          onEventsClick={goEvents}
+
+        />
+
+
+
+      </>
+
+
+
+    )
+
+  }
+
+
+
+  // ============================================
+
+  // EVENTS PAGE
+
+  // ============================================
+
+
+
+  if (
+
+    isLogIn &&
+
+    currentUser &&
 
     currentPage === 'events'
 
@@ -2037,53 +1146,15 @@ function CreativeCollabNetwork() {
 
 
 
-
-
         <Events
 
+          onHomeClick={goHome}
 
+          onProfileClick={goProfile}
 
-          onHomeClick={
+          onCollaborationClick={goCollaboration}
 
-            () =>
-
-              setCurrentPage(
-
-                'dashboard'
-
-              )
-
-          }
-
-
-
-          onProfileClick={
-
-            () =>
-
-              setCurrentPage(
-
-                'profile'
-
-              )
-
-          }
-
-
-
-          onEventsClick={
-
-            () =>
-
-              setCurrentPage(
-
-                'events'
-
-              )
-
-          }
-
-
+          onEventsClick={goEvents}
 
         />
 
@@ -2096,8 +1167,6 @@ function CreativeCollabNetwork() {
     )
 
   }
-
-
 
 
 
@@ -2109,7 +1178,7 @@ function CreativeCollabNetwork() {
 
 
 
-  if (isLogIn) {
+  if (isLogIn && currentUser) {
 
 
 
@@ -2121,137 +1190,63 @@ function CreativeCollabNetwork() {
 
 
 
-
-
         <div className="logged-in-header">
 
 
 
+          <div className="current-user-info">
 
 
-          {
 
-            currentUser
+            <strong>
 
-            &&
+              Welcome, {currentUser.fullName}
 
-            (
+            </strong>
 
 
 
-              <div className="current-user-info">
+            <span>
 
+              @{currentUser.username}
 
+            </span>
 
 
 
-                <strong>
+            <span>
 
+              {currentUser.email}
 
+            </span>
 
-                  Welcome,
 
-                  {' '}
 
-                  {currentUser.fullName}
+            <span>
 
+              Role: {currentUser.role}
 
+            </span>
 
-                </strong>
 
 
-
-
-
-                <span>
-
-
-
-                  @{currentUser.username}
-
-
-
-                </span>
-
-
-
-
-
-                <span>
-
-
-
-                  {currentUser.email}
-
-
-
-                </span>
-
-
-
-
-
-                <span>
-
-
-
-                  Role:
-
-                  {' '}
-
-                  {currentUser.role}
-
-
-
-                </span>
-
-
-
-
-
-              </div>
-
-
-
-            )
-
-          }
-
-
+          </div>
 
 
 
           <button
 
-
-
             type="button"
-
-
 
             className="logout-button"
 
-
-
-            onClick={
-
-              handleLogout
-
-            }
-
-
+            onClick={handleLogout}
 
           >
 
-
-
             Logout
 
-
-
           </button>
-
-
 
 
 
@@ -2259,65 +1254,31 @@ function CreativeCollabNetwork() {
 
 
 
+        {currentUser.role === 'SUPER_ADMIN' ? (
 
+          <SuperAdminDashboard />
 
-        <Dashboard
+        ) : currentUser.role === 'ADMIN' ? (
 
+          <AdminDashboard />
 
+        ) : (
 
-          onHomeClick={
+          <Dashboard
 
-            () =>
+            onHomeClick={goHome}
 
-              setCurrentPage(
+            onProfileClick={goProfile}
 
-                'dashboard'
+            onCollaborationClick={goCollaboration}
 
-              )
+            onEventsClick={goEvents}
 
-          }
+            onUserClick={openPublicProfile}
 
+          />
 
-
-          onProfileClick={
-
-            () =>
-
-              setCurrentPage(
-
-                'profile'
-
-              )
-
-          }
-
-
-
-          onEventsClick={
-
-            () =>
-
-              setCurrentPage(
-
-                'events'
-
-              )
-
-          }
-
-
-
-          onUserClick={
-
-            openPublicProfile
-
-          }
-
-
-
-        />
-
-
+        )}
 
 
 
@@ -2331,11 +1292,39 @@ function CreativeCollabNetwork() {
 
 
 
+  // ============================================
+
+  // SESSION LOADING
+
+  // ============================================
+
+
+
+  if (isLogIn && !currentUser) {
+
+
+
+    return (
+
+
+
+      <main className="page-container">
+
+        <p>Loading your account...</p>
+
+      </main>
+
+
+
+    )
+
+  }
+
 
 
   // ============================================
 
-  // LOGIN / SIGNUP
+  // LOGIN / SIGNUP PAGE
 
   // ============================================
 
@@ -2349,93 +1338,49 @@ function CreativeCollabNetwork() {
 
 
 
-
-
       <section className="intro-section">
-
-
 
 
 
         <img
 
-
-
-          src={
-
-            logoWebsite
-
-          }
-
-
+          src={logoWebsite}
 
           alt="Professional Creative Collaboration Network Logo"
 
-
-
           className="logoWebsite"
-
-
 
         />
 
 
 
-
-
         <span className="eyebrow">
 
-
-
           CREATE || CONNECT || COLLABORATE
-
-
 
         </span>
 
 
 
-
-
         <h1>
 
-
-
-          Professional Creative
-
-          {' '}
-
-          Collaboration Network
-
-
+          Professional Creative Collaboration Network
 
         </h1>
 
 
 
-
-
         <p>
 
+          A creative platform for building professional
 
+          connections, showcasing creative work,
 
-          A creative platform for building
+          discovering collaboration opportunities
 
-          professional connections,
-
-          showcasing creative work,
-
-          discovering collaboration
-
-          opportunities and participating
-
-          in creative events.
-
-
+          and participating in creative events.
 
         </p>
-
-
 
 
 
@@ -2443,11 +1388,7 @@ function CreativeCollabNetwork() {
 
 
 
-
-
       <section className="auth-card">
-
-
 
 
 
@@ -2455,15 +1396,9 @@ function CreativeCollabNetwork() {
 
 
 
-
-
           <button
 
-
-
             type="button"
-
-
 
             className={
 
@@ -2475,55 +1410,25 @@ function CreativeCollabNetwork() {
 
             }
 
+            onClick={() => {
 
+              setAuthnMode('signup')
 
-            onClick={
+              setUiMessages('')
 
-              () => {
-
-
-
-                setAuthnMode(
-
-                  'signup'
-
-                )
-
-
-
-                setUiMessages(
-
-                  ''
-
-                )
-
-              }
-
-            }
-
-
+            }}
 
           >
 
-
-
             Sign Up
-
-
 
           </button>
 
 
 
-
-
           <button
 
-
-
             type="button"
-
-
 
             className={
 
@@ -2535,45 +1440,19 @@ function CreativeCollabNetwork() {
 
             }
 
+            onClick={() => {
 
+              setAuthnMode('login')
 
-            onClick={
+              setUiMessages('')
 
-              () => {
-
-
-
-                setAuthnMode(
-
-                  'login'
-
-                )
-
-
-
-                setUiMessages(
-
-                  ''
-
-                )
-
-              }
-
-            }
-
-
+            }}
 
           >
 
-
-
             Login
 
-
-
           </button>
-
-
 
 
 
@@ -2581,11 +1460,7 @@ function CreativeCollabNetwork() {
 
 
 
-
-
         <h2>
-
-
 
           {
 
@@ -2597,753 +1472,457 @@ function CreativeCollabNetwork() {
 
           }
 
-
-
         </h2>
 
 
 
+        {/* ================================= */}
 
+        {/* SIGNUP FORM */}
 
-        {/* SIGNUP */}
-
-
-
-        {
-
-          authnMode === 'signup'
-
-          &&
-
-          (
+        {/* ================================= */}
 
 
 
-            <form
+        {authnMode === 'signup' && (
 
-              className="auth-form"
 
-              onSubmit={
 
-                handleSignup
+          <form
 
-              }
+            className="auth-form"
+
+            onSubmit={handleSignup}
+
+          >
+
+
+
+            <label>
+
+              Full Name:
+
+
+
+              <input
+
+                type="text"
+
+                placeholder="Enter full name"
+
+                value={fullName}
+
+                onChange={(event) =>
+
+                  setFullName(event.target.value)
+
+                }
+
+                required
+
+              />
+
+            </label>
+
+
+
+            <label>
+
+              Username:
+
+
+
+              <input
+
+                type="text"
+
+                placeholder="Choose username"
+
+                value={username}
+
+                onChange={(event) =>
+
+                  setUsername(event.target.value)
+
+                }
+
+                minLength={3}
+
+                required
+
+              />
+
+            </label>
+
+
+
+            <label>
+
+              Email Address:
+
+
+
+              <input
+
+                type="email"
+
+                placeholder="Enter email address"
+
+                value={email}
+
+                onChange={(event) =>
+
+                  setEmail(event.target.value)
+
+                }
+
+                required
+
+              />
+
+            </label>
+
+
+
+            <label>
+
+              Date of Birth:
+
+
+
+              <input
+
+                type="date"
+
+                value={dofBirth}
+
+                max={new Date().toLocaleDateString('en-CA')}
+
+                onChange={(event) =>
+
+                  setDofBirth(event.target.value)
+
+                }
+
+                required
+
+              />
+
+            </label>
+
+
+
+            {/* GUARDIAN DETAILS */}
+
+
+
+            {isUnder18 && (
+
+
+
+              <div>
+
+
+
+                <p>
+
+                  Users under 18 require guardian consent.
+
+                </p>
+
+
+
+                <label>
+
+                  Guardian Email:
+
+
+
+                  <input
+
+                    type="email"
+
+                    placeholder="Enter guardian email"
+
+                    value={emailOfGuardian}
+
+                    onChange={(event) =>
+
+                      setEmailOfGuardian(event.target.value)
+
+                    }
+
+                    required
+
+                  />
+
+
+
+                </label>
+
+
+
+              </div>
+
+
+
+            )}
+
+
+
+            <label>
+
+              Password:
+
+
+
+              <input
+
+                type="password"
+
+                placeholder="Create password"
+
+                value={password}
+
+                onChange={(event) =>
+
+                  setPassword(event.target.value)
+
+                }
+
+                minLength={8}
+
+                required
+
+              />
+
+            </label>
+
+
+
+            <label>
+
+              Confirm Password:
+
+
+
+              <input
+
+                type="password"
+
+                placeholder="Confirm password"
+
+                value={confirmPassword}
+
+                onChange={(event) =>
+
+                  setConfirmPassword(event.target.value)
+
+                }
+
+                required
+
+              />
+
+            </label>
+
+
+
+            {uiMessages && (
+
+
+
+              <p
+
+                className="form-message"
+
+                role="status"
+
+              >
+
+                {uiMessages}
+
+              </p>
+
+
+
+            )}
+
+
+
+            <button
+
+              className="primary-button"
+
+              type="submit"
+
+              disabled={isLoading}
 
             >
 
 
 
-
-
-              <label>
-
-
-
-                Full Name:
-
-
-
-                <input
-
-
-
-                  type="text"
-
-
-
-                  placeholder="Enter full name"
-
-
-
-                  value={
-
-                    fullName
-
-                  }
-
-
-
-                  onChange={
-
-                    event =>
-
-                      setFullName(
-
-                        event.target.value
-
-                      )
-
-                  }
-
-
-
-                />
-
-
-
-              </label>
-
-
-
-
-
-              <label>
-
-
-
-                Username:
-
-
-
-                <input
-
-
-
-                  type="text"
-
-
-
-                  placeholder="Choose username"
-
-
-
-                  value={
-
-                    username
-
-                  }
-
-
-
-                  onChange={
-
-                    event =>
-
-                      setUsername(
-
-                        event.target.value
-
-                      )
-
-                  }
-
-
-
-                />
-
-
-
-              </label>
-
-
-
-
-
-              <label>
-
-
-
-                Email Address:
-
-
-
-                <input
-
-
-
-                  type="email"
-
-
-
-                  placeholder="Enter email address"
-
-
-
-                  value={
-
-                    email
-
-                  }
-
-
-
-                  onChange={
-
-                    event =>
-
-                      setEmail(
-
-                        event.target.value
-
-                      )
-
-                  }
-
-
-
-                />
-
-
-
-              </label>
-
-
-
-
-
-              <label>
-
-
-
-                Date of Birth:
-
-
-
-                <input
-
-
-
-                  type="date"
-
-
-
-                  value={
-
-                    dofBirth
-
-                  }
-
-
-
-                  onChange={
-
-                    event =>
-
-                      setDofBirth(
-
-                        event.target.value
-
-                      )
-
-                  }
-
-
-
-                />
-
-
-
-              </label>
-
-
-
-
-
               {
 
-                isUnder18
+                isLoading
 
-                &&
+                  ? 'Creating Account...'
 
-                (
-
-
-
-                  <div>
-
-
-
-
-
-                    <p>
-
-
-
-                      Users under 18 require
-
-                      guardian consent.
-
-
-
-                    </p>
-
-
-
-
-
-                    <label>
-
-
-
-                      Guardian Email:
-
-
-
-                      <input
-
-
-
-                        type="email"
-
-
-
-                        placeholder="Enter guardian email"
-
-
-
-                        value={
-
-                          emailOfGuardian
-
-                        }
-
-
-
-                        onChange={
-
-                          event =>
-
-                            setEmailOfGuardian(
-
-                              event.target.value
-
-                            )
-
-                        }
-
-
-
-                      />
-
-
-
-                    </label>
-
-
-
-
-
-                  </div>
-
-
-
-                )
+                  : 'Join our Creative Network'
 
               }
 
 
 
+            </button>
 
 
-              <label>
 
+          </form>
 
 
-                Password:
 
+        )}
 
 
-                <input
 
+        {/* ================================= */}
 
+        {/* LOGIN FORM */}
 
-                  type="password"
+        {/* ================================= */}
 
 
 
-                  placeholder="Create password"
+        {authnMode === 'login' && (
 
 
 
-                  value={
+          <form
 
-                    password
+            className="auth-form"
 
-                  }
+            onSubmit={handleLoginPage}
 
+          >
 
 
-                  onChange={
 
-                    event =>
+            <label>
 
-                      setPassword(
+              Email Address:
 
-                        event.target.value
 
-                      )
 
-                  }
+              <input
 
+                type="email"
 
+                placeholder="Enter your email address"
 
-                />
+                value={loginEmail}
 
+                onChange={(event) =>
 
-
-              </label>
-
-
-
-
-
-              <label>
-
-
-
-                Confirm Password:
-
-
-
-                <input
-
-
-
-                  type="password"
-
-
-
-                  placeholder="Confirm password"
-
-
-
-                  value={
-
-                    confirmPassword
-
-                  }
-
-
-
-                  onChange={
-
-                    event =>
-
-                      setConfirmPassword(
-
-                        event.target.value
-
-                      )
-
-                  }
-
-
-
-                />
-
-
-
-              </label>
-
-
-
-
-
-              {
-
-                uiMessages
-
-                &&
-
-                (
-
-
-
-                  <p className="form-message">
-
-
-
-                    {uiMessages}
-
-
-
-                  </p>
-
-
-
-                )
-
-              }
-
-
-
-
-
-              <button
-
-
-
-                className="primary-button"
-
-
-
-                type="submit"
-
-
-
-                disabled={
-
-                  isLoading
+                  setLoginEmail(event.target.value)
 
                 }
 
+                required
 
+              />
+
+            </label>
+
+
+
+            <label>
+
+              Password:
+
+
+
+              <input
+
+                type="password"
+
+                placeholder="Enter your password"
+
+                value={loginPassword}
+
+                onChange={(event) =>
+
+                  setLoginPassword(event.target.value)
+
+                }
+
+                required
+
+              />
+
+            </label>
+
+
+
+            {uiMessages && (
+
+
+
+              <p
+
+                className="form-message"
+
+                role="status"
 
               >
 
+                {uiMessages}
 
-
-                {
-
-                  isLoading
-
-                    ? 'Creating Account...'
-
-                    : 'Join our Creative Network'
-
-                }
+              </p>
 
 
 
-              </button>
+            )}
 
 
 
+            <button
 
+              className="primary-button"
 
-            </form>
+              type="submit"
 
-
-
-          )
-
-        }
-
-
-
-
-
-        {/* LOGIN */}
-
-
-
-        {
-
-          authnMode === 'login'
-
-          &&
-
-          (
-
-
-
-            <form
-
-              className="auth-form"
-
-              onSubmit={
-
-                handleLoginPage
-
-              }
+              disabled={isLoading}
 
             >
 
 
 
-
-
-              <label>
-
-
-
-                Email Address:
-
-
-
-                <input
-
-
-
-                  type="email"
-
-
-
-                  placeholder="Enter your email address"
-
-
-
-                  value={
-
-                    loginEmail
-
-                  }
-
-
-
-                  onChange={
-
-                    event =>
-
-                      setLoginEmail(
-
-                        event.target.value
-
-                      )
-
-                  }
-
-
-
-                />
-
-
-
-              </label>
-
-
-
-
-
-              <label>
-
-
-
-                Password:
-
-
-
-                <input
-
-
-
-                  type="password"
-
-
-
-                  placeholder="Enter your password"
-
-
-
-                  value={
-
-                    loginPassword
-
-                  }
-
-
-
-                  onChange={
-
-                    event =>
-
-                      setLoginPassword(
-
-                        event.target.value
-
-                      )
-
-                  }
-
-
-
-                />
-
-
-
-              </label>
-
-
-
-
-
               {
 
-                uiMessages
+                isLoading
 
-                &&
+                  ? 'Logging In...'
 
-                (
-
-
-
-                  <p className="form-message">
-
-
-
-                    {uiMessages}
-
-
-
-                  </p>
-
-
-
-                )
+                  : 'Log In to Creative Network'
 
               }
 
 
 
-
-
-              <button
-
-
-
-                className="primary-button"
+            </button>
 
 
 
-                type="submit"
+          </form>
 
 
 
-                disabled={
-
-                  isLoading
-
-                }
-
-
-
-              >
-
-
-
-                {
-
-                  isLoading
-
-                    ? 'Logging In...'
-
-                    : 'Log In to Creative Network'
-
-                }
-
-
-
-              </button>
-
-
-
-
-
-            </form>
-
-
-
-          )
-
-        }
-
-
+        )}
 
 
 
       </section>
-
-
 
 
 
@@ -3352,8 +1931,6 @@ function CreativeCollabNetwork() {
   )
 
 }
-
-
 
 
 

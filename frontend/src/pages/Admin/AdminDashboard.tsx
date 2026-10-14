@@ -23,8 +23,6 @@ type OverviewPeriod =
   | 'today'
   | '7d'
   | '30d'
-  | '6m'
-  | '1y'
 
 
 type ReportStatus =
@@ -32,6 +30,7 @@ type ReportStatus =
   | 'UNDER_REVIEW'
   | 'RESOLVED'
   | 'DISMISSED'
+  | 'ESCALATED'
 
 
 type ReportPriority =
@@ -242,8 +241,6 @@ const periodLabels: Record<
   today: 'Today',
   '7d': '7 Days',
   '30d': '30 Days',
-  '6m': '6 Months',
-  '1y': '1 Year',
 }
 
 
@@ -293,35 +290,6 @@ function buildOverviewData(
     multiplier = 3.4
   }
 
-  if (period === '6m') {
-    labels = [
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-    ]
-    multiplier = 15
-  }
-
-  if (period === '1y') {
-    labels = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ]
-    multiplier = 28
-  }
 
   return labels.map(
     (
@@ -674,6 +642,20 @@ function AdminDashboard() {
     )
 
 
+  const [
+    notificationsOpen,
+    setNotificationsOpen,
+  ] =
+    useState(false)
+
+
+  const [
+    dismissedNotificationIds,
+    setDismissedNotificationIds,
+  ] =
+    useState<string[]>([])
+
+
   useEffect(
     () => {
 
@@ -812,6 +794,35 @@ function AdminDashboard() {
         !==
         'DISMISSED',
     ).length
+
+
+  const escalatedReports =
+    reports.filter(
+      report =>
+        report.status
+        ===
+        'ESCALATED',
+    ).length
+
+
+
+  const adminNotifications = [
+    ...(urgentReports > 0
+      ? [{ id: 'urgent', message: `${urgentReports} urgent report(s) need attention.`, section: 'reports' as Section }]
+      : []),
+    ...(overdueReports > 0
+      ? [{ id: 'overdue', message: `${overdueReports} report(s) are older than 24 hours.`, section: 'reports' as Section }]
+      : []),
+    ...(escalatedReports > 0
+      ? [{ id: 'escalated', message: `${escalatedReports} report(s) are escalated to Super Admin.`, section: 'reports' as Section }]
+      : []),
+  ]
+
+  const visibleAdminNotifications =
+    adminNotifications.filter(
+      notification =>
+        !dismissedNotificationIds.includes(notification.id),
+    )
 
 
   const activeUsers =
@@ -1044,7 +1055,11 @@ function AdminDashboard() {
                 ===
                 'DISMISSED'
                   ? 'DISMISS_REPORT'
-                  : 'UPDATE_REPORT'
+                  : status
+                    ===
+                    'ESCALATED'
+                      ? 'ESCALATE_REPORT'
+                      : 'UPDATE_REPORT'
 
       addActivity(
         action,
@@ -1436,54 +1451,151 @@ function AdminDashboard() {
           </div>
 
 
-          {
-            section
-            !==
-            'analytics'
-            &&
-            (
-              <div className="admin-live-status">
+          <div className="admin-header-tools">
 
-                <span className="admin-live-dot" />
+            <div className="admin-notification-wrapper">
+              <button
+                type="button"
+                className="admin-notification-button"
+                onClick={() =>
+                  setNotificationsOpen(
+                    current => !current
+                  )
+                }
+                aria-label="Open Admin notifications"
+              >
+                🔔
+                {
+                  visibleAdminNotifications.length > 0
+                  &&
+                  (
+                    <span>
+                      {visibleAdminNotifications.length}
+                    </span>
+                  )
+                }
+              </button>
 
-                <div>
-                  <strong>
-                    Live
-                  </strong>
+              {
+                notificationsOpen
+                &&
+                (
+                  <div className="admin-notification-panel">
+                    <div className="notification-panel-heading">
+                      <strong>Admin Notifications</strong>
+                      <div>
+                        {visibleAdminNotifications.length > 0 && (
+                          <button
+                            type="button"
+                            className="notification-dismiss-all"
+                            onClick={() =>
+                              setDismissedNotificationIds(
+                                adminNotifications.map(notification => notification.id),
+                              )
+                            }
+                          >
+                            Dismiss all
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          className="notification-close"
+                          onClick={() => setNotificationsOpen(false)}
+                          aria-label="Close notifications"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    </div>
 
-                  <small>
-                    Updated
-                    {' '}
-                    {
-                      lastUpdated
-                        .toLocaleTimeString(
-                          [],
-                          {
-                            hour:
-                              '2-digit',
-                            minute:
-                              '2-digit',
-                            second:
-                              '2-digit',
-                          },
-                        )
+                    {visibleAdminNotifications.length ? (
+                      <div className="notification-list">
+                        {visibleAdminNotifications.map(notification => (
+                          <div className="notification-item" key={notification.id}>
+                            <button
+                              type="button"
+                              className="notification-message"
+                              onClick={() => {
+                                setSection(notification.section)
+                                setNotificationsOpen(false)
+                              }}
+                            >
+                              {notification.message}
+                            </button>
+                            <button
+                              type="button"
+                              className="notification-dismiss"
+                              onClick={() =>
+                                setDismissedNotificationIds(current => [
+                                  ...current,
+                                  notification.id,
+                                ])
+                              }
+                              aria-label={`Dismiss ${notification.message}`}
+                            >
+                              Dismiss
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="notification-empty">No new notifications.</p>
+                    )}
+                  </div>
+                )
+              }
+            </div>
+
+            {
+              section
+              !==
+              'analytics'
+              &&
+              (
+                <div className="admin-live-status">
+
+                  <span className="admin-live-dot" />
+
+                  <div>
+                    <strong>
+                      Live
+                    </strong>
+
+                    <small>
+                      Updated
+                      {' '}
+                      {
+                        lastUpdated
+                          .toLocaleTimeString(
+                            [],
+                            {
+                              hour:
+                                '2-digit',
+                              minute:
+                                '2-digit',
+                              second:
+                                '2-digit',
+                            },
+                          )
+                      }
+                    </small>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="admin-refresh-button"
+                    onClick={
+                      handleRefresh
                     }
-                  </small>
+                  >
+                    Refresh
+                  </button>
+
                 </div>
+              )
+            }
 
-                <button
-                  type="button"
-                  className="admin-refresh-button"
-                  onClick={
-                    handleRefresh
-                  }
-                >
-                  Refresh
-                </button>
-
-              </div>
-            )
-          }
+          </div>
 
         </header>
 
@@ -1520,10 +1632,7 @@ function AdminDashboard() {
                     [
                       'today',
                       '7d',
-                      '30d',
-                      '6m',
-                      '1y',
-                    ] as OverviewPeriod[]
+                      '30d',] as OverviewPeriod[]
                   ).map(
                     period => (
                       <button
@@ -1555,6 +1664,30 @@ function AdminDashboard() {
                 }
 
               </div>
+
+
+              <section className="admin-attention-banner">
+                <div>
+                  <strong>Priority Attention</strong>
+                  <span>
+                    {urgentReports} urgent · {overdueReports} overdue · {escalatedReports} escalated
+                  </span>
+                </div>
+                <div className="admin-attention-actions">
+                  <button
+                    type="button"
+                    onClick={() => setSection('reports')}
+                  >
+                    Review Queue
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSection('activity')}
+                  >
+                    View Activity
+                  </button>
+                </div>
+              </section>
 
 
               <section className="admin-metric-grid">
@@ -3390,6 +3523,47 @@ function AdminDashboard() {
                     </button>
                   )
                 }
+
+                {
+                  selectedReport.status
+                  !==
+                  'RESOLVED'
+                  &&
+                  selectedReport.status
+                  !==
+                  'DISMISSED'
+                  &&
+                  selectedReport.status
+                  !==
+                  'ESCALATED'
+                  &&
+                  (
+                    <button
+                      type="button"
+                      className="admin-warning-button"
+                      onClick={() => {
+                        const confirmed =
+                          window.confirm(
+                            `Escalate Report #${selectedReport.id} to Super Admin?`,
+                          )
+
+                        if (!confirmed) {
+                          return
+                        }
+
+                        updateReportStatus(
+                          selectedReport.id,
+                          'ESCALATED',
+                        )
+
+                        setSelectedReport(null)
+                      }}
+                    >
+                      Escalate
+                    </button>
+                  )
+                }
+
 
                 <button
                   type="button"
