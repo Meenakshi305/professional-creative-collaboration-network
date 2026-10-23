@@ -12,3 +12,230 @@
 .cp-admin-tiles { display:grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap:12px; margin-top:20px; }.cp-admin-tile { display:flex; flex-direction:column; align-items:flex-start; gap:9px; padding:16px; border:1px solid #e6e0f0; border-radius:12px; }.cp-admin-tile-mark { color:#7866d8; }.cp-admin-tile strong { color:#383069; font-size:13px; }.cp-admin-tile small { color:#827c91;font-size:11px; }
 @media(max-width:1100px) { .cp-admin-metrics {grid-template-columns:repeat(2,minmax(0,1fr))} .cp-admin-tiles {grid-template-columns:repeat(2,minmax(0,1fr))} }
 @media(max-width:700px) { .cp-admin-layout { flex-direction:column; padding-bottom:72px; }.cp-admin-heading {flex-wrap:wrap}.cp-admin-tiles{grid-template-columns:1fr} }
+
+/* =====================================================
+   CREATIVE NETWORK - ADMIN LAYOUT
+   Shared Admin Sidebar + Existing Admin Content
+
+   Keeps:
+   - Original application font family
+   - Multicolour Creative Network background
+   - Existing Admin content
+   - Analytics and SuperAdmin styling
+===================================================== */
+
+/* =========================
+   MAIN ADMIN LAYOUT
+========================= */
+
+.cp-admin-layout {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+
+  width: 100%;
+  min-width: 0;
+  min-height: 100vh;
+
+  box-sizing: border-box;
+
+  /* Background is provided by CreativeAppShell */
+  background: transparent;
+}
+
+/* =========================
+   ADMIN CONTENT AREA
+========================= */
+
+.cp-admin-main {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 100vh;
+
+  display: flex;
+  flex-direction: column;
+
+  padding: 24px 28px 40px;
+  box-sizing: border-box;
+
+  background: transparent;
+  color: #45425c;
+}
+
+/* Ensure direct Admin content fills
+   the available space correctly. */
+
+.cp-admin-main > * {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* =========================
+   ADMIN CONTENT SURFACES
+========================= */
+
+/* Do not replace the existing
+   AdminDashboard or Analytics CSS.
+
+   These classes can be used by
+   Admin content components.
+*/
+
+.cp-admin-content-card {
+  background: rgba(255, 255, 255, 0.94);
+
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  border-radius: 16px;
+
+  box-shadow: 0 5px 20px rgba(48, 42, 104, 0.09);
+
+  padding: 22px;
+  box-sizing: border-box;
+}
+
+.cp-admin-content-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  flex-wrap: wrap;
+  gap: 16px;
+
+  margin-bottom: 24px;
+}
+
+.cp-admin-content-title {
+  margin: 0;
+
+  color: #29265f;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.cp-admin-content-subtitle {
+  margin: 6px 0 0;
+
+  color: #625c78;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* =========================
+   OPTIONAL CONTENT GRID
+========================= */
+
+.cp-admin-content-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+
+  width: 100%;
+}
+
+/* =========================
+   SCROLL AND OVERFLOW
+========================= */
+
+.cp-admin-main {
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+/* Avoid horizontal overflow from
+   wide dashboard content. */
+
+.cp-admin-layout,
+.cp-admin-main {
+  max-width: 100%;
+}
+
+/* =========================
+   FOCUS / ACCESSIBILITY
+========================= */
+
+.cp-admin-main :focus-visible {
+  outline: 2px solid #7566d2;
+  outline-offset: 3px;
+}
+
+/* =========================
+   RESPONSIVE - TABLET
+========================= */
+
+@media (max-width: 1200px) {
+
+  .cp-admin-main {
+    padding: 22px 20px 32px;
+  }
+
+  .cp-admin-content-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* =========================
+   RESPONSIVE - SMALL TABLET
+========================= */
+
+@media (max-width: 900px) {
+
+  .cp-admin-main {
+    padding: 20px 16px 28px;
+  }
+
+  .cp-admin-content-title {
+    font-size: 21px;
+  }
+
+  .cp-admin-content-card {
+    padding: 18px;
+  }
+}
+
+/* =========================
+   RESPONSIVE - MOBILE
+========================= */
+
+@media (max-width: 700px) {
+
+  .cp-admin-layout {
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  /* AdminSidebar.css makes the
+     secondary sidebar horizontal
+     at mobile widths. */
+
+  .cp-admin-main {
+    flex: 1 1 auto;
+
+    width: 100%;
+    min-height: 0;
+
+    padding: 18px 12px 28px;
+    overflow-x: auto;
+  }
+
+  .cp-admin-content-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .cp-admin-content-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .cp-admin-content-title {
+    font-size: 20px;
+  }
+
+  .cp-admin-content-card {
+    padding: 16px;
+    border-radius: 12px;
+  }
+}

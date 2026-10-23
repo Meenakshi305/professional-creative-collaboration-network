@@ -5,12 +5,13 @@ import {
 } from 'react'
 
 import './AdminDashboard.css'
+import { adminApi, type AdminOverview, type AdminReport } from '../../service/adminService'
 
 import AnalyticsDashboard
   from '../../shared/Analytics/AnalyticsDashboard'
 
 
-type Section =
+export type Section =
   | 'overview'
   | 'reports'
   | 'users'
@@ -100,138 +101,6 @@ type Toast = {
     | 'error'
   message: string
 } | null
-
-
-const initialReports: AssignedReport[] = [
-  {
-    id: 105,
-    target: 'User #58',
-    reason: 'Spam',
-    priority: 'MEDIUM',
-    status: 'UNDER_REVIEW',
-    createdAt: 'Today 10:45 PM',
-    ageHours: 7,
-  },
-  {
-    id: 109,
-    target: 'Post #284',
-    reason: 'Harassment',
-    priority: 'HIGH',
-    status: 'OPEN',
-    createdAt: 'Today 9:24 PM',
-    ageHours: 10,
-  },
-  {
-    id: 112,
-    target: 'Portfolio #81',
-    reason: 'Inappropriate content',
-    priority: 'URGENT',
-    status: 'OPEN',
-    createdAt: 'Today 7:52 PM',
-    ageHours: 15,
-  },
-  {
-    id: 116,
-    target: 'Event #44',
-    reason: 'Misleading information',
-    priority: 'LOW',
-    status: 'OPEN',
-    createdAt: 'Yesterday',
-    ageHours: 29,
-  },
-]
-
-
-const initialUsers: ManagedUser[] = [
-  {
-    id: 21,
-    name: 'Ravi Kumar',
-    email: 'ravi@example.com',
-    role: 'CREATIVE_PROFESSIONAL',
-    status: 'ACTIVE',
-  },
-  {
-    id: 22,
-    name: 'Priya Sharma',
-    email: 'priya@example.com',
-    role: 'CREATIVE_PROFESSIONAL',
-    status: 'ACTIVE',
-  },
-  {
-    id: 23,
-    name: 'James Brown',
-    email: 'james@example.com',
-    role: 'ORGANISATION',
-    status: 'ACTIVE',
-  },
-  {
-    id: 24,
-    name: 'Emily Carter',
-    email: 'emily@example.com',
-    role: 'CREATIVE_PROFESSIONAL',
-    status: 'SUSPENDED',
-  },
-]
-
-
-const initialModerationItems: ModerationItem[] = [
-  {
-    id: 240,
-    type: 'POST',
-    title: 'Photography Showcase',
-    owner: 'Ravi Kumar',
-    status: 'VISIBLE',
-  },
-  {
-    id: 76,
-    type: 'PORTFOLIO',
-    title: 'Brand Identity Project',
-    owner: 'Priya Sharma',
-    status: 'VISIBLE',
-  },
-  {
-    id: 31,
-    type: 'EVENT',
-    title: 'Creative Networking Night',
-    owner: 'Adelaide Creatives',
-    status: 'VISIBLE',
-  },
-  {
-    id: 51,
-    type: 'OPPORTUNITY',
-    title: 'Short Film Collaboration',
-    owner: 'Daniel Lee',
-    status: 'REMOVED',
-  },
-]
-
-
-const initialActivity: ActivityLog[] = [
-  {
-    id: 1,
-    action: 'RESOLVE_REPORT',
-    target: 'Report #98',
-    time: 'Today 5:14 PM',
-  },
-  {
-    id: 2,
-    action: 'SUSPEND_USER',
-    target: 'User #61',
-    time: 'Today 4:46 PM',
-  },
-  {
-    id: 3,
-    action: 'REMOVE_CONTENT',
-    target: 'Post #232',
-    time: 'Today 3:12 PM',
-  },
-  {
-    id: 4,
-    action: 'START_REVIEW',
-    target: 'Report #105',
-    time: 'Today 2:39 PM',
-  },
-]
 
 
 const periodLabels: Record<
@@ -555,15 +424,38 @@ function LineChart({
 }
 
 
-function AdminDashboard() {
+function mapReport(report: AdminReport): AssignedReport {
+  const status: ReportStatus = report.status === 'PENDING' ? 'OPEN' :
+    report.status === 'UPHELD' ? 'RESOLVED' : 'DISMISSED'
+  return {
+    id: report.id,
+    target: `Post #${report.reportedPostId}`,
+    reason: report.reason,
+    priority: 'MEDIUM', // Backend does not store priority; do not treat this as verified severity.
+    status,
+    createdAt: new Date(report.createdAt).toLocaleString(),
+    ageHours: Math.max(0, (Date.now() - new Date(report.createdAt).getTime()) / 3_600_000),
+  }
+}
+
+type AdminDashboardProps = { activeSection: Section; onSectionChange: (section: Section) => void }
+
+function AdminDashboard({ activeSection, onSectionChange }: AdminDashboardProps) {
 
   const [
     section,
     setSection,
   ] =
     useState<Section>(
-      'overview'
+      activeSection
     )
+
+  useEffect(() => { setSection(activeSection) }, [activeSection])
+
+  const navigateSection = (nextSection: Section) => {
+    setSection(nextSection)
+    onSectionChange(nextSection)
+  }
 
   const [
     overviewPeriod,
@@ -578,7 +470,7 @@ function AdminDashboard() {
     setReports,
   ] =
     useState<AssignedReport[]>(
-      initialReports
+      []
     )
 
   const [
@@ -586,15 +478,14 @@ function AdminDashboard() {
     setUsers,
   ] =
     useState<ManagedUser[]>(
-      initialUsers
+      []
     )
 
   const [
     moderationItems,
-    setModerationItems,
   ] =
     useState<ModerationItem[]>(
-      initialModerationItems
+      []
     )
 
   const [
@@ -602,7 +493,7 @@ function AdminDashboard() {
     setActivity,
   ] =
     useState<ActivityLog[]>(
-      initialActivity
+      []
     )
 
   const [
@@ -641,6 +532,44 @@ function AdminDashboard() {
       null
     )
 
+
+  const [overviewLive, setOverviewLive] = useState<AdminOverview | null>(null)
+  const [apiError, setApiError] = useState<string | null>(null)
+  const [apiLoading, setApiLoading] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  // Load the real backend records; never fall back to fabricated users or reports.
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      setApiLoading(true)
+      setApiError(null)
+      try {
+        const [overview, userPage, assignedPage, activityPage] = await Promise.all([
+          adminApi.overview(), adminApi.users(), adminApi.assignedReports(), adminApi.activity(),
+        ])
+        if (cancelled) return
+        setOverviewLive(overview)
+        setUsers(userPage.content.map(u => ({
+          id: u.id, name: u.fullName || u.username, email: u.email, role: u.role,
+          status: u.active ? 'ACTIVE' as const : 'DEACTIVATED' as const,
+        })))
+        setReports(assignedPage.content.map(mapReport))
+        setActivity(activityPage.content.map(a => ({
+          id: a.id, action: a.action,
+          target: `${a.targetType} #${a.targetId ?? '-'}`,
+          time: new Date(a.createdAt).toLocaleString(),
+        })))
+        setLastUpdated(new Date())
+      } catch (err) {
+        if (!cancelled) setApiError(err instanceof Error ? err.message : 'Could not load Admin data.')
+      } finally {
+        if (!cancelled) setApiLoading(false)
+      }
+    }
+    void load()
+    return () => { cancelled = true }
+  }, [refreshKey])
 
   const [
     notificationsOpen,
@@ -989,276 +918,52 @@ function AdminDashboard() {
     }
 
 
-  const addActivity =
-    (
-      action: string,
-      target: string,
-    ) => {
-
-      const now =
-        new Date()
-
-      setActivity(
-        previous => [
-          {
-            id: Date.now(),
-            action,
-            target,
-            time:
-              now.toLocaleTimeString(
-                [],
-                {
-                  hour:
-                    '2-digit',
-                  minute:
-                    '2-digit',
-                },
-              ),
-          },
-          ...previous,
-        ]
-      )
+  const updateReportStatus = async (reportId: number, status: ReportStatus) => {
+    if (status !== 'RESOLVED' && status !== 'DISMISSED') {
+      showToast('error', 'This report transition is not yet supported by the backend.')
+      return
     }
-
-
-  const updateReportStatus =
-    (
-      reportId: number,
-      status: ReportStatus,
-    ) => {
-
-      setReports(
-        previous =>
-          previous.map(
-            report =>
-              report.id
-              ===
-              reportId
-                ? {
-                    ...report,
-                    status,
-                  }
-                : report
-          )
+    try {
+      const updated = await adminApi.resolveReport(
+        reportId, status === 'RESOLVED' ? 'UPHELD' : 'DISMISSED',
       )
-
-      const action =
-        status
-        ===
-        'UNDER_REVIEW'
-          ? 'START_REVIEW'
-          : status
-            ===
-            'RESOLVED'
-              ? 'RESOLVE_REPORT'
-              : status
-                ===
-                'DISMISSED'
-                  ? 'DISMISS_REPORT'
-                  : status
-                    ===
-                    'ESCALATED'
-                      ? 'ESCALATE_REPORT'
-                      : 'UPDATE_REPORT'
-
-      addActivity(
-        action,
-        `Report #${reportId}`,
-      )
-
-      showToast(
-        'success',
-        `Report #${reportId} updated to ${status.replace('_', ' ')}.`,
-      )
-
-      setSelectedReport(
-        current =>
-          current?.id
-          ===
-          reportId
-            ? {
-                ...current,
-                status,
-              }
-            : current
-      )
+      setReports(previous => previous.map(r => r.id === reportId ? mapReport(updated) : r))
+      setSelectedReport(null)
+      setRefreshKey(value => value + 1)
+      showToast('success', `Report #${reportId} saved to the backend.`)
+    } catch (error) {
+      showToast('error', error instanceof Error ? error.message : 'Report action failed')
     }
+  }
 
-
-  const updateUserStatus =
-    (
-      userId: number,
-      status:
-        | 'ACTIVE'
-        | 'SUSPENDED'
-        | 'DEACTIVATED',
-    ) => {
-
-      const user =
-        users.find(
-          candidate =>
-            candidate.id
-            ===
-            userId,
-        )
-
-      if (!user) {
-        return
-      }
-
-      if (
-        status
-        ===
-        'SUSPENDED'
-        ||
-        status
-        ===
-        'DEACTIVATED'
-      ) {
-
-        const confirmed =
-          window.confirm(
-            status
-            ===
-            'SUSPENDED'
-              ? `Suspend ${user.name}?`
-              : `Deactivate ${user.name}? This should preserve the account record and email.`,
-          )
-
-        if (!confirmed) {
-          return
-        }
-      }
-
-      setUsers(
-        previous =>
-          previous.map(
-            candidate =>
-              candidate.id
-              ===
-              userId
-                ? {
-                    ...candidate,
-                    status,
-                  }
-                : candidate
-          )
-      )
-
-      const action =
-        status
-        ===
-        'SUSPENDED'
-          ? 'SUSPEND_USER'
-          : status
-            ===
-            'DEACTIVATED'
-              ? 'DEACTIVATE_USER'
-              : 'REACTIVATE_USER'
-
-      addActivity(
-        action,
-        `${user.name} (#${user.id})`,
-      )
-
-      showToast(
-        'success',
-        `${user.name} is now ${status.toLowerCase()}.`,
-      )
+  const updateUserStatus = async (
+    userId: number,
+    status: 'ACTIVE' | 'SUSPENDED' | 'DEACTIVATED',
+  ) => {
+    const user = users.find(candidate => candidate.id === userId)
+    if (!user) return
+    if (status === 'SUSPENDED') {
+      showToast('error', 'Suspension is not supported by the backend. Use Deactivate instead.')
+      return
     }
-
-
-  const toggleContentStatus =
-    (
-      itemId: number,
-    ) => {
-
-      const item =
-        moderationItems.find(
-          candidate =>
-            candidate.id
-            ===
-            itemId,
-        )
-
-      if (!item) {
-        return
-      }
-
-      const nextStatus =
-        item.status
-        ===
-        'VISIBLE'
-          ? 'REMOVED'
-          : 'VISIBLE'
-
-      if (
-        nextStatus
-        ===
-        'REMOVED'
-      ) {
-
-        const confirmed =
-          window.confirm(
-            `Remove "${item.title}" from public visibility?`,
-          )
-
-        if (!confirmed) {
-          return
-        }
-      }
-
-      setModerationItems(
-        previous =>
-          previous.map(
-            candidate =>
-              candidate.id
-              ===
-              itemId
-                ? {
-                    ...candidate,
-                    status:
-                      nextStatus,
-                  }
-                : candidate
-          )
-      )
-
-      addActivity(
-        nextStatus
-        ===
-        'REMOVED'
-          ? 'REMOVE_CONTENT'
-          : 'RESTORE_CONTENT',
-        `${item.type} #${item.id}`,
-      )
-
-      showToast(
-        'success',
-        `${item.title} ${
-          nextStatus
-          ===
-          'REMOVED'
-            ? 'removed'
-            : 'restored'
-        }.`,
-      )
+    if (status === 'DEACTIVATED' && !window.confirm(`Deactivate ${user.name}?`)) return
+    try {
+      const updated = await adminApi.setUserActive(userId, status === 'ACTIVE')
+      setUsers(previous => previous.map(candidate => candidate.id === userId
+        ? { ...candidate, status: updated.active ? 'ACTIVE' : 'DEACTIVATED' }
+        : candidate))
+      setRefreshKey(value => value + 1)
+      showToast('success', `${user.name}'s status was saved.`)
+    } catch (error) {
+      showToast('error', error instanceof Error ? error.message : 'User update failed')
     }
+  }
 
+  const toggleContentStatus = (_itemId: number) => {
+    showToast('error', 'Post visibility API is not implemented yet; no content was changed.')
+  }
 
-  const handleRefresh =
-    () => {
-
-      setLastUpdated(
-        new Date()
-      )
-
-      showToast(
-        'success',
-        'Dashboard refreshed successfully.',
-      )
-    }
-
+  const handleRefresh = () => setRefreshKey(value => value + 1)
 
   const pageTitle = {
     overview:
@@ -1277,162 +982,24 @@ function AdminDashboard() {
 
 
   return (
-    <div className="admin-layout">
+    <div className="cp-admin-dashboard-body">
 
-      <aside className="admin-sidebar">
-
-        <div className="admin-sidebar-brand">
-
-          <div className="admin-brand-badge">
-            A
-          </div>
-
-          <div>
-            <h2>
-              Admin
-            </h2>
-
-            <p>
-              Creative Collab
-            </p>
-          </div>
-
-        </div>
-
-
-        <nav className="admin-navigation">
-
-          <button
-            className={
-              section
-              ===
-              'overview'
-                ? 'active'
-                : ''
-            }
-            onClick={
-              () =>
-                setSection(
-                  'overview'
-                )
-            }
-          >
-            Overview
-          </button>
-
-
-          <button
-            className={
-              section
-              ===
-              'reports'
-                ? 'active'
-                : ''
-            }
-            onClick={
-              () =>
-                setSection(
-                  'reports'
-                )
-            }
-          >
-            My Assigned Reports
-
-            {
-              openReports > 0
-              &&
-              (
-                <span className="admin-nav-count">
-                  {
-                    openReports
-                  }
-                </span>
-              )
-            }
-          </button>
-
-
-          <button
-            className={
-              section
-              ===
-              'users'
-                ? 'active'
-                : ''
-            }
-            onClick={
-              () =>
-                setSection(
-                  'users'
-                )
-            }
-          >
-            Manage Users
-          </button>
-
-
-          <button
-            className={
-              section
-              ===
-              'analytics'
-                ? 'active'
-                : ''
-            }
-            onClick={
-              () =>
-                setSection(
-                  'analytics'
-                )
-            }
-          >
-            Analytics
-          </button>
-
-
-          <button
-            className={
-              section
-              ===
-              'moderation'
-                ? 'active'
-                : ''
-            }
-            onClick={
-              () =>
-                setSection(
-                  'moderation'
-                )
-            }
-          >
-            Content Moderation
-          </button>
-
-
-          <button
-            className={
-              section
-              ===
-              'activity'
-                ? 'active'
-                : ''
-            }
-            onClick={
-              () =>
-                setSection(
-                  'activity'
-                )
-            }
-          >
-            My Activity
-          </button>
-
-        </nav>
-
-      </aside>
-
-
-      <main className="admin-main">
+      <main className="cp-admin-dashboard-content">
+        {apiLoading && <p role="status" style={{ color: '#625c78' }}>Loading Admin records from the backend…</p>}
+        {apiError && <p role="alert" style={{ color: '#a42742', background: '#fff4f6', padding: 12, borderRadius: 10 }}>
+          {apiError}. Verify the Spring Boot server, Admin JWT, CORS and security rules.
+        </p>}
+        {overviewLive && (
+          <section aria-label="Live platform totals" style={{ display:'flex', flexWrap:'wrap', gap: 16, padding: 16, marginBottom: 16, background:'rgba(255,255,255,.94)', borderRadius: 12, color:'#29265f' }}>
+            <strong>Live database totals</strong>
+            <span>Users: {overviewLive.totalUsers}</span>
+            <span>Posts: {overviewLive.totalPosts}</span>
+            <span>Events: {overviewLive.totalEvents}</span>
+            <span>Pending reports: {overviewLive.pendingReports}</span>
+          </section>
+        )}
+        {section === 'analytics' && <p style={{padding:10, color:'#625c78'}}>The analytics charts below are existing sample visualisations. Only the database totals above are live.</p>}
+        {section === 'moderation' && <p style={{padding:10, color:'#625c78'}}>Content removal/restoration requires a separate moderation API. No items have been changed.</p>}
 
         <header className="admin-header">
 
@@ -1516,7 +1083,7 @@ function AdminDashboard() {
                               type="button"
                               className="notification-message"
                               onClick={() => {
-                                setSection(notification.section)
+                                navigateSection(notification.section)
                                 setNotificationsOpen(false)
                               }}
                             >
@@ -1676,13 +1243,13 @@ function AdminDashboard() {
                 <div className="admin-attention-actions">
                   <button
                     type="button"
-                    onClick={() => setSection('reports')}
+                    onClick={() => navigateSection('reports')}
                   >
                     Review Queue
                   </button>
                   <button
                     type="button"
-                    onClick={() => setSection('activity')}
+                    onClick={() => navigateSection('activity')}
                   >
                     View Activity
                   </button>
@@ -1963,7 +1530,7 @@ function AdminDashboard() {
                       className="admin-primary-button"
                       onClick={
                         () =>
-                          setSection(
+                          navigateSection(
                             'reports'
                           )
                       }
@@ -2113,7 +1680,7 @@ function AdminDashboard() {
                           className="admin-alert danger"
                           onClick={
                             () =>
-                              setSection(
+                              navigateSection(
                                 'reports'
                               )
                           }
@@ -2156,7 +1723,7 @@ function AdminDashboard() {
                           className="admin-alert warning"
                           onClick={
                             () =>
-                              setSection(
+                              navigateSection(
                                 'reports'
                               )
                           }
@@ -2313,7 +1880,7 @@ function AdminDashboard() {
                       type="button"
                       onClick={
                         () =>
-                          setSection(
+                          navigateSection(
                             'users'
                           )
                       }
@@ -2333,7 +1900,7 @@ function AdminDashboard() {
                       type="button"
                       onClick={
                         () =>
-                          setSection(
+                          navigateSection(
                             'users'
                           )
                       }
@@ -2358,7 +1925,7 @@ function AdminDashboard() {
                       type="button"
                       onClick={
                         () =>
-                          setSection(
+                          navigateSection(
                             'moderation'
                           )
                       }
@@ -2378,7 +1945,7 @@ function AdminDashboard() {
                       type="button"
                       onClick={
                         () =>
-                          setSection(
+                          navigateSection(
                             'moderation'
                           )
                       }
@@ -2461,7 +2028,7 @@ function AdminDashboard() {
                       type="button"
                       onClick={
                         () =>
-                          setSection(
+                          navigateSection(
                             'reports'
                           )
                       }
@@ -2473,7 +2040,7 @@ function AdminDashboard() {
                       type="button"
                       onClick={
                         () =>
-                          setSection(
+                          navigateSection(
                             'users'
                           )
                       }
@@ -2485,7 +2052,7 @@ function AdminDashboard() {
                       type="button"
                       onClick={
                         () =>
-                          setSection(
+                          navigateSection(
                             'moderation'
                           )
                       }
@@ -2497,7 +2064,7 @@ function AdminDashboard() {
                       type="button"
                       onClick={
                         () =>
-                          setSection(
+                          navigateSection(
                             'analytics'
                           )
                       }
@@ -2531,7 +2098,7 @@ function AdminDashboard() {
                     className="admin-secondary-button"
                     onClick={
                       () =>
-                        setSection(
+                        navigateSection(
                           'activity'
                         )
                     }
@@ -3486,9 +3053,7 @@ function AdminDashboard() {
                             'RESOLVED',
                           )
 
-                          setSelectedReport(
-                            null
-                          )
+
                         }
                       }
                     >
@@ -3513,9 +3078,7 @@ function AdminDashboard() {
                             'DISMISSED',
                           )
 
-                          setSelectedReport(
-                            null
-                          )
+
                         }
                       }
                     >

@@ -909,7 +909,7 @@ function CreativeCollabNetwork() {
       settings: 'settings',
       admin: 'admin'
     }
-    if (page === 'admin' && currentUser?.role?.replace(/^ROLE_/i, '').toUpperCase() !== 'ADMIN') {
+    if (page === 'admin' && !['ADMIN', 'SUPER_ADMIN'].includes(currentUser?.role?.replace(/^ROLE_/i, '').toUpperCase() ?? '')) {
       setUiMessages('You do not have permission to access the admin page.')
       return
     }

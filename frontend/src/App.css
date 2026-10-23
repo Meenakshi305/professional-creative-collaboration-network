@@ -286,3 +286,13 @@ body { color: var(--cp-text-body); }
 /* Keep existing form designs; ensure form text stays legible. */
 input, textarea, select { color: var(--cp-text-body); }
 button { letter-spacing: 0; }
+:root {
+  --cp-text-heading: #29265f;
+  --cp-text-body: #45425c;
+  --cp-text-muted: #625c78;
+  --cp-text-accent: #5748c8;
+}
+
+.cp-shell-main {
+  color: var(--cp-text-body);
+}

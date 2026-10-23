@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { getCurrentUser } from '../../service/authService'
 import Sidebar, { type MainPage } from './Sidebar'
 import AdminLayout from '../../webpages/Admin/AdminLayout'
+import SuperAdminLive from '../../pages/SuperAdmin/SuperAdminLive'
 import './CreativeAppShell.css'
 
 export type CreativeAppShellProps = {
@@ -32,12 +33,14 @@ export default function CreativeAppShell({ activePage, onNavigate, onLogout, chi
   if (loading) return <div className="cp-shell-loading">Loading account...</div>
   if (!user) return <div className="cp-shell-loading">Session expired. Please sign in again.</div>
 
-  const isAdmin = user.role?.replace(/^ROLE_/i, '').toUpperCase() === 'ADMIN'
+  const role = user.role?.replace(/^ROLE_/i, '').toUpperCase()
+  const isSuperAdmin = role === 'SUPER_ADMIN'
+  const canAccessAdmin = role === 'ADMIN' || isSuperAdmin
   return <div className="cp-app-shell">
-    <Sidebar activePage={activePage} isAdmin={isAdmin} onNavigate={onNavigate}
+    <Sidebar activePage={activePage} isAdmin={canAccessAdmin} onNavigate={onNavigate}
       onLogout={onLogout} displayName={user.fullName ?? undefined} />
     <div className="cp-shell-main">
-      {activePage === 'admin' ? (isAdmin ? <AdminLayout /> : <div className="cp-no-access" role="alert">Admin access required.</div>) : children}
+      {activePage === 'admin' ? (isSuperAdmin ? <SuperAdminLive /> : canAccessAdmin ? <AdminLayout /> : <div className="cp-no-access" role="alert">Admin access required.</div>) : children}
     </div>
   </div>
 }

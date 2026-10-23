@@ -1,10 +1,167 @@
-.cp-admin-sidebar { width: 210px; flex: 0 0 210px; background: #f9f7ff; border-right: 1px solid #e5e0f1; padding: 24px 13px; box-sizing: border-box; min-height: 100dvh; }
-.cp-admin-brand { display: flex; flex-direction: column; gap: 5px; padding: 0 10px 23px; color: #302a68; }
-.cp-admin-brand strong { font-size: 16px; }.cp-admin-brand small { color: #77708f; font-size: 11px; }
-.cp-admin-nav { display: flex; flex-direction: column; gap: 7px; }
-.cp-admin-link { display: flex; width: 100%; align-items: center; gap: 10px; background: transparent; color: #554d73; border: none; border-radius: 10px; padding: 12px; font: inherit; font-size: 13px; cursor: pointer; text-align: left; }
-.cp-admin-link span { width: 20px; text-align: center; font-size: 19px; }
-.cp-admin-link:hover { background: #efebfc; }
-.cp-admin-link.is-active { background: #e6dfff; color: #4f3db0; font-weight: 700; }
-@media (max-width: 900px) { .cp-admin-sidebar { width: 170px; flex-basis: 170px; } }
-@media (max-width: 700px) { .cp-admin-sidebar { width: 100%; min-height: unset; flex-basis: auto; padding: 12px; } .cp-admin-brand { padding: 0 4px 10px; } .cp-admin-nav { flex-direction: row; overflow-x: auto; } .cp-admin-link { width: auto; flex: 0 0 auto; padding: 9px 12px; } }
+
+/* ==========================================
+   CREATIVE NETWORK - ADMIN SIDEBAR
+   Uses existing application font family
+========================================== */
+
+.cp-admin-sidebar {
+  width: 220px;
+  min-width: 220px;
+  min-height: 100%;
+  flex-shrink: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  padding: 24px 14px;
+  box-sizing: border-box;
+
+  background: rgba(250, 248, 255, 0.96);
+  border-right: 1px solid rgba(117, 103, 223, 0.16);
+}
+
+/* Admin workspace heading */
+
+.cp-admin-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+
+  padding: 12px 12px 24px;
+  margin-bottom: 16px;
+
+  border-bottom: 1px solid rgba(117, 103, 223, 0.14);
+}
+
+.cp-admin-brand strong {
+  color: #29265f;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.cp-admin-brand small {
+  color: #625c78;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Navigation */
+
+.cp-admin-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  width: 100%;
+}
+
+.cp-admin-link {
+  width: 100%;
+  min-height: 44px;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  padding: 11px 14px;
+  border: 1px solid transparent;
+  border-radius: 11px;
+
+  background: transparent;
+  color: #625c78;
+
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  line-height: 1.4;
+
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.cp-admin-link svg {
+  width: 19px;
+  height: 19px;
+  flex-shrink: 0;
+  color: currentColor;
+}
+
+/* Hover */
+
+.cp-admin-link:hover {
+  background: rgba(117, 102, 210, 0.09);
+  color: #5748c8;
+}
+
+/* Active navigation */
+
+.cp-admin-link.is-active {
+  background: #7566d2;
+  color: #ffffff;
+  border-color: #7566d2;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(117, 102, 210, 0.2);
+}
+
+.cp-admin-link.is-active:hover {
+  background: #6758c4;
+  border-color: #6758c4;
+}
+
+.cp-admin-link:focus-visible {
+  outline: 3px solid rgba(117, 102, 210, 0.4);
+  outline-offset: 2px;
+}
+
+/* ==========================================
+   RESPONSIVE
+========================================== */
+
+@media (max-width: 1000px) {
+  .cp-admin-sidebar {
+    width: 185px;
+    min-width: 185px;
+    padding: 20px 10px;
+  }
+
+  .cp-admin-link {
+    padding: 10px;
+    gap: 9px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 700px) {
+  .cp-admin-sidebar {
+    width: 100%;
+    min-width: 0;
+    min-height: auto;
+
+    padding: 14px 12px;
+
+    border-right: none;
+    border-bottom: 1px solid rgba(117, 103, 223, 0.16);
+  }
+
+  .cp-admin-brand {
+    padding: 4px 8px 12px;
+    margin-bottom: 12px;
+  }
+
+  .cp-admin-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 4px;
+  }
+
+  .cp-admin-link {
+    width: auto;
+    min-width: max-content;
+    white-space: nowrap;
+    padding: 10px 12px;
+  }
+}
