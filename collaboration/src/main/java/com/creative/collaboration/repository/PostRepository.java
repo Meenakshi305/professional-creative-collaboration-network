@@ -17,14 +17,15 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     // Main dashboard:
     // posts only from people the logged-in user follows
     @Query("""
-        SELECT p
-        FROM Post p
-        WHERE p.user.id IN (
-            SELECT f.following.id
-            FROM UserFollow f
-            WHERE f.follower.id = :userId
-        )
-        ORDER BY p.createdAt DESC
+           SELECT p
+                   FROM Post p
+                   WHERE p.user.id = :userId
+                      OR p.user.id IN (
+                          SELECT f.following.id
+                          FROM UserFollow f
+                          WHERE f.follower.id = :userId
+                      )
+                   ORDER BY p.createdAt DESC, p.id DESC
     """)
     List<Post> findFeedPosts(
             @Param("userId") Long userId

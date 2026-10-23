@@ -1,0 +1,10 @@
+.cp-admin-sidebar { width: 210px; flex: 0 0 210px; background: #f9f7ff; border-right: 1px solid #e5e0f1; padding: 24px 13px; box-sizing: border-box; min-height: 100dvh; }
+.cp-admin-brand { display: flex; flex-direction: column; gap: 5px; padding: 0 10px 23px; color: #302a68; }
+.cp-admin-brand strong { font-size: 16px; }.cp-admin-brand small { color: #77708f; font-size: 11px; }
+.cp-admin-nav { display: flex; flex-direction: column; gap: 7px; }
+.cp-admin-link { display: flex; width: 100%; align-items: center; gap: 10px; background: transparent; color: #554d73; border: none; border-radius: 10px; padding: 12px; font: inherit; font-size: 13px; cursor: pointer; text-align: left; }
+.cp-admin-link span { width: 20px; text-align: center; font-size: 19px; }
+.cp-admin-link:hover { background: #efebfc; }
+.cp-admin-link.is-active { background: #e6dfff; color: #4f3db0; font-weight: 700; }
+@media (max-width: 900px) { .cp-admin-sidebar { width: 170px; flex-basis: 170px; } }
+@media (max-width: 700px) { .cp-admin-sidebar { width: 100%; min-height: unset; flex-basis: auto; padding: 12px; } .cp-admin-brand { padding: 0 4px 10px; } .cp-admin-nav { flex-direction: row; overflow-x: auto; } .cp-admin-link { width: auto; flex: 0 0 auto; padding: 9px 12px; } }

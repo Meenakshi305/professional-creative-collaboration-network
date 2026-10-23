@@ -1,0 +1,101 @@
+
+.live-comments {
+  padding: 16px;
+  border-top: 1px solid #e5e7eb;
+  background: #fff;
+}
+
+.live-comments h4 {
+  margin: 0 0 16px;
+  font-size: 15px;
+}
+
+.live-comment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 16px;
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+.live-comment-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.live-comment-item .comment-avatar {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.live-comment-item .comment-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.live-comment-item .comment-content strong {
+  font-size: 13px;
+}
+
+.live-comment-item .comment-content p {
+  margin: 4px 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.live-comment-item .comment-content small {
+  color: #6b7280;
+  font-size: 11px;
+}
+
+.live-comment-form {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.live-comment-form input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid #d1d5db;
+  border-radius: 20px;
+  padding: 11px 14px;
+  font-size: 13px;
+}
+
+.live-comment-form button {
+  background: #16826f;
+  border: none;
+  color: white;
+  border-radius: 20px;
+  padding: 11px 18px;
+  cursor: pointer;
+}
+
+.live-comment-form button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.delete-comment-btn {
+  border: none;
+  background: transparent;
+  color: #b91c1c;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.live-comment-error {
+  color: #b91c1c;
+  font-size: 13px;
+}

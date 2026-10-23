@@ -901,3 +901,130 @@
     flex-direction: column;
   }
 }
+
+/* Compact hybrid Creative Pro profile: append to existing Profile.css */
+.profile-screen .profile-banner {
+  height: 92px !important;
+  min-height: 92px !important;
+}
+.profile-screen .profile-banner::after { opacity: .35; }
+.profile-screen .profile-main-info {
+  padding-top: 16px !important;
+  padding-bottom: 22px !important;
+  gap: 20px;
+}
+.profile-screen .profile-avatar {
+  width: 108px !important;
+  height: 108px !important;
+  min-width: 108px;
+  min-height: 108px;
+  object-fit: cover;
+}
+.profile-screen .profile-heading { margin-top: 0 !important; min-width: 0; }
+.profile-screen .profile-bio { margin: 8px 0 10px !important; }
+.profile-screen .profile-stats.instagram-follow-stats {
+  display: flex !important;
+  gap: 24px !important;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 8px !important;
+  padding-top: 8px !important;
+}
+.profile-screen .instagram-follow-stat {
+  display: inline-flex !important;
+  align-items: baseline !important;
+  gap: 6px !important;
+  padding: 4px 0 !important;
+  border: 0;
+  background: transparent;
+  color: #30265c;
+  width: auto !important;
+  text-align: left;
+}
+.profile-screen .instagram-follow-stat strong { font-size: 16px; font-weight: 750; }
+.profile-screen .instagram-follow-stat span { font-size: 14px; font-weight: 400; color: #77708e; }
+.profile-screen button.instagram-follow-stat { cursor: pointer; }
+.profile-screen button.instagram-follow-stat:hover span { text-decoration: underline; }
+.profile-screen .profile-tabs { display:flex; gap: 8px; flex-wrap:wrap; }
+.profile-screen .profile-tabs .profile-tab { flex: 1 1 120px; }
+@media (max-width: 600px) {
+  .profile-screen .profile-banner {height:76px !important;min-height:76px !important;}
+  .profile-screen .profile-avatar {width:84px !important;height:84px !important;min-width:84px;min-height:84px;}
+  .profile-screen .profile-main-info { gap:12px; }
+  .profile-screen .profile-stats.instagram-follow-stats {gap:15px !important;}
+}
+/* Add to the END of your existing Profile.css.
+   Applies to own + public profile pages only. */
+.profile-screen .profile-page {
+  padding-top: 16px !important;
+}
+.profile-screen .profile-navigation {
+  margin-bottom: 12px !important;
+}
+.profile-screen .profile-content {
+  padding-top: 0 !important;
+}
+.profile-screen .profile-card {
+  overflow: hidden;
+  border-radius: 18px;
+}
+.profile-screen .profile-banner {
+  height: 86px !important;
+  min-height: 86px !important;
+  padding: 14px 24px !important;
+  box-sizing: border-box;
+}
+.profile-screen .banner-number { display: none !important; }
+.profile-screen .banner-label {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  margin: 0 !important;
+  font-size: 11px !important;
+  letter-spacing: 3px;
+}
+.profile-screen .profile-main-info {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  padding: 18px 24px 20px !important;
+}
+.profile-screen .profile-main-info > .profile-avatar {
+  position: relative !important;
+  top: -46px !important;
+  left: auto !important;
+  margin: 0 0 -46px !important;
+  width: 96px !important;
+  height: 96px !important;
+  min-width: 96px !important;
+  min-height: 96px !important;
+  flex: 0 0 96px;
+  border: 4px solid white;
+  border-radius: 50%;
+  box-sizing: border-box;
+  object-fit: cover;
+}
+.profile-screen .profile-heading {
+  flex: 1;
+  min-width: 0;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.profile-screen .profile-name-row { align-items: center; gap: 12px; }
+.profile-screen .profile-bio { margin: 8px 0 10px !important; }
+.profile-screen .profile-stats { margin-top: 8px !important; padding-top: 10px !important; }
+@media (max-width:650px) {
+  .profile-screen .profile-page { padding: 12px !important; }
+  .profile-screen .profile-banner { height: 72px !important; min-height:72px !important; }
+  .profile-screen .profile-main-info { gap: 12px; padding: 12px !important; }
+  .profile-screen .profile-main-info > .profile-avatar {
+    width: 70px !important;
+    height: 70px !important;
+    min-width: 70px !important;
+    min-height: 70px !important;
+    flex-basis: 70px;
+    top: -30px !important;
+    margin-bottom: -30px !important;
+  }
+  .profile-screen .profile-name-line h1 { font-size: 20px; overflow-wrap:anywhere; }
+}

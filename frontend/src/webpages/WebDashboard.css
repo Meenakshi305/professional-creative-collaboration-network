@@ -18,8 +18,8 @@
 
 .dashboard-search {
   height: 44px;
-  min-width: 220px;
-  max-width: 420px;
+  min-width: 0;
+  max-width: 100%;
     
   flex: 1;
 
@@ -67,6 +67,7 @@
 
 .dashboard-search input {
   width: 100%;
+  min-width: 0;
 
   border: none;
   outline: none;
@@ -95,9 +96,9 @@
   display: grid;
 
   grid-template-columns:
-    minmax(220px, 250px)
-    minmax(450px, 1fr)
-    minmax(270px, 310px);
+    minmax(200px, 250px)
+    minmax(0, 1fr)
+    minmax(240px, 310px);
 
   gap: 22px;
   align-items: start;
@@ -155,6 +156,9 @@
 
 .dashboard-left .profile-card {
   overflow: hidden;
+  width: 100%;
+  height: auto;
+  box-sizing: border-box;
 }
 
 .profile-cover {
@@ -170,16 +174,16 @@
 }
 
 .profile-details {
-  padding: 0 18px 20px;
+  padding: 0 14px 16px;
 
   text-align: center;
 }
 
 .dashboard-left .profile-avatar {
-  width: 76px;
-  height: 76px;
+  width: 72px;
+  height: 72px;
 
-  margin: -39px auto 12px;
+  margin: -37px auto 10px;
 
   display: flex;
   align-items: center;
@@ -211,7 +215,7 @@
 
   color: #29265f;
 
-  font-size: 19px;
+  font-size: 18px;
   font-weight: 800;
 }
 
@@ -259,24 +263,27 @@
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
 
-  padding: 15px 22px;
+  padding: 10px 16px;
   min-height: 0;
+  line-height: 1.35;
 }
 .dashboard-left .profile-stats span {
   color: #77718a;
-  font-size: 14px;
+  font-size: 13px;
 }
 .dashboard-left .profile-stats strong {
+  flex-shrink: 0;
   color: #6555db;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
 }
 
 /* ---------------- PROFILE LINKS ---------------- */
 
 .dashboard-left .profile-links {
-  padding: 10px;
+  padding: 8px 10px;
 
   display: flex;
   flex-direction: column;
@@ -286,7 +293,7 @@
 .dashboard-left .profile-links button {
   width: 100%;
 
-  padding: 10px 11px;
+  padding: 8px 11px;
 
   border: none;
   border-radius: 9px;
@@ -394,6 +401,7 @@
   height: 45px;
 
   flex: 1;
+  min-width: 0;
 
   padding: 0 18px;
 
@@ -875,40 +883,32 @@
 
   flex-shrink: 0;
 }
-.footer-links {
+.dashboard-footer .footer-links {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   align-items: center;
-
-  gap: 26px;
-
-  margin-bottom: 3px;
+  gap: 12px 24px;
+  margin-bottom: 4px;
 }
-.footer-links button {
+
+/* The footer uses <span> elements, not <button> elements. */
+.dashboard-footer .footer-links span {
+  display: inline-block;
   padding: 2px 0;
-
-  border: none;
-  background: transparent;
-
-  color: rgba(255, 255, 255, 0.88);
-
+  color: rgba(255, 255, 255, 0.92);
   font-family: inherit;
-  font-size: 9px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+}
 
-  cursor: pointer;
-}
-.footer-links button:hover {
-  background: rgba(255, 255, 255, 0.10);
-  color: #ffffff;
-  text-decoration: none;
-}
 .dashboard-footer p {
   margin: 2px 0 0;
-
-  color: rgba(255, 255, 255, 0.72);
-
-  font-size: 8px;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 10px;
+  line-height: 1.5;
 }
 /* =========================================================
    RESPONSIVE LAYOUT
@@ -922,8 +922,8 @@
   }
   .dashboard-container {
     grid-template-columns:
-      220px
-      minmax(430px, 1fr);
+      minmax(190px, 220px)
+      minmax(0, 1fr);
   }
   .dashboard-right {
     display: none;
@@ -1041,11 +1041,13 @@
 .search-wrapper {
   position: relative;
   flex: 1;
-  max-width: 420px;
+  max-width: 540px;
+  min-width: 0;
 }
 .search-wrapper .dashboard-search {
   width: 100%;
   max-width: none;
+  min-width: 0;
   box-sizing: border-box;
 }
 
@@ -1508,3 +1510,191 @@
 
   background: rgba(117, 103, 223, 0.04);
 }
+
+/* =========================================================
+   DESKTOP CARD ALIGNMENT - LAYOUT ONLY (2026-10-22)
+   ========================================================= */
+
+/* Center all three existing columns with equal outer margins. */
+@media (min-width: 1181px) {
+  .dashboard-page .dashboard-container {
+    width: min(1724px, calc(100% - 64px));
+    max-width: 1724px;
+    margin-inline: auto;
+    box-sizing: border-box;
+    grid-template-columns:
+      minmax(220px, min(306px, 22%))
+      minmax(0, 1fr)
+      minmax(270px, min(380px, 27%));
+    column-gap: 26px;
+    align-items: start;
+  }
+}
+
+/* Keep existing cards inside their respective grid columns. */
+.dashboard-page .dashboard-left,
+.dashboard-page .dashboard-feed,
+.dashboard-page .dashboard-right {
+  min-width: 0;
+}
+
+.dashboard-page .dashboard-left .profile-card,
+.dashboard-page .dashboard-feed .create-post-card,
+.dashboard-page .dashboard-feed .feed-post,
+.dashboard-page .dashboard-right .discovery-card {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Keep the avatar over the cover and the name/stats centered. */
+.dashboard-page .dashboard-left .profile-card {
+  overflow: hidden;
+}
+
+.dashboard-page .dashboard-left .profile-details {
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.dashboard-page .dashboard-left .profile-avatar {
+  position: relative;
+  z-index: 1;
+}
+
+.dashboard-page .dashboard-left .profile-stats > div {
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* Match the vertical separation of the three right-side cards. */
+.dashboard-page .dashboard-right {
+  gap: 18px;
+}
+/* Add to the BOTTOM of existing WebDashboard.css */
+.dashboard-feed .post-actions.post-actions-two {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 8px;
+  width: 100%;
+  border-top: 1px solid #eceaf2;
+  padding: 10px 0;
+}
+.dashboard-feed .post-actions-two .creative-like-control {
+  width: 100%;
+  min-width: 0;
+  position: relative;
+}
+.dashboard-feed .post-actions-two .creative-like-control > button,
+.dashboard-feed .post-actions-two .dashboard-comment-button {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 12px;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  border: 0;
+  border-radius: 9px;
+  box-shadow: none;
+  background: transparent;
+  color: #514c67;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.dashboard-feed .post-actions-two .creative-like-control > button:hover,
+.dashboard-feed .post-actions-two .dashboard-comment-button:hover {
+  background: #f3efff;
+}
+.dashboard-feed .post-actions-two .creative-like-control > button.is-liked {
+  color: #e63946;
+}
+.dashboard-feed .post-actions-two .like-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #eeeaff;
+  color: #6554c0;
+  font-size: 12px;
+  font-weight: 700;
+}
+.dashboard-feed .post-actions-two .like-error,
+.dashboard-feed .post-actions-two .like-error-message {
+  display: block;
+  color: #b91c1c;
+  font-size: 11px;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+/* Add to the bottom of src/webpages/WebDashboard.css */
+.dashboard-page .dashboard-left .profile-avatar {
+  overflow: hidden;
+  border-radius: 50%;
+}
+.dashboard-page .dashboard-left .profile-avatar .dashboard-profile-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+/* Add to the BOTTOM of the existing WebDashboard.css. */
+.dashboard-page .dashboard-right .creative-person > .suggested-avatar-photo,
+.dashboard-page .dashboard-right .creative-person > .suggested-avatar-initials {
+  flex: 0 0 56px;
+  width: 56px;
+  height: 56px;
+  min-width: 56px;
+  border-radius: 50%;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.dashboard-page .dashboard-right .creative-person > .suggested-avatar-photo {
+  display: block;
+  object-fit: cover;
+  object-position: center;
+}
+
+.dashboard-page .dashboard-right .creative-person > .suggested-avatar-initials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #39306f, #7760df);
+  color: #fff;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.dashboard-page .dashboard-right .creative-person > .suggested-avatar-initials span {
+  display: block;
+  white-space: nowrap;
+  line-height: 1;
+}
+/* CREATIVE PRO — two-column home layout, append to WebDashboard.css */
+.cp-app-shell .dashboard-page, .dashboard-page { min-width:0; background:#f6f4fb; }
+.cp-home-heading { width:min(1400px,calc(100% - 48px)); margin:0 auto 16px; padding-top:24px; }
+.cp-home-heading h1 {font-size:clamp(23px,2.1vw,30px);line-height:1.2;margin:0;color:#302a68;font-weight:800;}
+.cp-home-heading p {margin:7px 0 0;color:#7d7691;font-size:14px;}
+.cp-dashboard-search-row {position:relative;z-index:70;width:min(1400px,calc(100% - 48px));margin:0 auto 22px;}
+.cp-dashboard-search-row .search-wrapper {display:block;width:100%;max-width:100%;position:relative;margin:0;}
+.cp-dashboard-search-row .dashboard-search {max-width:none; width:100%; min-height:52px; box-sizing:border-box; background:#fff;border-color:#e2dcef;}
+.cp-dashboard-search-row .dashboard-search input {font-size:14px;}
+.cp-dashboard-search-row .search-results {position:absolute;z-index:90;left:0;top:calc(100% + 6px);width:100%;max-height:min(60vh,530px);overflow-y:auto;box-sizing:border-box;background:white;box-shadow:0 14px 35px rgba(35,25,76,.15);border:1px solid #e8e2f5;border-radius:14px;}
+/* Override old 3-column desktop, tablet, and previous append rules */
+.dashboard-page .dashboard-container {display:grid !important;grid-template-columns:minmax(0,1.8fr) minmax(280px,1fr) !important;align-items:start;gap:22px !important;width:min(1400px,calc(100% - 48px)) !important;max-width:1400px !important;margin:0 auto !important;box-sizing:border-box;}
+.dashboard-page .dashboard-feed {grid-column:1;min-width:0;width:100%;}
+.dashboard-page .dashboard-right {grid-column:2;min-width:0;width:100%;display:flex;flex-direction:column;gap:18px;}
+.dashboard-page .dashboard-feed .create-post-card,.dashboard-page .dashboard-right .discovery-card {width:100%;max-width:100%;box-sizing:border-box;}
+.cp-composer-avatar {overflow:hidden; flex-shrink:0;}
+.cp-composer-avatar img {width:100%;height:100%;display:block;object-fit:cover;border-radius:50%;}
+@media(max-width:1050px){ .dashboard-page .dashboard-container {grid-template-columns:minmax(0,1.45fr) minmax(240px,1fr) !important;gap:16px !important;} }
+@media(max-width:760px){ .dashboard-page .dashboard-container {grid-template-columns:minmax(0,1fr) !important;width:calc(100% - 28px) !important;gap:18px !important;} .dashboard-page .dashboard-feed,.dashboard-page .dashboard-right {grid-column:1;} .cp-home-heading,.cp-dashboard-search-row{width:calc(100% - 28px);} .cp-home-heading {padding-top:14px;} }

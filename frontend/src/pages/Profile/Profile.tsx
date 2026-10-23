@@ -6,7 +6,10 @@ import {
 
 } from 'react'
 
+import PostList from '../../shared/PostList/PostList'
+
 import './Profile.css'
+import OwnFollowModal from '../../shared/OwnFollowModal/OwnFollowModal'
 
 import NavigationBar
 
@@ -190,6 +193,8 @@ function Profile({
 
   ] = useState(0)
 
+  const [followListOpen, setFollowListOpen] = useState<'followers' | 'following' | null>(null)
+
   // ============================================
 
   // PROFILE IMAGE
@@ -329,6 +334,7 @@ function Profile({
   ] = useState<
 
     'posts' |
+    'experience' |
 
     'achievements'
 
@@ -1890,12 +1896,6 @@ function Profile({
 
             <div className="profile-banner">
 
-              <div className="banner-number">
-
-                7
-
-              </div>
-
               <div className="banner-label">
 
                 CREATIVE
@@ -2030,71 +2030,17 @@ function Profile({
 
                 {/* NOT CLICKABLE */}
 
-                <div className="profile-stats">
+                <div className="profile-stats instagram-follow-stats">
 
-                  <div className="profile-stat">
+                  <button type="button" className="profile-stat follow-stat-button instagram-follow-stat" onClick={() => setFollowListOpen('followers')} aria-label={`View my followers`}>
+                    <strong>{followersCount}</strong>
+                    <span>Followers</span>
+                  </button>
 
-                    <strong>
-
-                      {skills.length}
-
-                    </strong>
-
-                    <span>
-
-                      Skills
-
-                    </span>
-
-                  </div>
-
-                  <div className="profile-stat">
-
-                    <strong>
-
-                      {experiences.length}
-
-                    </strong>
-
-                    <span>
-
-                      Experience
-
-                    </span>
-
-                  </div>
-
-                  <div className="profile-stat">
-
-                    <strong>
-
-                      {followersCount}
-
-                    </strong>
-
-                    <span>
-
-                      Followers
-
-                    </span>
-
-                  </div>
-
-                  <div className="profile-stat">
-
-                    <strong>
-
-                      {followingCount}
-
-                    </strong>
-
-                    <span>
-
-                      Following
-
-                    </span>
-
-                  </div>
+                  <button type="button" className="profile-stat follow-stat-button instagram-follow-stat" onClick={() => setFollowListOpen('following')} aria-label={`View my following`}>
+                    <strong>{followingCount}</strong>
+                    <span>Following</span>
+                  </button>
 
                 </div>
 
@@ -2232,6 +2178,98 @@ function Profile({
 
           </section>
 
+          {/* POSTS / ACHIEVEMENTS */}
+
+          <section
+
+            className="
+
+              profile-section-card
+
+              profile-work-section
+
+            "
+
+          >
+
+            <div className="profile-tabs">
+
+              <button
+
+                type="button"
+
+                className={
+
+                  activeTab === 'posts'
+
+                    ? 'profile-tab active'
+
+                    : 'profile-tab'
+
+                }
+
+                onClick={
+
+                  () =>
+
+                    setActiveTab(
+
+                      'posts'
+
+                    )
+
+                }
+
+              >
+
+                Posts
+
+              </button>
+
+              <button
+                type="button"
+                className={activeTab === 'experience' ? 'profile-tab active' : 'profile-tab'}
+                onClick={() => setActiveTab('experience')}
+              >
+                Experience
+              </button>
+
+              <button
+
+                type="button"
+
+                className={
+
+                  activeTab === 'achievements'
+
+                    ? 'profile-tab active'
+
+                    : 'profile-tab'
+
+                }
+
+                onClick={
+
+                  () =>
+
+                    setActiveTab(
+
+                      'achievements'
+
+                    )
+
+                }
+
+              >
+
+                Achievements
+
+              </button>
+
+            </div>
+
+            {activeTab === 'experience' && (
+              <>
           {/* EXPERIENCE */}
 
           <section className="profile-section-card">
@@ -2474,149 +2512,21 @@ function Profile({
 
           </section>
 
-          {/* POSTS / ACHIEVEMENTS */}
-
-          <section
-
-            className="
-
-              profile-section-card
-
-              profile-work-section
-
-            "
-
-          >
-
-            <div className="profile-tabs">
-
-              <button
-
-                type="button"
-
-                className={
-
-                  activeTab === 'posts'
-
-                    ? 'profile-tab active'
-
-                    : 'profile-tab'
-
-                }
-
-                onClick={
-
-                  () =>
-
-                    setActiveTab(
-
-                      'posts'
-
-                    )
-
-                }
-
-              >
-
-                Posts
-
-              </button>
-
-              <button
-
-                type="button"
-
-                className={
-
-                  activeTab === 'achievements'
-
-                    ? 'profile-tab active'
-
-                    : 'profile-tab'
-
-                }
-
-                onClick={
-
-                  () =>
-
-                    setActiveTab(
-
-                      'achievements'
-
-                    )
-
-                }
-
-              >
-
-                Achievements
-
-              </button>
-
-            </div>
-
-            {
-
-              activeTab === 'posts'
-
-              &&
-
-              (
-
-                <div className="profile-posts">
-
-                  <article className="profile-post">
-
-                    <div className="profile-post-header">
-
-                      <div className="profile-post-avatar">
-
-                        {getInitials()}
-
-                      </div>
-
-                      <div>
-
-                        <div className="post-name">
-
-                          <strong>
-
-                            {currentUser?.fullName}
-
-                          </strong>
-
-                          <span className="small-verified">
-
-                            ✓
-
-                          </span>
-
-                        </div>
-
-                        <span>
-
-                          No posts yet
-
-                        </span>
-
-                      </div>
-
-                    </div>
-
-                    <p>
-
-                      Your posts will appear here.
-
-                    </p>
-
-                  </article>
-
-                </div>
-
-              )
-
-            }
+              </>
+            )}
+
+            {activeTab === 'posts' && (
+              <div className="profile-posts">
+                {currentUser ? (
+                  <PostList
+                    userId={currentUser.userId}
+                    own={true}
+                  />
+                ) : (
+                  <p>Unable to load your posts.</p>
+                )}
+              </div>
+            )}
 
             {
 
@@ -2683,6 +2593,13 @@ function Profile({
           </section>
 
         </div>
+
+        {followListOpen && currentUser && (
+          <OwnFollowModal
+            initialTab={followListOpen}
+            onClose={() => setFollowListOpen(null)}
+          />
+        )}
 
         {/* EDIT PROFILE MODAL */}
 

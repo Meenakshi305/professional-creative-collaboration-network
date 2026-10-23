@@ -1,618 +1,288 @@
-/* ============================================
-   AUTH PAGE - MATCH PROFILE PAGE STYLE
-============================================ */
+/* =========================================================
+   CREATIVE PRO GLOBAL THEME
+   Multicolour page background inspired by the original screenshot.
+   Keep this variable defined ONCE.
+========================================================= */
+:root {
+  --creative-background:
+    radial-gradient(ellipse at 0% 0%, rgba(94, 159, 205, 0.94) 0%, transparent 58%),
+    radial-gradient(ellipse at 100% 0%, rgba(209, 145, 116, 0.94) 0%, transparent 60%),
+    radial-gradient(ellipse at 0% 100%, rgba(188, 131, 119, 0.94) 0%, transparent 60%),
+    radial-gradient(ellipse at 100% 100%, rgba(65, 98, 157, 0.96) 0%, transparent 63%),
+    linear-gradient(135deg, #729dc3 0%, #c698a0 53%, #7370ab 100%);
+  --creative-card-background: rgba(255, 255, 255, 0.91);
+  --creative-primary: #302a68;
+  --creative-accent: #7566d2;
+}
 
+html, body, #root { min-height: 100%; margin: 0; }
+body { background: var(--creative-background); background-attachment: fixed; }
+#root { min-height: 100vh; }
+
+/* One continuous background behind the signed-in app and auth screen. */
+.cp-app-shell { min-height: 100vh; background: var(--creative-background); background-attachment: fixed; }
+.cp-shell-main, .cp-shell-content { min-height: 100vh; background: transparent; }
+
+/* Page wrappers must not cover the shared multicolour background.
+   These selectors target PAGE WRAPPERS, not cards or the dark sidebar. */
+.cp-app-shell .profile-screen,
+.cp-app-shell .profile-page,
+.cp-app-shell .dashboard-page,
+.cp-app-shell .dashboard-container,
+.cp-app-shell .events-page,
+.cp-app-shell .collaboration-page,
+.cp-app-shell .admin-layout,
+.cp-app-shell .admin-page,
+.cp-app-shell .public-profile-page,
+.cp-app-shell .notifications-page,
+.cp-app-shell .settings-page { background: transparent; }
+
+/* =========================================================
+   AUTH PAGE
+========================================================= */
 .page-container {
   min-height: 100vh;
   width: 100%;
-
   display: grid;
   grid-template-columns: 1fr 0.9fr;
-
   gap: 36px;
-
   align-items: center;
-
   padding: 40px;
-
   box-sizing: border-box;
-
   background: var(--creative-background);
 }
 
-
-/* ============================================
+/* =========================================================
    LEFT INTRO CARD
-============================================ */
-
+========================================================= */
 .intro-section {
   position: relative;
-
   overflow: hidden;
-
   min-height: 560px;
-
   display: flex;
   flex-direction: column;
-
   justify-content: center;
-
   padding: 48px;
-
   border: 1px solid rgba(255, 255, 255, 0.68);
-
   border-radius: 20px;
-
-  background:
-    linear-gradient(
-      115deg,
-      rgba(42, 38, 95, 0.96),
-      rgba(79, 74, 166, 0.92),
-      rgba(117, 103, 223, 0.85),
-      rgba(193, 117, 139, 0.75)
-    );
-
-  box-shadow:
-    0 8px 25px
-    rgba(50, 45, 100, 0.11);
+  background: linear-gradient(115deg,
+    rgba(42, 38, 95, 0.96), rgba(79, 74, 166, 0.92),
+    rgba(117, 103, 223, 0.85), rgba(193, 117, 139, 0.75));
+  box-shadow: 0 8px 25px rgba(50, 45, 100, 0.11);
 }
-
-
 .intro-section::after {
   content: '';
-
   position: absolute;
-
   width: 520px;
   height: 520px;
-
   right: -180px;
   top: -260px;
-
-  border:
-    70px solid
-    rgba(255, 255, 255, 0.06);
-
+  border: 70px solid rgba(255, 255, 255, 0.06);
   border-radius: 50%;
+  pointer-events: none;
 }
-
-
-.logoWebsite {
-  position: relative;
-  z-index: 2;
-
-  width: 105px;
-  height: auto;
-
-  margin-bottom: 28px;
-}
-
-
+.logoWebsite { position: relative; z-index: 2; width: 105px; height: auto; margin-bottom: 28px; }
 .eyebrow {
-  position: relative;
-  z-index: 2;
-
-  margin-bottom: 14px;
-
-  color:
-    rgba(255, 255, 255, 0.88);
-
-  font-size: 12px;
-  font-weight: 800;
-
-  letter-spacing: 3px;
+  position: relative; z-index: 2; margin-bottom: 14px;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 12px; font-weight: 800; letter-spacing: 3px;
 }
-
-
 .intro-section h1 {
-  position: relative;
-  z-index: 2;
-
-  max-width: 620px;
-
-  margin: 0 0 20px;
-
-  color: white;
-
-  font-size: clamp(
-    2.6rem,
-    5vw,
-    4.5rem
-  );
-
-  line-height: 1.05;
-
-  letter-spacing: -2px;
+  position: relative; z-index: 2; max-width: 620px; margin: 0 0 20px;
+  color: #fff; font-size: clamp(2.6rem, 5vw, 4.5rem);
+  line-height: 1.05; letter-spacing: -2px;
 }
-
-
 .intro-section p {
-  position: relative;
-  z-index: 2;
-
-  max-width: 560px;
-
-  margin: 0;
-
-  color:
-    rgba(255, 255, 255, 0.84);
-
-  font-size: 16px;
-
-  line-height: 1.75;
+  position: relative; z-index: 2; max-width: 560px; margin: 0;
+  color: rgba(255, 255, 255, 0.84); font-size: 16px; line-height: 1.75;
 }
 
-
-/* ============================================
-   AUTH CARD
-============================================ */
-
+/* =========================================================
+   AUTH CARD / TABS
+========================================================= */
 .auth-card {
-  width: 100%;
-
-  max-width: 520px;
-
-  justify-self: center;
-
-  padding: 30px;
-
-  box-sizing: border-box;
-
-  background:
-    rgba(255, 255, 255, 0.91);
-
-  border:
-    1px solid
-    rgba(255, 255, 255, 0.7);
-
-  border-radius: 20px;
-
-  box-shadow:
-    0 8px 25px
-    rgba(50, 45, 100, 0.11);
-
-  backdrop-filter:
-    blur(12px);
+  width: 100%; max-width: 520px; justify-self: center;
+  padding: 30px; box-sizing: border-box;
+  background: var(--creative-card-background);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 20px; box-shadow: 0 8px 25px rgba(50, 45, 100, 0.11);
+  backdrop-filter: blur(12px);
 }
-
-
-.auth-card h2 {
-  margin:
-    26px
-    0
-    24px;
-
-  color: #29265f;
-
-  font-size: 24px;
-
-  text-align: center;
-}
-
-
-/* ============================================
-   AUTH TABS
-============================================ */
-
+.auth-card h2 { margin: 26px 0 24px; color: #29265f; font-size: 24px; text-align: center; }
 .auth-tabs {
-  display: grid;
-
-  grid-template-columns:
-    1fr 1fr;
-
-  gap: 8px;
-
-  padding: 6px;
-
-  border-radius: 12px;
-
-  background:
-    rgba(117, 103, 223, 0.08);
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  padding: 6px; border-radius: 12px; background: rgba(117, 103, 223, 0.08);
 }
-
-
 .auth-tabs button {
-  padding:
-    10px
-    16px;
-
-  border: none;
-
-  border-radius: 9px;
-
-  background: transparent;
-
-  color: #68657a;
-
-  font-size: 13px;
-  font-weight: 700;
-
-  cursor: pointer;
-
-  transition: 0.2s ease;
+  padding: 10px 16px; border: none; border-radius: 9px;
+  background: transparent; color: #68657a; font-size: 13px;
+  font-weight: 700; cursor: pointer; transition: 0.2s ease;
 }
-
-
-.auth-tabs button:hover {
-  color: #5748c8;
-}
-
-
+.auth-tabs button:hover { color: #5748c8; }
 .auth-tabs .active-tab {
-  background: white;
-
-  color: #5748c8;
-
-  box-shadow:
-    0 4px 14px
-    rgba(50, 45, 100, 0.1);
+  background: white; color: #5748c8;
+  box-shadow: 0 4px 14px rgba(50, 45, 100, 0.1);
 }
 
-
-/* ============================================
-   AUTH FORM
-============================================ */
-
-.auth-form {
-  display: flex;
-
-  flex-direction: column;
-
-  gap: 18px;
-}
-
-
+/* =========================================================
+   AUTH FORM / INPUTS
+========================================================= */
+.auth-form { display: flex; flex-direction: column; gap: 18px; }
 .auth-form label {
-  display: flex;
-
-  flex-direction: column;
-
-  gap: 8px;
-
-  color: #29265f;
-
-  font-size: 13px;
-  font-weight: 700;
+  display: flex; flex-direction: column; gap: 8px;
+  color: #29265f; font-size: 13px; font-weight: 700;
+}
+.auth-form input, .auth-form select {
+  width: 100%; min-height: 46px; padding: 11px 14px; box-sizing: border-box;
+  border: 1px solid rgba(117, 103, 223, 0.25);
+  border-radius: 10px; outline: none; background: rgba(248, 247, 255, 0.9);
+  color: #45425c; font-family: inherit; font-size: 14px; transition: 0.2s ease;
+}
+.auth-form input::placeholder { color: #aaa6ba; }
+.auth-form input:focus, .auth-form select:focus {
+  border-color: #7567df; background: white;
+  box-shadow: 0 0 0 3px rgba(117, 103, 223, 0.1);
 }
 
-
-/* ============================================
-   INPUTS
-============================================ */
-
-.auth-form input,
-.auth-form select {
-  width: 100%;
-
-  min-height: 46px;
-
-  padding:
-    11px
-    14px;
-
-  box-sizing: border-box;
-
-  border:
-    1px solid
-    rgba(117, 103, 223, 0.25);
-
-  border-radius: 10px;
-
-  outline: none;
-
-  background:
-    rgba(248, 247, 255, 0.9);
-
-  color: #45425c;
-
-  font-family: inherit;
-
-  font-size: 14px;
-
-  transition: 0.2s ease;
-}
-
-
-.auth-form input::placeholder {
-  color: #aaa6ba;
-}
-
-
-.auth-form input:focus,
-.auth-form select:focus {
-  border-color: #7567df;
-
-  background: white;
-
-  box-shadow:
-    0 0 0 3px
-    rgba(117, 103, 223, 0.1);
-}
-
-
-/* ============================================
-   GUARDIAN SECTION
-============================================ */
-
+/* =========================================================
+   GUARDIAN CONSENT / MESSAGES
+========================================================= */
 .guardian-section {
-  padding: 16px;
-
-  border:
-    1px solid
-    rgba(117, 103, 223, 0.14);
-
-  border-radius: 12px;
-
-  background:
-    rgba(117, 103, 223, 0.06);
+  padding: 16px; border: 1px solid rgba(117, 103, 223, 0.14);
+  border-radius: 12px; background: rgba(117, 103, 223, 0.06);
 }
-
-
-.guardian-section p {
-  margin:
-    0
-    0
-    12px;
-
-  color: #68657a;
-
-  font-size: 13px;
-
-  line-height: 1.5;
-}
-
-
-/* ============================================
-   MESSAGE
-============================================ */
-
+.guardian-section p { margin: 0 0 12px; color: #68657a; font-size: 13px; line-height: 1.5; }
 .form-message {
-  margin: 0;
-
-  padding:
-    11px
-    13px;
-
-  border-radius: 10px;
-
-  background:
-    rgba(117, 103, 223, 0.1);
-
-  color: #5748c8;
-
-  font-size: 13px;
-  font-weight: 600;
-
-  line-height: 1.5;
+  margin: 0; padding: 11px 13px; border-radius: 10px;
+  background: rgba(117, 103, 223, 0.1);
+  color: #5748c8; font-size: 13px; font-weight: 600; line-height: 1.5;
 }
 
-
-/* ============================================
-   MAIN AUTH BUTTON
-============================================ */
-
+/* =========================================================
+   BUTTONS
+========================================================= */
 .primary-button {
-  width: 100%;
-
-  min-height: 48px;
-
-  margin-top: 4px;
-
-  padding:
-    11px
-    20px;
-
-  border:
-    1px solid
-    #7567df;
-
-  border-radius: 10px;
-
-  background: #7567df;
-
-  color: white;
-
-  font-size: 14px;
-  font-weight: 700;
-
-  cursor: pointer;
-
+  width: 100%; min-height: 48px; margin-top: 4px; padding: 11px 20px;
+  border: 1px solid #7567df; border-radius: 10px; background: #7567df;
+  color: white; font-size: 14px; font-weight: 700; cursor: pointer;
   transition: 0.2s ease;
 }
-
-
 .primary-button:hover:not(:disabled) {
-  background: #5748c8;
-
-  border-color: #5748c8;
-
-  transform:
-    translateY(-1px);
+  background: #5748c8; border-color: #5748c8; transform: translateY(-1px);
 }
+.primary-button:disabled { opacity: 0.6; cursor: not-allowed; }
 
-
-.primary-button:disabled {
-  opacity: 0.6;
-
-  cursor: not-allowed;
-}
-
-
-/* ============================================
-   LOGOUT
-   MATCH PROFILE BUTTON STYLE
-============================================ */
-
+/* Retain for older screens, but the new Sidebar handles logout. */
 .logout-container {
-  display: flex;
-
-  justify-content: flex-end;
-
-  padding:
-    14px
-    24px;
-
-  background: var(--creative-background);
+  display: flex; justify-content: flex-end;
+  padding: 14px 24px; background: var(--creative-background);
 }
-
-
 .logout-button {
-  padding:
-    10px
-    22px;
-
-  border: none;
-
-  border-radius: 10px;
-
-  background: #7567df;
-
-  color: white;
-
-  font-size: 13px;
-  font-weight: 700;
-
-  cursor: pointer;
-
-  transition: 0.2s ease;
+  padding: 10px 22px; border: none; border-radius: 10px;
+  background: #7567df; color: white; font-size: 13px;
+  font-weight: 700; cursor: pointer; transition: 0.2s ease;
 }
+.logout-button:hover { background: #5748c8; transform: translateY(-1px); }
 
-
-.logout-button:hover {
-  background: #5748c8;
-
-  transform:
-    translateY(-1px);
-}
-
-
-/* ============================================
-   LOGGED-IN HEADER
-============================================ */
-
+/* Retained for backwards compatibility; should no longer render with shared sidebar. */
 .logged-in-header {
-  display: flex;
-
-  align-items: center;
-
-  justify-content: space-between;
-
-  gap: 20px;
-
-  padding:
-    18px
-    30px;
-
-  background:
-    rgba(255, 255, 255, 0.89);
-
-  border-bottom:
-    1px solid
-    rgba(117, 103, 223, 0.12);
-
-  box-shadow:
-    0 5px 16px
-    rgba(50, 45, 100, 0.07);
-
-  backdrop-filter:
-    blur(12px);
+  display: flex; align-items: center; justify-content: space-between; gap: 20px;
+  padding: 18px 30px; background: rgba(255, 255, 255, 0.89);
+  border-bottom: 1px solid rgba(117, 103, 223, 0.12);
+  box-shadow: 0 5px 16px rgba(50, 45, 100, 0.07);
+  backdrop-filter: blur(12px);
 }
-
-
 .current-user-info {
-  display: flex;
-
-  flex-wrap: wrap;
-
-  align-items: center;
-
-  gap:
-    8px
-    18px;
-
-  color: #68657a;
-
-  font-size: 13px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px;
+  color: #68657a; font-size: 13px;
 }
+.current-user-info strong { color: #29265f; font-size: 14px; }
 
-
-.current-user-info strong {
-  color: #29265f;
-
-  font-size: 14px;
-}
-
-
-/* ============================================
+/* =========================================================
    RESPONSIVE
-============================================ */
-
+========================================================= */
 @media (max-width: 950px) {
-
-  .page-container {
-    grid-template-columns: 1fr;
-
-    padding:
-      30px
-      22px;
-  }
-
-
-  .intro-section {
-    min-height: auto;
-
-    padding: 38px;
-  }
-
-
-  .auth-card {
-    max-width: 650px;
-  }
+  .page-container { grid-template-columns: 1fr; padding: 30px 22px; }
+  .intro-section { min-height: auto; padding: 38px; }
+  .auth-card { max-width: 650px; }
 }
-
-
 @media (max-width: 600px) {
-
-  .page-container {
-    padding:
-      18px
-      12px;
-  }
-
-
-  .intro-section {
-    padding:
-      28px
-      22px;
-
-    border-radius: 16px;
-  }
-
-
-  .intro-section h1 {
-    font-size: 2.15rem;
-
-    letter-spacing: -1px;
-  }
-
-
-  .intro-section p {
-    font-size: 14px;
-  }
-
-
-  .auth-card {
-    padding:
-      24px
-      18px;
-
-    border-radius: 16px;
-  }
-
-
-  .logged-in-header {
-    align-items: flex-start;
-
-    flex-direction: column;
-  }
+  .page-container { padding: 18px 12px; }
+  .intro-section { padding: 28px 22px; border-radius: 16px; }
+  .intro-section h1 { font-size: 2.15rem; letter-spacing: -1px; }
+  .intro-section p { font-size: 14px; }
+  .auth-card { padding: 24px 18px; border-radius: 16px; }
+  .logged-in-header { align-items: flex-start; flex-direction: column; }
 }
+
+/* ==========================================
+   CREATIVE PRO - HOME BACKGROUND
+   Matches original multicolour theme
+   ========================================== */
+
+.dashboard-page,
+.dashboard-container,
+.web-dashboard,
+.dashboard-main,
+.dashboard-content {
+  background: transparent !important;
+}
+
+/* Shared Home background */
+.cp-shell-main:has(.dashboard-container),
+.cp-shell-main:has(.dashboard-page) {
+  background: var(--creative-background) !important;
+  background-attachment: fixed !important;
+}
+
+/* Keep the original white cards */
+.dashboard-container .post-card,
+.dashboard-container .suggested-creatives-card,
+.dashboard-container .collaboration-card,
+.dashboard-container .upcoming-events-card {
+  background: rgba(255, 255, 255, 0.94);
+}
+/* Creative Network: Option 1 text colours only.
+   Preserves the font family already used by your application. */
+:root {
+  --cp-text-heading: #29265f;
+  --cp-text-body: #45425c;
+  --cp-text-muted: #625c78;
+  --cp-text-accent: #5748c8;
+  --cp-sidebar-text: #dad3fa;
+  --cp-sidebar-active-text: #ffffff;
+}
+
+/* Keep the existing application font family unchanged. */
+body { color: var(--cp-text-body); }
+
+/* Heading colours: keeps the existing font sizing and family. */
+.cp-shell-main h1, .cp-shell-main h2, .cp-shell-main h3,
+.page-container h1, .page-container h2,
+.cp-shell-main .profile-name-line h1 {
+  color: var(--cp-text-heading);
+  letter-spacing: -0.015em;
+}
+
+/* Muted text with good contrast over white cards. */
+.cp-shell-main .profile-title,
+.cp-shell-main .profile-meta,
+.cp-shell-main .section-eyebrow,
+.cp-shell-main .profile-stat span {
+  color: var(--cp-text-muted);
+}
+
+/* Re-emphasize section labels in the existing violet accent. */
+.cp-shell-main .section-eyebrow { color: var(--cp-text-accent); }
+
+/* Preserve white text on intentionally dark / colourful surfaces. */
+.cp-shell-main .profile-banner h1,
+.cp-shell-main .profile-banner h2,
+.cp-shell-main .profile-banner h3,
+.page-container .intro-section h1 {
+  color: #fff;
+}
+
+/* Keep existing form designs; ensure form text stays legible. */
+input, textarea, select { color: var(--cp-text-body); }
+button { letter-spacing: 0; }

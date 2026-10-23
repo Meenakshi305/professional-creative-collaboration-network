@@ -1,3 +1,4 @@
+import PostList from '../../shared/PostList/PostList'
 import {
   useEffect,
   useState
@@ -25,7 +26,7 @@ import {
 import {
   getFollowersCount,
   getFollowingCount,
-  getFollowStatus,
+  getFollowRelationship,
   followUser,
   unfollowUser
 } from '../../service/followService'
@@ -40,6 +41,7 @@ type PublicProfileProps = {
   onProfileClick: () => void
 
   onEventsClick: () => void
+  onCollaborationClick: () => void
 
   onBackClick: () => void
 }
@@ -54,6 +56,7 @@ function PublicProfile({
   onProfileClick,
 
   onEventsClick,
+  onCollaborationClick,
 
   onBackClick
 
@@ -71,6 +74,13 @@ function PublicProfile({
     null
   )
 
+
+  // Show initials if the profile photo is absent or cannot load.
+  const [profileImageFailed, setProfileImageFailed] = useState(false)
+
+  useEffect(() => {
+    setProfileImageFailed(false)
+  }, [userId])
 
   // ============================================
   // SKILLS
@@ -118,6 +128,8 @@ function PublicProfile({
   ] = useState(false)
 
 
+  const [followsMe, setFollowsMe] = useState(false)
+
   const [
     isOwnProfile,
     setIsOwnProfile
@@ -139,6 +151,7 @@ function PublicProfile({
     setActiveTab
   ] = useState<
     'posts' |
+    'experience' |
     'achievements'
   >('posts')
 
@@ -193,6 +206,7 @@ function PublicProfile({
           setIsFollowing(
             false
           )
+          setFollowsMe(false)
 
 
           // ====================================
@@ -358,7 +372,7 @@ function PublicProfile({
           if (!ownProfile) {
 
             const followStatus =
-              await getFollowStatus(
+              await getFollowRelationship(
                 userId
               )
 
@@ -366,8 +380,9 @@ function PublicProfile({
             if (!cancelled) {
 
               setIsFollowing(
-                followStatus
+                followStatus.iFollow
               )
+              setFollowsMe(followStatus.followsMe)
             }
           }
 
@@ -538,19 +553,20 @@ function PublicProfile({
   // ============================================
 
   const getInitials = () => {
+    // Prefer the person's full name when the profile API provides it.
+    // Otherwise split usernames such as aarav_sharma into AS.
+    const fullName = profile && 'fullName' in profile &&
+      typeof profile.fullName === 'string'
+        ? profile.fullName.trim()
+        : ''
+    const name = fullName || profile?.username || ''
+    const words = name.split(/[\s_.-]+/).filter(Boolean)
 
-    if (!profile?.username) {
-
-      return 'U'
+    if (words.length >= 2) {
+      return (words[0][0] + words[words.length - 1][0]).toUpperCase()
     }
 
-
-    return profile.username
-      .substring(
-        0,
-        2
-      )
-      .toUpperCase()
+    return words.length === 1 ? words[0].slice(0, 2).toUpperCase() : 'U'
   }
 
 
@@ -606,6 +622,7 @@ function PublicProfile({
             onProfileClick
           }
 
+          onCollaborationClick={onCollaborationClick}
           onEventsClick={
             onEventsClick
           }
@@ -660,6 +677,7 @@ function PublicProfile({
             onProfileClick
           }
 
+          onCollaborationClick={onCollaborationClick}
           onEventsClick={
             onEventsClick
           }
@@ -736,6 +754,7 @@ function PublicProfile({
         onEventsClick={
           onEventsClick
         }
+          onCollaborationClick={onCollaborationClick}
 
       />
 
@@ -823,13 +842,6 @@ function PublicProfile({
             <div className="profile-banner">
 
 
-              <div className="banner-number">
-
-                7
-
-              </div>
-
-
               <div className="banner-label">
 
                 CREATIVE
@@ -847,35 +859,32 @@ function PublicProfile({
               {/* PROFILE IMAGE */}
               {/* ================================= */}
 
-              {
-                profile.profileImageUrl
-                  ? (
-
-                      <img
-
-                        src={
-                          profile.profileImageUrl
-                        }
-
-                        alt={
-                          profile.username
-                        }
-
-                        className="profile-avatar"
-
-                      />
-
-                    )
-                  : (
-
-                      <div className="profile-avatar">
-
-                        {getInitials()}
-
-                      </div>
-
-                    )
-              }
+              {profile.profileImageUrl && !profileImageFailed ? (
+                <img
+                  src={profile.profileImageUrl}
+                  alt={`${profile.username}'s profile`}
+                  className="profile-avatar"
+                  onError={() => setProfileImageFailed(true)}
+                  style={{ objectFit: 'cover' }}
+                />
+              ) : (
+                <div
+                  className="profile-avatar public-profile-initials"
+                  aria-label={`${profile.username} avatar`}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden',
+                    fontSize: 'clamp(24px, 3vw, 42px)',
+                    fontWeight: 700,
+                    lineHeight: 1,
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {getInitials()}
+                </div>
+              )}
 
 
               <div className="profile-heading">
@@ -953,6 +962,10 @@ function PublicProfile({
                   }
 
 
+                  {!isOwnProfile && followsMe && (
+                    <span className="follow-relationship-badge">Follows you</span>
+                  )}
+
                   {/* ================================= */}
                   {/* OWN PROFILE */}
                   {/* ================================= */}
@@ -1005,44 +1018,10 @@ function PublicProfile({
                 {/* DISPLAY ONLY - NOT CLICKABLE */}
                 {/* ================================= */}
 
-                <div className="profile-stats">
+                <div className="profile-stats instagram-follow-stats">
 
 
-                  <div className="profile-stat">
-
-                    <strong>
-
-                      {skills.length}
-
-                    </strong>
-
-                    <span>
-
-                      Skills
-
-                    </span>
-
-                  </div>
-
-
-                  <div className="profile-stat">
-
-                    <strong>
-
-                      {experiences.length}
-
-                    </strong>
-
-                    <span>
-
-                      Experience
-
-                    </span>
-
-                  </div>
-
-
-                  <div className="profile-stat">
+                  <div className="profile-stat instagram-follow-stat">
 
                     <strong>
 
@@ -1059,7 +1038,7 @@ function PublicProfile({
                   </div>
 
 
-                  <div className="profile-stat">
+                  <div className="profile-stat instagram-follow-stat">
 
                     <strong>
 
@@ -1163,6 +1142,86 @@ function PublicProfile({
           </section>
 
 
+          {/* ================================== */}
+          {/* POSTS / ACHIEVEMENTS */}
+          {/* ================================== */}
+
+          <section
+            className="
+              profile-section-card
+              profile-work-section
+            "
+          >
+
+
+            <div className="profile-tabs">
+
+
+              <button
+
+                type="button"
+
+                className={
+                  activeTab === 'posts'
+                    ? 'profile-tab active'
+                    : 'profile-tab'
+                }
+
+                onClick={
+                  () =>
+                    setActiveTab(
+                      'posts'
+                    )
+                }
+
+              >
+
+                Posts
+
+              </button>
+
+
+              <button
+                type="button"
+                className={activeTab === 'experience' ? 'profile-tab active' : 'profile-tab'}
+                onClick={() => setActiveTab('experience')}
+              >
+                Experience
+              </button>
+
+              <button
+
+                type="button"
+
+                className={
+                  activeTab === 'achievements'
+                    ? 'profile-tab active'
+                    : 'profile-tab'
+                }
+
+                onClick={
+                  () =>
+                    setActiveTab(
+                      'achievements'
+                    )
+                }
+
+              >
+
+                Achievements
+
+              </button>
+
+
+            </div>
+
+
+            {/* ================================= */}
+            {/* POSTS */}
+            {/* ================================= */}
+
+            {activeTab === 'experience' && (
+              <>
           {/* ================================== */}
           {/* EXPERIENCE */}
           {/* ================================== */}
@@ -1316,141 +1375,12 @@ function PublicProfile({
           </section>
 
 
-          {/* ================================== */}
-          {/* POSTS / ACHIEVEMENTS */}
-          {/* ================================== */}
+              </>
+            )}
 
-          <section
-            className="
-              profile-section-card
-              profile-work-section
-            "
-          >
-
-
-            <div className="profile-tabs">
-
-
-              <button
-
-                type="button"
-
-                className={
-                  activeTab === 'posts'
-                    ? 'profile-tab active'
-                    : 'profile-tab'
-                }
-
-                onClick={
-                  () =>
-                    setActiveTab(
-                      'posts'
-                    )
-                }
-
-              >
-
-                Posts
-
-              </button>
-
-
-              <button
-
-                type="button"
-
-                className={
-                  activeTab === 'achievements'
-                    ? 'profile-tab active'
-                    : 'profile-tab'
-                }
-
-                onClick={
-                  () =>
-                    setActiveTab(
-                      'achievements'
-                    )
-                }
-
-              >
-
-                Achievements
-
-              </button>
-
-
-            </div>
-
-
-            {/* ================================= */}
-            {/* POSTS */}
-            {/* ================================= */}
-
-            {
-              activeTab === 'posts'
-              &&
-              (
-
-                <div className="profile-posts">
-
-
-                  <article className="profile-post">
-
-
-                    <div className="profile-post-header">
-
-
-                      <div className="profile-post-avatar">
-
-                        {getInitials()}
-
-                      </div>
-
-
-                      <div>
-
-
-                        <div className="post-name">
-
-
-                          <strong>
-
-                            @{profile.username}
-
-                          </strong>
-
-
-                          <span className="small-verified">
-
-                            ✓
-
-                          </span>
-
-
-                        </div>
-
-
-                      </div>
-
-
-                    </div>
-
-
-                    <p>
-
-                      This user's posts will appear here.
-
-                    </p>
-
-
-                  </article>
-
-
-                </div>
-
-              )
-            }
-
+            {activeTab === 'posts' && (
+              <PostList userId={userId} own={isOwnProfile} />
+            )}
 
             {/* ================================= */}
             {/* ACHIEVEMENTS */}

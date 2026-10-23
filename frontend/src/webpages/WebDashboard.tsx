@@ -1,9 +1,13 @@
+import { getFeedPosts, createPost, mediaUrl, type Post } from '../service/postService'
+import { getCurrentUser, type CurrentUserResponse } from '../service/authService'
+import { getUserProfile, type ProfileResponse } from '../service/profileService'
 
 import { useEffect, useRef, useState } from 'react'
 
 import './WebDashboard.css'
 
-import NavigationBar from '../shared/NavigationBar/NavigationBar'
+import LiveComments from '../shared/LiveComments/LiveComments'
+import LikeButton from '../shared/LikeButton/LikeButton'
 
 import {
   searchUsers,
@@ -12,11 +16,6 @@ import {
   type SuggestedUser
 } from '../service/userService'
 
-type UserPost = {
-  id: number
-  caption: string
-  image: string
-}
 
 type DashboardProps = {
   onHomeClick: () => void
@@ -53,8 +52,6 @@ const events = [
 ]
 
 function Dashboard({
-  onHomeClick,
-  onProfileClick,
   onCollaborationClick,
   onEventsClick,
   onUserClick
@@ -76,6 +73,7 @@ function Dashboard({
 
   const [suggestedUsers, setSuggestedUsers] =
     useState<SuggestedUser[]>([])
+  const [failedSuggestedImages, setFailedSuggestedImages] = useState<number[]>([])
 
   const [suggestionsLoading, setSuggestionsLoading] =
     useState(true)
@@ -88,24 +86,58 @@ function Dashboard({
   const [selectedImage, setSelectedImage] =
     useState<string | null>(null)
 
-  const [userPosts, setUserPosts] = useState<UserPost[]>([])
+  const [userPosts, setUserPosts] = useState<Post[]>([])
+
+  // Logged-in creative's avatar for the compact post composer.
+  const [dashboardUser, setDashboardUser] = useState<CurrentUserResponse | null>(null)
+  const [dashboardProfile, setDashboardProfile] = useState<ProfileResponse | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    getCurrentUser().then(async user => {
+      if (cancelled) return
+      setDashboardUser(user)
+      try {
+        const profile = await getUserProfile(user.userId)
+        if (!cancelled) setDashboardProfile(profile)
+      } catch (error) {
+        console.warn('Composer profile image unavailable:', error)
+      }
+    }).catch(error => console.warn('Composer account unavailable:', error))
+    return () => { cancelled = true }
+  }, [])
+
+  const profileName = dashboardUser?.fullName?.trim() || dashboardUser?.username || 'My Profile'
+  const profileInitials = profileName.split(/\s+/).slice(0, 2)
+    .map(part => part.charAt(0)).join('').toUpperCase()
+
 
   const imageInputRef = useRef<HTMLInputElement>(null)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [postError, setPostError] = useState('')
+  const [feedLoading, setFeedLoading] = useState(true)
+  const [publishing, setPublishing] = useState(false)
+  useEffect(() => {
+    let cancelled = false
+    setFeedLoading(true)
+    getFeedPosts()
+      .then(posts => {
+        if (!cancelled) setUserPosts(posts)
+      })
+      .catch(error => {
+        if (!cancelled) setPostError(error instanceof Error ? error.message : 'Unable to load feed')
+      })
+      .finally(() => {
+        if (!cancelled) setFeedLoading(false)
+      })
+    return () => { cancelled = true }
+  }, [])
 
   // ============================================
   // LIKE AND COMMENTS
   // ============================================
 
-  const [likedPosts, setLikedPosts] =
-    useState<(number | string)[]>([])
-
   const [openCommentPost, setOpenCommentPost] =
-    useState<number | string | null>(null)
-
-  const [commentText, setCommentText] = useState('')
-
-  const [postComments, setPostComments] =
-    useState<Record<string, string[]>>({})
+    useState<number | null>(null)
 
   // ============================================
   // FILTER SEARCH
@@ -280,6 +312,7 @@ function Dashboard({
       }
     }
 
+    setSelectedFile(file)
     reader.readAsDataURL(file)
   }
 
@@ -287,143 +320,53 @@ function Dashboard({
   // PUBLISH POST
   // ============================================
 
-  const handlePublishPost = () => {
-
-    if (!selectedImage) {
-      return
-    }
-
-    const newPost: UserPost = {
-      id: Date.now(),
-      caption: postCaption.trim(),
-      image: selectedImage
-    }
-
-    setUserPosts(previous => [newPost, ...previous])
-    setPostCaption('')
-    setSelectedImage(null)
-
-    if (imageInputRef.current) {
-      imageInputRef.current.value = ''
-    }
+  const handlePublishPost = async () => {
+    if ((!postCaption.trim() && !selectedFile) || publishing) return
+    setPublishing(true)
+    setPostError('')
+    try {
+      const saved = await createPost(postCaption, selectedFile ? [selectedFile] : [])
+      setUserPosts(previous => [saved, ...previous.filter(p => p.postId !== saved.postId)])
+      setPostCaption('')
+      setSelectedImage(null)
+      setSelectedFile(null)
+      if (imageInputRef.current) imageInputRef.current.value = ''
+    } catch (e) {
+      setPostError(e instanceof Error ? e.message : 'Could not publish post')
+    } finally { setPublishing(false) }
   }
 
   // ============================================
-  // LIKE POST
+  // LIVE COMMENTS (PERSISTED IN MYSQL)
   // ============================================
 
-  const handleLike = (postId: number | string) => {
-
-    setLikedPosts(previous =>
-      previous.includes(postId)
-        ? previous.filter(id => id !== postId)
-        : [...previous, postId]
-    )
-  }
-
-  // ============================================
-  // COMMENTS
-  // ============================================
-
-  const handleAddComment = (postId: number | string) => {
-
-    const newComment = commentText.trim()
-
-    if (!newComment) {
-      return
-    }
-
-    setPostComments(previous => ({
-      ...previous,
-      [String(postId)]: [
-        ...(previous[String(postId)] || []),
-        newComment
-      ]
-    }))
-
-    setCommentText('')
-  }
-
-  const renderComments = (postId: number | string) => {
-
-    if (openCommentPost !== postId) {
-      return null
-    }
-
-    return (
-      <div className="comment-section">
-
-        {(postComments[String(postId)] || []).map(
-          (comment, index) => (
-            <div className="comment-item" key={index}>
-              <div className="comment-avatar">PG</div>
-              <div className="comment-content">
-                <strong>Creative User</strong>
-                <p>{comment}</p>
-              </div>
-            </div>
-          )
-        )}
-
-        <div className="comment-input-row">
-          <div className="comment-avatar">PG</div>
-
-          <input
-            type="text"
-            placeholder="Write a comment..."
-            value={commentText}
-            onChange={event =>
-              setCommentText(event.target.value)
-            }
-            onKeyDown={event => {
-              if (event.key === 'Enter') {
-                handleAddComment(postId)
-              }
-            }}
-          />
-
-          <button
-            type="button"
-            onClick={() => handleAddComment(postId)}
-          >
-            Post
-          </button>
-        </div>
-
-      </div>
-    )
-  }
-
-  const renderPostActions = (postId: number | string) => (
+  const renderPostActions = (postId: number) => (
     <>
       <div className="post-actions post-actions-two">
+        {/* Persisted MySQL likes and count */}
+        <LikeButton
+          postId={postId}
+          className="dashboard-like-button"
+        />
 
         <button
           type="button"
-          className={likedPosts.includes(postId) ? 'liked' : ''}
-          onClick={() => handleLike(postId)}
-        >
-          {likedPosts.includes(postId) ? '♥ Liked' : '♡ Like'}
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            setOpenCommentPost(
-              openCommentPost === postId ? null : postId
+          className="dashboard-comment-button"
+          aria-expanded={openCommentPost === postId}
+          onClick={() =>
+            setOpenCommentPost(previous =>
+              previous === postId ? null : postId
             )
-            setCommentText('')
-          }}
+          }
         >
-          💬 Comment
-          {postComments[String(postId)]?.length
-            ? ` (${postComments[String(postId)].length})`
-            : ''}
+          <span aria-hidden="true">💬</span>
+          <span>Comment</span>
         </button>
-
       </div>
 
-      {renderComments(postId)}
+      {openCommentPost === postId && (
+        <LiveComments key={postId} postId={postId} />
+      )}
     </>
   )
 
@@ -439,14 +382,13 @@ function Dashboard({
       {/* NAVIGATION BAR */}
       {/* ====================================== */}
 
-      <NavigationBar
-        activePage="home"
-        onHomeClick={onHomeClick}
-        onProfileClick={onProfileClick}
-        onCollaborationClick={onCollaborationClick}
-        onEventsClick={onEventsClick}
-        searchArea={
-
+      <header className="cp-home-heading">
+        <div>
+          <h1>Discover</h1>
+          <p>Find inspiration, people and creative opportunities.</p>
+        </div>
+      </header>
+      <div className="cp-dashboard-search-row">
           <div className="search-wrapper">
 
             <div className="dashboard-search">
@@ -630,8 +572,7 @@ function Dashboard({
             )}
 
           </div>
-        }
-      />
+      </div>
 
       {/* ====================================== */}
       {/* DASHBOARD BODY */}
@@ -640,80 +581,8 @@ function Dashboard({
       <section className="dashboard-container">
 
         {/* =================================== */}
-        {/* LEFT PROFILE */}
-        {/* =================================== */}
+        {/* The redundant left profile card was removed. */}
 
-        <aside className="dashboard-left">
-
-          <section className="profile-card">
-
-            <div className="profile-cover" />
-
-            <div className="profile-details">
-
-              <div className="profile-avatar">
-                <span>PG</span>
-              </div>
-
-              <h2>Creative Professional</h2>
-
-              <p className="profile-role">
-                Creative Network Member
-              </p>
-
-              <p className="profile-location">
-                Adelaide, South Australia
-              </p>
-
-            </div>
-
-            <div className="profile-stats">
-
-              <div>
-                <span>Profile Views</span>
-                <strong>24</strong>
-              </div>
-
-              <div>
-                <span>Connections</span>
-                <strong>18</strong>
-              </div>
-
-              <div>
-                <span>Posts</span>
-                <strong>{userPosts.length}</strong>
-              </div>
-
-            </div>
-
-            <div className="profile-links">
-
-              <button type="button" onClick={onProfileClick}>
-                👤 View My Profile
-              </button>
-
-              <button type="button" onClick={onProfileClick}>
-                🎨 My Portfolio
-              </button>
-
-              <button type="button" onClick={onEventsClick}>
-                📅 My Events
-              </button>
-
-              <button
-                type="button"
-                onClick={onCollaborationClick}
-              >
-                🤝 Collaborations
-              </button>
-
-            </div>
-
-          </section>
-
-        </aside>
-
-        {/* =================================== */}
         {/* CENTRE FEED */}
         {/* =================================== */}
 
@@ -725,8 +594,12 @@ function Dashboard({
 
             <div className="create-post-top">
 
-              <div className="small-avatar">
-                <span>PG</span>
+              <div className="small-avatar cp-composer-avatar">
+                {dashboardProfile?.profileImageUrl ? (
+                  <img src={dashboardProfile.profileImageUrl} alt={profileName} onError={event => { event.currentTarget.style.display = 'none' }} />
+                ) : (
+                  <span>{profileInitials || 'U'}</span>
+                )}
               </div>
 
               <input
@@ -763,6 +636,7 @@ function Dashboard({
                   className="remove-selected-image"
                   onClick={() => {
                     setSelectedImage(null)
+                    setSelectedFile(null)
 
                     if (imageInputRef.current) {
                       imageInputRef.current.value = ''
@@ -779,7 +653,7 @@ function Dashboard({
 
             <div className="create-post-action">
 
-              {!selectedImage ? (
+              {!selectedImage && !postCaption.trim() ? (
 
                 <button
                   type="button"
@@ -818,8 +692,9 @@ function Dashboard({
                     type="button"
                     className="publish-ready-button"
                     onClick={handlePublishPost}
+                    disabled={publishing}
                   >
-                    Publish Post
+                    {publishing ? 'Publishing...' : 'Publish Post'}
                   </button>
 
                 </div>
@@ -831,23 +706,26 @@ function Dashboard({
           </section>
 
           {/* ================================= */}
-          {/* USER CREATED POSTS */}
+          {/* POSTS FROM BACKEND: SELF AND FOLLOWED USERS */}
           {/* ================================= */}
 
+          {postError && <p role="alert">{postError}</p>}
+          {feedLoading && <p>Loading posts...</p>}
+          {!feedLoading && !postError && userPosts.length === 0 && <p>No posts yet. Follow creatives or create your first post.</p>}
           {userPosts.map(post => (
 
-            <article className="feed-post" key={post.id}>
+            <article className="feed-post" key={post.postId}>
 
               <div className="post-header">
 
                 <div className="post-avatar">
-                  <span>PG</span>
+                  <span>{post.username.slice(0, 2).toUpperCase()}</span>
                 </div>
 
                 <div className="post-author">
-                  <strong>Creative User</strong>
+                  <strong onClick={() => onUserClick(post.userId)} style={{ cursor: 'pointer' }}>@{post.username}</strong>
                   <span>Creative Professional</span>
-                  <small>Just now</small>
+                  <small>{new Date(post.createdAt).toLocaleString()}</small>
                 </div>
 
                 <span className="post-more">•••</span>
@@ -858,73 +736,22 @@ function Dashboard({
 
                 {post.caption && <p>{post.caption}</p>}
 
-                <img
-                  src={post.image}
-                  alt="Creative post"
-                  className="published-post-image"
-                />
+                {post.media.map(media => media.mediaType === 'IMAGE' ? (
+                  <img key={media.mediaId} src={mediaUrl(media.viewUrl)} alt={media.originalFileName} className="published-post-image" />
+                ) : (
+                  <a key={media.mediaId} href={mediaUrl(media.viewUrl)} target="_blank" rel="noreferrer">{media.originalFileName}</a>
+                ))}
 
               </div>
 
-              {renderPostActions(post.id)}
+              {renderPostActions(post.postId)}
 
             </article>
 
           ))}
 
           {/* ================================= */}
-          {/* SAMPLE FEED POST */}
-          {/* ================================= */}
-
-          <article className="feed-post">
-
-            <div className="post-header">
-
-              <div className="post-avatar">
-                <span>OM</span>
-              </div>
-
-              <div className="post-author">
-                <strong>Oliver Miller</strong>
-                <span>Photographer • Adelaide</span>
-                <small>2 hours ago</small>
-              </div>
-
-              <span className="post-more">•••</span>
-
-            </div>
-
-            <div className="post-content">
-
-              <p>
-                Exploring Adelaide through my lens.
-                Every street, colour and creative space
-                has its own story to tell.
-              </p>
-
-              <div className="post-media-placeholder">
-
-                <div className="portfolio-preview-content">
-
-                  <span className="portfolio-preview-icon">
-                    📷
-                  </span>
-
-                  <strong>Creative Portfolio</strong>
-
-                  <span>
-                    Photography • Adelaide
-                  </span>
-
-                </div>
-
-              </div>
-
-            </div>
-
-            {renderPostActions('oliver-post')}
-
-          </article>
+          {/* Feed contains only persisted posts from the API. */}
 
         </section>
 
@@ -959,21 +786,27 @@ function Dashboard({
                   key={user.userId}
                 >
 
-                  {user.profileImageUrl ? (
-
+                  {user.profileImageUrl?.trim() &&
+                  !failedSuggestedImages.includes(user.userId) ? (
                     <img
                       src={user.profileImageUrl}
-                      alt={user.username}
-                      className="small-avatar"
-                      style={{ objectFit: 'cover' }}
+                      alt={`${user.fullName || user.username} profile`}
+                      className="small-avatar suggested-avatar-photo"
+                      onError={() =>
+                        setFailedSuggestedImages(previous =>
+                          previous.includes(user.userId)
+                            ? previous
+                            : [...previous, user.userId]
+                        )
+                      }
                     />
-
                   ) : (
-
-                    <div className="small-avatar">
+                    <div
+                      className="small-avatar suggested-avatar-initials"
+                      aria-label={`${user.fullName || user.username} initials`}
+                    >
                       <span>{getUserInitials(user)}</span>
                     </div>
-
                   )}
 
                   <div>
