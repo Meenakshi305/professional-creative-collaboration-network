@@ -18,37 +18,21 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
-
 @Configuration
 public class SecurityConfig {
 
-
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-
 
     public SecurityConfig(
             JwtAuthenticationFilter jwtAuthenticationFilter
     ) {
-
-        this.jwtAuthenticationFilter =
-                jwtAuthenticationFilter;
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
-
-
-    // ==========================================
-    // PASSWORD ENCODER
-    // ==========================================
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-
         return new BCryptPasswordEncoder();
     }
-
-
-    // ==========================================
-    // CORS CONFIGURATION
-    // ==========================================
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
@@ -56,14 +40,11 @@ public class SecurityConfig {
         CorsConfiguration configuration =
                 new CorsConfiguration();
 
-
-        // React / Vite frontend
-        configuration.setAllowedOrigins(
+        configuration.setAllowedOriginPatterns(
                 List.of(
-                        "http://localhost:5173"
+                        "http://localhost:*"
                 )
         );
-
 
         configuration.setAllowedMethods(
                 List.of(
@@ -76,11 +57,9 @@ public class SecurityConfig {
                 )
         );
 
-
         configuration.setAllowedHeaders(
                 List.of("*")
         );
-
 
         configuration.setExposedHeaders(
                 List.of(
@@ -88,43 +67,27 @@ public class SecurityConfig {
                 )
         );
 
-
         configuration.setAllowCredentials(
                 true
         );
 
-
         UrlBasedCorsConfigurationSource source =
                 new UrlBasedCorsConfigurationSource();
-
 
         source.registerCorsConfiguration(
                 "/**",
                 configuration
         );
 
-
         return source;
     }
-
-
-    // ==========================================
-    // SECURITY FILTER CHAIN
-    // ==========================================
 
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http
     ) throws Exception {
 
-
         http
-
-
-                // ======================================
-                // CORS
-                // ======================================
-
                 .cors(
                         cors ->
                                 cors.configurationSource(
@@ -132,20 +95,10 @@ public class SecurityConfig {
                                 )
                 )
 
-
-                // ======================================
-                // CSRF
-                // ======================================
-
                 .csrf(
                         csrf ->
                                 csrf.disable()
                 )
-
-
-                // ======================================
-                // STATELESS JWT
-                // ======================================
 
                 .sessionManagement(
                         session ->
@@ -154,33 +107,37 @@ public class SecurityConfig {
                                 )
                 )
 
-
-                // ======================================
-                // ENDPOINT SECURITY
-                // ======================================
-
                 .authorizeHttpRequests(
-
                         auth ->
                                 auth
 
-
-                                        // ==========================
-                                        // PUBLIC AUTH
-                                        // ==========================
-
+                                        // PUBLIC AUTH ENDPOINTS
                                         .requestMatchers(
                                                 "/api/auth/signup",
                                                 "/api/auth/login",
-                                                "/api/auth/signin"
+                                                "/api/auth/signin",
+                                                "/error"
                                         )
                                         .permitAll()
 
+                                        // SUPER ADMIN ONLY
+                                        .requestMatchers(
+                                                "/api/super-admin/**"
+                                        )
+                                        .hasRole(
+                                                "SUPER_ADMIN"
+                                        )
 
-                                        // ==========================
-                                        // PROTECTED AUTH
-                                        // ==========================
+                                        // ADMIN OR SUPER ADMIN
+                                        .requestMatchers(
+                                                "/api/admin/**"
+                                        )
+                                        .hasAnyRole(
+                                                "ADMIN",
+                                                "SUPER_ADMIN"
+                                        )
 
+                                        // AUTHENTICATED USER ENDPOINTS
                                         .requestMatchers(
                                                 "/api/auth/me",
                                                 "/api/auth/password",
@@ -188,61 +145,30 @@ public class SecurityConfig {
                                         )
                                         .authenticated()
 
-
-                                        // ==========================
-                                        // POSTS
-                                        // ==========================
-
                                         .requestMatchers(
                                                 "/api/posts/**"
                                         )
                                         .authenticated()
-
-
-                                        // ==========================
-                                        // FEED
-                                        // ==========================
 
                                         .requestMatchers(
                                                 "/api/feed/**"
                                         )
                                         .authenticated()
 
-
-                                        // ==========================
-                                        // TEMPORARY
-                                        //
-                                        // Other APIs can stay public
-                                        // while you integrate them.
-                                        // ==========================
-
+                                        // TEMPORARY WHILE OTHER APIs ARE INTEGRATED
                                         .requestMatchers(
                                                 "/api/**"
                                         )
                                         .permitAll()
 
-
-                                        // ==========================
-                                        // EVERYTHING ELSE
-                                        // ==========================
-
                                         .anyRequest()
                                         .authenticated()
-
                 );
 
-
-        // ==========================================
-        // JWT FILTER
-        // ==========================================
-
         http.addFilterBefore(
-
                 jwtAuthenticationFilter,
-
                 UsernamePasswordAuthenticationFilter.class
         );
-
 
         return http.build();
     }
