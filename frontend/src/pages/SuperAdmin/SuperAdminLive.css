@@ -142,3 +142,15 @@
 .cn-sa-legend-dot{width:11px;height:11px;border-radius:3px;flex-shrink:0}
 @media(max-width:1100px){.cn-sa-chart-grid{grid-template-columns:1fr}}
 @media(max-width:480px){.cn-sa-chart-row{grid-template-columns:80px minmax(0,1fr) 35px;gap:7px;font-size:12px}.cn-sa-donut{width:145px;height:145px;flex-basis:145px}.cn-sa-donut-hole{width:96px;height:96px}}
+
+/* SuperAdmin seven-day posting analytics: inherits site font and colours */
+.cn-sa-post-monitor{display:flex;flex-direction:column;gap:16px;margin-top:20px}
+.cn-sa-post-chart{display:flex;flex-direction:column;gap:14px;margin-top:18px}
+.cn-sa-post-day{display:grid;grid-template-columns:58px minmax(0,1fr) 38px minmax(0,1fr) 72px;align-items:center;gap:9px;color:#45425c;font-size:12px}
+.cn-sa-post-track{height:15px;background:#eeebf7;border-radius:5px;overflow:hidden}
+.cn-sa-post-fill-posts{height:100%;background:#7566d2;border-radius:5px}
+.cn-sa-post-fill-users{height:100%;background:#579fc5;border-radius:5px}
+.cn-sa-post-day strong{text-align:right;color:#29265f}
+.cn-sa-post-day small{text-align:right;color:#625c78}
+.cn-sa-highlight{font-size:36px;color:#29265f}
+@media(max-width:680px){.cn-sa-post-day{grid-template-columns:52px minmax(0,1fr) 26px;gap:6px}.cn-sa-post-day .cn-sa-post-track:nth-of-type(2),.cn-sa-post-day small{display:none}}

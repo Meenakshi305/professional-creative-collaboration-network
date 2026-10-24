@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
-import { superAdminApi, type ManagedUser, type Report, type Totals, type AuditEntry, type ModuleSetting, type ContentItem, type AccountInput } from '../../service/superAdminService'
+import { superAdminApi, type ManagedUser, type Report, type Totals, type AuditEntry, type ModuleSetting, type ContentItem, type AccountInput, type PostMonitoring, type DailyLikesMonitoring } from '../../service/superAdminService'
 import './SuperAdminLive.css'
 
 type Tab = 'overview' | 'users' | 'admins' | 'reports' | 'content' | 'analytics' | 'modules' | 'audit' | 'system'
@@ -86,6 +86,9 @@ export default function SuperAdminLive() {
   const [notice, setNotice] = useState('')
   const [totals, setTotals] = useState<Totals | null>(null)
   const [analytics, setAnalytics] = useState<Totals | null>(null)
+  const [postMonitoring, setPostMonitoring] = useState<PostMonitoring | null>(null)
+  const [likesMonitoring, setLikesMonitoring] = useState<DailyLikesMonitoring | null>(null)
+  const [likesError, setLikesError] = useState('')
   const [users, setUsers] = useState<ManagedUser[]>([])
   const [admins, setAdmins] = useState<ManagedUser[]>([])
   const [reports, setReports] = useState<Report[]>([])
@@ -100,7 +103,19 @@ export default function SuperAdminLive() {
     setBusy(true); setError('')
     try {
       if (tab === 'overview') setTotals(await superAdminApi.overview())
-      if (tab === 'analytics') setAnalytics(await superAdminApi.analytics())
+      if (tab === 'analytics') {
+        const [platform, posting] = await Promise.all([superAdminApi.analytics(), superAdminApi.postMonitoring()])
+        setAnalytics(platform)
+        setPostMonitoring(posting)
+        // Keep posting analytics usable if the likes table is not yet mapped.
+        try {
+          setLikesMonitoring(await superAdminApi.dailyLikesMonitoring())
+          setLikesError('')
+        } catch (err) {
+          setLikesMonitoring(null)
+          setLikesError(err instanceof Error ? err.message : 'Unable to fetch daily likes')
+        }
+      }
       if (tab === 'users') setUsers((await superAdminApi.users()).content)
       if (tab === 'admins') setAdmins(await superAdminApi.admins())
       if (tab === 'reports') { const [rs, as] = await Promise.all([superAdminApi.reports(), superAdminApi.admins()]); setReports(rs.content); setAdmins(as) }
@@ -175,6 +190,91 @@ export default function SuperAdminLive() {
           </div>
           </>
         )}
+        {postMonitoring && (
+          <section className="cn-sa-post-monitor" aria-label="Seven-day posting monitoring">
+            <div className="cn-sa-card">
+              <h2>User posting monitoring — 7 days</h2>
+              <p className="cn-sa-note">Real database posts from {postMonitoring.from} through {postMonitoring.through} ({postMonitoring.timezone}). No posting limits are imposed.</p>
+            </div>
+            <div className="cn-sa-grid">
+              <div className="cn-sa-card"><span>Posts today</span><strong>{postMonitoring.postsToday}</strong></div>
+              <div className="cn-sa-card"><span>Posting users today</span><strong>{postMonitoring.activePostersToday}</strong></div>
+              <div className="cn-sa-card"><span>Posts over 7 days</span><strong>{postMonitoring.totalPosts}</strong></div>
+              <div className="cn-sa-card"><span>Unique posters (7 days)</span><strong>{postMonitoring.uniquePosters}</strong></div>
+            </div>
+            <div className="cn-sa-chart-grid">
+              <div className="cn-sa-card">
+                <h2>Posts and active users each day</h2>
+                <div className="cn-sa-post-chart" role="img" aria-label={postMonitoring.daily.map(d => `${d.date}: ${d.posts} posts from ${d.activeUsers} users`).join('; ')}>
+                  {postMonitoring.daily.map(d => {
+                    const max = Math.max(1, ...postMonitoring.daily.map(x => x.posts), ...postMonitoring.daily.map(x => x.activeUsers))
+                    return <div key={d.date} className="cn-sa-post-day">
+                      <span>{d.date.slice(5)}</span>
+                      <div className="cn-sa-post-track"><div className="cn-sa-post-fill-posts" style={{width: `${100 * d.posts / max}%`}} /></div>
+                      <strong>{d.posts}</strong>
+                      <div className="cn-sa-post-track"><div className="cn-sa-post-fill-users" style={{width: `${100 * d.activeUsers / max}%`}} /></div>
+                      <small>{d.activeUsers} users</small>
+                    </div>
+                  })}
+                </div>
+                <p className="cn-sa-note">Violet = posts, blue = unique posting users</p>
+              </div>
+              <div className="cn-sa-card">
+                <h2>Maximum posts by one user in a day</h2>
+                {postMonitoring.maximumSingleDay ? <>
+                  <strong className="cn-sa-highlight">{postMonitoring.maximumSingleDay.posts}</strong>
+                  <p>@{postMonitoring.maximumSingleDay.username} on {postMonitoring.maximumSingleDay.date}</p>
+                </> : <p>No posts in the selected period.</p>}
+                <h2>Most active user — total over 7 days</h2>
+                {postMonitoring.mostActiveUser ? <p>@{postMonitoring.mostActiveUser.username}: <strong>{postMonitoring.mostActiveUser.posts} posts</strong></p> : <p>No posting users.</p>}
+              </div>
+            </div>
+            <div className="cn-sa-card"><h2>Top 10 posting users — 7 days</h2>
+              <div className="cn-sa-tablewrap"><table><thead><tr><th>Rank</th><th>User</th><th>Posts</th></tr></thead>
+                <tbody>{postMonitoring.topUsers.map((user, index) => <tr key={user.userId}><td>{index + 1}</td><td>@{user.username}</td><td>{user.posts}</td></tr>)}</tbody>
+              </table></div>
+              {postMonitoring.topUsers.length === 0 && <p>No posts created in this period.</p>}
+            </div>
+          </section>
+        )}
+        <section className="cn-sa-post-monitor" aria-label="Most liked users monitoring">
+          <div className="cn-sa-card">
+            <h2>Most liked users — daily</h2>
+            <p className="cn-sa-note">Likes received on a user's posts during each day, not likes they clicked. Ranking is by likes received today.</p>
+            {likesError && <p className="cn-sa-error" role="alert">Likes analytics unavailable: {likesError}</p>}
+            {likesMonitoring && <>
+              <h3>Most liked user today</h3>
+              {likesMonitoring.mostLikedToday
+                ? <p><strong>@{likesMonitoring.mostLikedToday.username}</strong> — {likesMonitoring.mostLikedToday.likesReceived} likes received</p>
+                : <p>No likes recorded today.</p>}
+              <div className="cn-sa-chart-grid">
+                <div className="cn-sa-card">
+                  <h3>Likes received per day — last 7 days</h3>
+                  <div className="cn-sa-post-chart" role="img" aria-label={likesMonitoring.daily.map(p => `${p.date}: ${p.totalLikes} likes`).join('; ')}>
+                    {likesMonitoring.daily.map(p => {
+                      const max = Math.max(1, ...likesMonitoring.daily.map(x => x.totalLikes))
+                      return <div key={p.date} className="cn-sa-post-day">
+                        <span>{p.date.slice(5)}</span>
+                        <div className="cn-sa-post-track"><div className="cn-sa-post-fill-posts" style={{width: `${p.totalLikes / max * 100}%`}} /></div>
+                        <strong>{p.totalLikes}</strong>
+                        <small>{p.winner ? `Top: @${p.winner.username} (${p.winner.likesReceived})` : 'No likes'}</small>
+                      </div>
+                    })}
+                  </div>
+                </div>
+                <div className="cn-sa-card">
+                  <h3>Top 10 most liked users today</h3>
+                  <div className="cn-sa-tablewrap"><table>
+                    <thead><tr><th>Rank</th><th>User</th><th>Likes received</th></tr></thead>
+                    <tbody>{likesMonitoring.topUsersToday.map((u, i) =>
+                      <tr key={u.userId}><td>{i + 1}</td><td>@{u.username}</td><td>{u.likesReceived}</td></tr>)}</tbody>
+                  </table></div>
+                  {!likesMonitoring.topUsersToday.length && <p>No likes recorded today.</p>}
+                </div>
+              </div>
+            </>}
+          </div>
+        </section>
         {!analytics && !busy && !error && <p>No analytics data returned.</p>}
       </section>
     )}

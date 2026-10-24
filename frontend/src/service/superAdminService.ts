@@ -27,7 +27,68 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 }
 const body = (value: unknown) => JSON.stringify(value)
 const page = (n = 0, size = 100) => `?page=${n}&size=${size}`
+
+export type DailyPostingPoint = {
+  date: string; posts: number; activeUsers: number; maxPostsPerUser: number
+}
+export type PostingUser = { userId: number; username: string; posts: number }
+export type DailyMaximum = PostingUser & { date: string }
+export type PostMonitoring = {
+  days: number; timezone: string; from: string; through: string
+  totalPosts: number; uniquePosters: number; postsToday: number; activePostersToday: number
+  maximumSingleDay: DailyMaximum | null
+  mostActiveUser: PostingUser | null
+  daily: DailyPostingPoint[]; topUsers: PostingUser[]
+}
+
+export type LikedUser = { userId: number; username: string; likesReceived: number }
+export type DailyLikesPoint = { date: string; totalLikes: number; winner: LikedUser | null }
+export type DailyLikesMonitoring = {
+  timezone: string; from: string; through: string
+  mostLikedToday: LikedUser | null
+  daily: DailyLikesPoint[]
+  topUsersToday: LikedUser[]
+}
+
+// Match the actual Java LikesAnalyticsResponse fields to the existing UI.
+type BackendLikesResponse = {
+  startDate?: string
+  endDate?: string
+  timezone?: string
+  mostLikedUserToday?: LikedUser | null
+  mostLikedToday?: LikedUser | null
+  dailyLikes?: { date: string; totalLikes: number }[]
+  daily?: DailyLikesPoint[]
+  topUsersToday?: LikedUser[]
+  dailyWinners?: { date: string; userId: number; username: string; likesReceived: number }[]
+}
+
+async function loadDailyLikesMonitoring(): Promise<DailyLikesMonitoring> {
+  const data = await request<BackendLikesResponse>('/superadmin/analytics/likes/daily?days=7')
+  if (!Array.isArray(data.dailyLikes) && !Array.isArray(data.daily)) {
+    throw new Error('Likes response missing dailyLikes; check the deployed backend controller.')
+  }
+  const winners = Array.isArray(data.dailyWinners) ? data.dailyWinners : []
+  const points = Array.isArray(data.dailyLikes) ? data.dailyLikes : (data.daily ?? [])
+  return {
+    timezone: data.timezone ?? 'Server local time',
+    from: data.startDate ?? points[0]?.date ?? '',
+    through: data.endDate ?? points[points.length - 1]?.date ?? '',
+    mostLikedToday: data.mostLikedUserToday ?? data.mostLikedToday ?? null,
+    daily: points.map(point => ({
+      date: point.date,
+      totalLikes: Number(point.totalLikes ?? 0),
+      winner: ('winner' in point ? point.winner as LikedUser | null : undefined)
+        ?? winners.find(w => w.date === point.date) ?? null,
+    })),
+    topUsersToday: Array.isArray(data.topUsersToday) ? data.topUsersToday : [],
+  }
+}
+
+
 export const superAdminApi = {
+  dailyLikesMonitoring: loadDailyLikesMonitoring,
+  postMonitoring: () => request<PostMonitoring>('/superadmin/analytics/posts/monitor?days=7'),
   overview: () => request<Totals>('/superadmin/overview'),
   analytics: () => request<Totals>('/superadmin/analytics'),
   users: (n = 0) => request<PageData<ManagedUser>>(`/superadmin/users${page(n)}`),
