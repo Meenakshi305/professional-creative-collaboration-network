@@ -99,3 +99,46 @@
   color: #b91c1c;
   font-size: 13px;
 }
+
+.live-comment-actions,
+.live-comment-edit-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.live-comment-edit {
+  margin-top: 8px;
+}
+
+.live-comment-edit input {
+  width: 100%;
+  max-width: 400px;
+  padding: 9px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.edit-comment-btn,
+.live-comment-edit-actions button {
+  padding: 6px 12px;
+  border: 1px solid #ddd6fe;
+  border-radius: 8px;
+  background: #f5f3ff;
+  color: #5b21b6;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.edit-comment-btn:hover,
+.live-comment-edit-actions button:hover {
+  background: #ede9fe;
+}
+
+.live-comment-actions button:disabled,
+.live-comment-edit-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
