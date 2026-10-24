@@ -6,8 +6,6 @@ import {
 
 import './SuperAdminDashboard.css'
 
-import AnalyticsDashboard
-  from '../../shared/Analytics/AnalyticsDashboard'
 
 
 type Section =
@@ -2089,13 +2087,7 @@ function SuperAdminDashboard() {
       key: 'access',
       label:
         'Admin Access',
-    },
-    {
-      key: 'modules',
-      label:
-        'System Modules',
-    },
-    {
+    },{
       key: 'system',
       label:
         'System',
@@ -3493,10 +3485,7 @@ function SuperAdminDashboard() {
                 )
               }
 
-              <AnalyticsDashboard
-                mode=
-                  "superAdmin"
-              />
+             
 
             </>
           )
@@ -3731,85 +3720,7 @@ function SuperAdminDashboard() {
         }
 
 
-        {
-          section ===
-          'modules'
-          &&
-          (
-            <>
-
-              {
-                renderHeader(
-                  'System Modules',
-                  'Enable or disable major platform modules.'
-                )
-              }
-
-
-              <div
-                className=
-                  "module-grid"
-              >
-
-                {
-                  modules.map(
-                    module => (
-
-                      <article
-                        className=
-                          "module-card"
-                        key=
-                          {module.id}
-                      >
-
-                        <div>
-
-                          <strong>
-                            {
-                              module.name
-                            }
-                          </strong>
-
-                          <span>
-                            {
-                              module
-                                .description
-                            }
-                          </span>
-
-                        </div>
-
-
-                        <button
-                          className={
-                            `module-toggle ${module.enabled ? 'enabled' : ''}`
-                          }
-                          onClick={() =>
-                            toggleModule(
-                              module.id
-                            )
-                          }
-                        >
-                          {
-                            module.enabled
-                              ?
-                              'Enabled'
-                              :
-                              'Disabled'
-                          }
-                        </button>
-
-                      </article>
-
-                    )
-                  )
-                }
-
-              </div>
-
-            </>
-          )
-        }
+        
 
 
         {

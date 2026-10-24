@@ -11,7 +11,7 @@ type ContentType = 'posts' | 'events' | 'opportunities'
 const tabs: { id: Tab; label: string }[] = [
   { id: 'overview', label: 'Overview' }, { id: 'users', label: 'Users' }, { id: 'admins', label: 'Manage Admins' },
   { id: 'reports', label: 'Reports' }, { id: 'content', label: 'Moderation' },
-  { id: 'analytics', label: 'Analytics' }, { id: 'modules', label: 'Modules' }, { id: 'audit', label: 'Audit Logs' }, { id: 'system', label: 'System' },
+  { id: 'analytics', label: 'Analytics' },  { id: 'audit', label: 'Audit Logs' }, { id: 'system', label: 'System' },
 ]
 
 // Charts use only the totals returned by /api/superadmin/analytics.
