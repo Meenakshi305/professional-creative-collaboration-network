@@ -1,3 +1,4 @@
+
 package com.creative.collaboration.service;
 
 import com.creative.collaboration.dto.*;
@@ -14,85 +15,53 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
 
 @Service
 @Transactional
 public class OpportunityService {
 
     private final OpportunityRepository opportunityRepository;
-
-    private final OpportunityApplicationRepository
-            applicationRepository;
-
+    private final OpportunityApplicationRepository applicationRepository;
     private final UserRepository userRepository;
-
 
     public OpportunityService(
             OpportunityRepository opportunityRepository,
             OpportunityApplicationRepository applicationRepository,
             UserRepository userRepository
     ) {
-
-        this.opportunityRepository =
-                opportunityRepository;
-
-        this.applicationRepository =
-                applicationRepository;
-
-        this.userRepository =
-                userRepository;
+        this.opportunityRepository = opportunityRepository;
+        this.applicationRepository = applicationRepository;
+        this.userRepository = userRepository;
     }
 
-
-    // POST /api/opportunities
+    // CREATE OPPORTUNITY
     public OpportunityResponse createOpportunity(
             Long userId,
             CreateOpportunityRequest request
     ) {
-
         User creator = findUser(userId);
 
-        Opportunity opportunity =
-                new Opportunity();
+        Opportunity opportunity = new Opportunity();
 
-        opportunity.setTitle(
-                request.title()
-        );
-
-        opportunity.setDescription(
-                request.description()
-        );
-
-        opportunity.setRequirements(
-                request.requirements()
-        );
-
-        opportunity.setLocation(
-                request.location()
-        );
-
+        opportunity.setTitle(request.title());
+        opportunity.setDescription(request.description());
+        opportunity.setRequirements(request.requirements());
+        opportunity.setLocation(request.location());
         opportunity.setApplicationDeadline(
                 request.applicationDeadline()
         );
-
-        opportunity.setCreatedBy(
-                creator
-        );
+        opportunity.setCreatedBy(creator);
 
         Opportunity saved =
-                opportunityRepository.save(
-                        opportunity
-                );
+                opportunityRepository.save(opportunity);
 
         return convertToResponse(saved);
     }
 
-
-    // GET /api/opportunities
+    // GET ALL OPPORTUNITIES
     @Transactional(readOnly = true)
-    public List<OpportunityResponse>
-    getAllOpportunities() {
-
+    public List<OpportunityResponse> getAllOpportunities() {
         return opportunityRepository
                 .findAll()
                 .stream()
@@ -100,161 +69,88 @@ public class OpportunityService {
                 .toList();
     }
 
-
-    // GET /api/opportunities/{id}
+    // GET SINGLE OPPORTUNITY
     @Transactional(readOnly = true)
-    public OpportunityResponse getOpportunity(
-            Long id
-    ) {
-
-        Opportunity opportunity =
-                findOpportunity(id);
-
-        return convertToResponse(
-                opportunity
-        );
+    public OpportunityResponse getOpportunity(Long id) {
+        return convertToResponse(findOpportunity(id));
     }
 
-
-    // PUT /api/opportunities/{id}
+    // UPDATE OPPORTUNITY
     public OpportunityResponse updateOpportunity(
             Long id,
             Long userId,
             UpdateOpportunityRequest request
     ) {
+        Opportunity opportunity = findOpportunity(id);
 
-        Opportunity opportunity =
-                findOpportunity(id);
-
-        verifyOwner(
-                opportunity,
-                userId
-        );
+        verifyOwner(opportunity, userId);
 
         if (request.title() != null
                 && !request.title().isBlank()) {
-
-            opportunity.setTitle(
-                    request.title()
-            );
+            opportunity.setTitle(request.title());
         }
 
         if (request.description() != null
                 && !request.description().isBlank()) {
-
-            opportunity.setDescription(
-                    request.description()
-            );
+            opportunity.setDescription(request.description());
         }
 
         if (request.requirements() != null) {
-
-            opportunity.setRequirements(
-                    request.requirements()
-            );
+            opportunity.setRequirements(request.requirements());
         }
 
         if (request.location() != null) {
-
-            opportunity.setLocation(
-                    request.location()
-            );
+            opportunity.setLocation(request.location());
         }
 
-        if (request.applicationDeadline()
-                != null) {
-
+        if (request.applicationDeadline() != null) {
             opportunity.setApplicationDeadline(
                     request.applicationDeadline()
             );
         }
 
         Opportunity updated =
-                opportunityRepository.save(
-                        opportunity
-                );
+                opportunityRepository.save(opportunity);
 
         return convertToResponse(updated);
     }
 
+    // DELETE OPPORTUNITY
+    public void deleteOpportunity(Long id, Long userId) {
+        Opportunity opportunity = findOpportunity(id);
 
-    // DELETE /api/opportunities/{id}
-    public void deleteOpportunity(
-            Long id,
-            Long userId
-    ) {
+        verifyOwner(opportunity, userId);
 
-        Opportunity opportunity =
-                findOpportunity(id);
-
-        verifyOwner(
-                opportunity,
-                userId
-        );
-
-        /*
-         * Delete applications first because
-         * they reference the opportunity.
-         */
-        applicationRepository
-                .deleteByOpportunity_Id(id);
-
-        opportunityRepository.delete(
-                opportunity
-        );
+        applicationRepository.deleteByOpportunity_Id(id);
+        opportunityRepository.delete(opportunity);
     }
 
-
-    // POST /api/opportunities/{id}/apply
-    public OpportunityApplicationResponse
-    applyToOpportunity(
+    // APPLY TO OPPORTUNITY
+    public OpportunityApplicationResponse applyToOpportunity(
             Long opportunityId,
             Long applicantId,
             ApplyOpportunityRequest request
     ) {
-
         Opportunity opportunity =
-                findOpportunity(
-                        opportunityId
-                );
+                findOpportunity(opportunityId);
 
-        User applicant =
-                findUser(
-                        applicantId
-                );
+        User applicant = findUser(applicantId);
 
-        /*
-         * Opportunity creator should not
-         * apply to their own opportunity.
-         */
-        if (opportunity
-                .getCreatedBy()
+        if (opportunity.getCreatedBy()
                 .getId()
                 .equals(applicantId)) {
-
             throw new IllegalArgumentException(
                     "You cannot apply to your own opportunity"
             );
         }
 
-
-        if (
-                opportunity
-                        .getApplicationDeadline()
-                        != null
-                        &&
-                        opportunity
-                                .getApplicationDeadline()
-                                .isBefore(
-                                        LocalDate.now()
-                                )
-        ) {
-
+        if (opportunity.getApplicationDeadline() != null
+                && opportunity.getApplicationDeadline()
+                        .isBefore(LocalDate.now())) {
             throw new IllegalStateException(
                     "Application deadline has passed"
             );
         }
-
 
         boolean alreadyApplied =
                 applicationRepository
@@ -263,194 +159,173 @@ public class OpportunityService {
                                 applicantId
                         );
 
-
         if (alreadyApplied) {
-
             throw new IllegalStateException(
                     "You have already applied for this opportunity"
             );
         }
 
-
         OpportunityApplication application =
                 new OpportunityApplication();
 
-        application.setOpportunity(
-                opportunity
+        application.setOpportunity(opportunity);
+        application.setApplicant(applicant);
+        application.setMessage(
+                request == null ? null : request.message()
         );
-
-        application.setApplicant(
-                applicant
-        );
-
-        if (request != null) {
-            application.setMessage(
-                    request.message()
-            );
-        }
-
-        application.setStatus(
-                "PENDING"
-        );
-
+        application.setStatus("PENDING");
 
         OpportunityApplication saved =
-                applicationRepository.save(
-                        application
-                );
+                applicationRepository.save(application);
 
-
-        return convertApplicationResponse(
-                saved
-        );
+        return convertApplicationResponse(saved);
     }
 
-
-    // GET /api/opportunities/{id}/applications
+    // GET APPLICATIONS FOR AN OPPORTUNITY
     @Transactional(readOnly = true)
-    public List<OpportunityApplicationResponse>
-    getApplications(
+    public List<OpportunityApplicationResponse> getApplications(
             Long opportunityId,
             Long userId
     ) {
-
         Opportunity opportunity =
-                findOpportunity(
-                        opportunityId
-                );
+                findOpportunity(opportunityId);
 
-        /*
-         * Only opportunity owner can view
-         * its applications for now.
-         */
-        verifyOwner(
-                opportunity,
-                userId
-        );
-
+        verifyOwner(opportunity, userId);
 
         return applicationRepository
-                .findByOpportunity_Id(
-                        opportunityId
-                )
+                .findByOpportunity_Id(opportunityId)
                 .stream()
-                .map(
-                        this::
-                                convertApplicationResponse
-                )
+                .map(this::convertApplicationResponse)
                 .toList();
     }
 
-
-    private User findUser(
-            Long id
+    // GET MY APPLICATIONS
+    @Transactional(readOnly = true)
+    public List<OpportunityApplicationResponse> getMyApplications(
+            Long applicantId
     ) {
+        findUser(applicantId);
 
+        return applicationRepository
+                .findByApplicant_Id(applicantId)
+                .stream()
+                .map(this::convertApplicationResponse)
+                .toList();
+    }
+
+    // ACCEPT OR REJECT APPLICATION
+    public OpportunityApplicationResponse updateApplicationStatus(
+            Long applicationId,
+            Long ownerId,
+            UpdateApplicationStatusRequest request
+    ) {
+        OpportunityApplication application =
+                applicationRepository
+                        .findById(applicationId)
+                        .orElseThrow(
+                                () -> new ResourceNotFoundException(
+                                        "Application not found with ID: "
+                                                + applicationId
+                                )
+                        );
+
+        verifyOwner(
+                application.getOpportunity(),
+                ownerId
+        );
+
+        if (request == null || request.status() == null) {
+            throw new IllegalArgumentException(
+                    "Application status is required"
+            );
+        }
+
+        String status = request.status()
+                .trim()
+                .toUpperCase(Locale.ROOT);
+
+        if (!status.equals("ACCEPTED")
+                && !status.equals("REJECTED")) {
+            throw new IllegalArgumentException(
+                    "Status must be ACCEPTED or REJECTED"
+            );
+        }
+
+        if (!"PENDING".equals(application.getStatus())) {
+            throw new IllegalStateException(
+                    "Only pending applications can be updated"
+            );
+        }
+
+        application.setStatus(status);
+
+        OpportunityApplication saved =
+                applicationRepository.save(application);
+
+        return convertApplicationResponse(saved);
+    }
+
+    private User findUser(Long id) {
         return userRepository
                 .findById(id)
                 .orElseThrow(
-                        () ->
-                                new ResourceNotFoundException(
-                                        "User not found with ID: "
-                                                + id
-                                )
+                        () -> new ResourceNotFoundException(
+                                "User not found with ID: " + id
+                        )
                 );
     }
 
-
-    private Opportunity findOpportunity(
-            Long id
-    ) {
-
+    private Opportunity findOpportunity(Long id) {
         return opportunityRepository
                 .findById(id)
                 .orElseThrow(
-                        () ->
-                                new ResourceNotFoundException(
-                                        "Opportunity not found with ID: "
-                                                + id
-                                )
+                        () -> new ResourceNotFoundException(
+                                "Opportunity not found with ID: " + id
+                        )
                 );
     }
-
 
     private void verifyOwner(
             Opportunity opportunity,
             Long userId
     ) {
-
-        if (!opportunity
-                .getCreatedBy()
+        if (!opportunity.getCreatedBy()
                 .getId()
                 .equals(userId)) {
-
             throw new IllegalArgumentException(
                     "Only the opportunity owner can perform this action"
             );
         }
     }
 
-
-    private OpportunityResponse
-    convertToResponse(
+    private OpportunityResponse convertToResponse(
             Opportunity opportunity
     ) {
-
         return new OpportunityResponse(
-
                 opportunity.getId(),
-
                 opportunity.getTitle(),
-
                 opportunity.getDescription(),
-
                 opportunity.getRequirements(),
-
                 opportunity.getLocation(),
-
-                opportunity
-                        .getApplicationDeadline(),
-
-                opportunity
-                        .getCreatedBy()
-                        .getId(),
-
-                opportunity
-                        .getCreatedBy()
-                        .getUsername(),
-
+                opportunity.getApplicationDeadline(),
+                opportunity.getCreatedBy().getId(),
+                opportunity.getCreatedBy().getUsername(),
                 opportunity.getCreatedAt(),
-
                 opportunity.getUpdatedAt()
         );
     }
-
 
     private OpportunityApplicationResponse
     convertApplicationResponse(
             OpportunityApplication application
     ) {
-
         return new OpportunityApplicationResponse(
-
                 application.getId(),
-
-                application
-                        .getOpportunity()
-                        .getId(),
-
-                application
-                        .getApplicant()
-                        .getId(),
-
-                application
-                        .getApplicant()
-                        .getUsername(),
-
+                application.getOpportunity().getId(),
+                application.getApplicant().getId(),
+                application.getApplicant().getUsername(),
                 application.getMessage(),
-
                 application.getStatus(),
-
                 application.getAppliedAt()
         );
     }
