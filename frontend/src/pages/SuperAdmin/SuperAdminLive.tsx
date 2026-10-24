@@ -1,15 +1,34 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react'
-import { superAdminApi, type ManagedUser, type Report, type Totals, type AuditEntry, type ModuleSetting, type ContentItem, type AccountInput, type PostMonitoring, type DailyLikesMonitoring } from '../../service/superAdminService'
+import { useCallback, useEffect, useState } from 'react'
+import { superAdminApi, type ManagedUser, type Report, type Totals, type AuditEntry, type ModuleSetting, type ContentItem, type PostMonitoring, type DailyLikesMonitoring } from '../../service/superAdminService'
 import './SuperAdminLive.css'
+import { adminApi, type AdminUser, type AdminActivity } from '../../service/adminService'
+import { adminSupportReportApi } from '../../service/adminSupportReportService'
+import SupportReportsPanel from '../Admin/SupportReportsPanel'
+import FlaggedCommentsPanel from '../Admin/FlaggedCommentsPanel'
 
 type Tab = 'overview' | 'users' | 'admins' | 'reports' | 'content' | 'analytics' | 'modules' | 'audit' | 'system'
 type ContentType = 'posts' | 'events' | 'opportunities'
 const tabs: { id: Tab; label: string }[] = [
-  { id: 'overview', label: 'Overview' }, { id: 'users', label: 'Users' }, { id: 'admins', label: 'Manage Admins' },
+  { id: 'overview', label: 'Overview' }, { id: 'users', label: 'Users' }, { id: 'admins', label: 'Manage Administrators' },
   { id: 'reports', label: 'Reports' }, { id: 'content', label: 'Moderation' },
-  { id: 'analytics', label: 'Analytics' }, { id: 'modules', label: 'Modules' }, { id: 'audit', label: 'Audit Logs' }, { id: 'system', label: 'System' },
+  { id: 'analytics', label: 'Analytics' },  { id: 'audit', label: 'Audit Logs' }, { id: 'system', label: 'System' },
 ]
-const emptyAccount: AccountInput = { fullName: '', username: '', email: '', temporaryPassword: '', role: 'USER' }
+
+// Display labels are separate from backend field names.
+const totalLabels: Record<string, string> = {
+  users: 'Total Users',
+  administrators: 'Administrators',
+  posts: 'Total Posts',
+  events: 'Total Events',
+  reports: 'Total Reports',
+  pendingReports: 'Pending Reports',
+  upheldReports: 'Upheld Reports',
+  dismissedReports: 'Dismissed Reports',
+}
+
+function getTotalLabel(key: string): string {
+  return totalLabels[key] ?? key.replace(/([A-Z])/g, ' $1').replace(/^./, letter => letter.toUpperCase())
+}
 
 // Charts use only the totals returned by /api/superadmin/analytics.
 // No fabricated time-series values or sample data.
@@ -79,7 +98,11 @@ function LiveAnalyticsCharts({ data }: { data: Totals }) {
 }
 
 
-export default function SuperAdminLive() {
+export default function SuperAdminLive({ mode = 'superadmin' }: { mode?: 'admin' | 'superadmin' }) {
+  const isSuperAdmin = mode === 'superadmin'
+  const [adminUsers, setAdminUsers] = useState<AdminUser[]>([])
+  const [adminAudit, setAdminAudit] = useState<AdminActivity[]>([])
+  const [userSearch, setUserSearch] = useState('')
   const [tab, setTab] = useState<Tab>('overview')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -89,6 +112,7 @@ export default function SuperAdminLive() {
   const [postMonitoring, setPostMonitoring] = useState<PostMonitoring | null>(null)
   const [likesMonitoring, setLikesMonitoring] = useState<DailyLikesMonitoring | null>(null)
   const [likesError, setLikesError] = useState('')
+  const [postingError, setPostingError] = useState('')
   const [users, setUsers] = useState<ManagedUser[]>([])
   const [admins, setAdmins] = useState<ManagedUser[]>([])
   const [reports, setReports] = useState<Report[]>([])
@@ -97,11 +121,62 @@ export default function SuperAdminLive() {
   const [health, setHealth] = useState<{status: string; database: string; userCount: number; serverTime: string} | null>(null)
   const [contentType, setContentType] = useState<ContentType>('posts')
   const [items, setItems] = useState<ContentItem[]>([])
-  const [account, setAccount] = useState<AccountInput>(emptyAccount)
 
   const refresh = useCallback(async () => {
     setBusy(true); setError('')
     try {
+      if (!isSuperAdmin) {
+        if (tab === 'overview' || tab === 'analytics') {
+          const [base, reports, people] = await Promise.all([
+            adminApi.overview(),
+            adminSupportReportApi.summary().catch(() => null),
+            adminApi.users(0, 200)
+          ])
+          const allPeople = people.content
+          const elevated = allPeople.filter(u => ['ADMIN', 'SUPER_ADMIN', 'ROLE_ADMIN', 'ROLE_SUPER_ADMIN'].includes(u.role)).length
+          const data: Totals = {
+            users: base.totalUsers,
+            posts: base.totalPosts,
+            events: base.totalEvents,
+            administrators: elevated,
+            reports: reports?.reports ?? base.totalReports,
+            pendingReports: reports?.pendingReports ?? base.pendingReports,
+            upheldReports: reports?.upheldReports ?? 0,
+            dismissedReports: reports?.dismissedReports ?? 0
+          } as Totals
+          if (tab === 'overview') setTotals(data)
+          else setAnalytics(data)
+          if (tab === 'analytics') {
+            const [posting, likes] = await Promise.allSettled([
+              superAdminApi.postMonitoring('admin'),
+              superAdminApi.dailyLikesMonitoring('admin')
+            ])
+            if (posting.status === 'fulfilled') {
+              setPostMonitoring(posting.value)
+              setPostingError('')
+            } else {
+              setPostMonitoring(null)
+              setPostingError(posting.reason instanceof Error ? posting.reason.message : 'Posting analytics unavailable')
+            }
+            if (likes.status === 'fulfilled') {
+              setLikesMonitoring(likes.value)
+              setLikesError('')
+            } else {
+              setLikesMonitoring(null)
+              setLikesError(likes.reason instanceof Error ? likes.reason.message : 'Likes analytics unavailable')
+            }
+          }
+          if (people.totalElements > allPeople.length) {
+            setNotice('Administrator count reflects the first page of users only.')
+          }
+        }
+        // Shared moderation endpoints live under /api/admin/content and
+        // must accept both roles on the backend.
+        if (tab === 'content') setItems((await superAdminApi.content(contentType)).content)
+        if (tab === 'users') setAdminUsers((await adminApi.users(0, 200)).content)
+        if (tab === 'audit') setAdminAudit((await adminApi.activity(0, 200)).content)
+        return
+      }
       if (tab === 'overview') setTotals(await superAdminApi.overview())
       if (tab === 'analytics') {
         const [platform, posting] = await Promise.all([superAdminApi.analytics(), superAdminApi.postMonitoring()])
@@ -118,14 +193,18 @@ export default function SuperAdminLive() {
       }
       if (tab === 'users') setUsers((await superAdminApi.users()).content)
       if (tab === 'admins') setAdmins(await superAdminApi.admins())
-      if (tab === 'reports') { const [rs, as] = await Promise.all([superAdminApi.reports(), superAdminApi.admins()]); setReports(rs.content); setAdmins(as) }
+      if (tab === 'reports') {
+        const [rs, as] = await Promise.allSettled([superAdminApi.reports(), superAdminApi.admins()])
+        setReports(rs.status === 'fulfilled' ? rs.value.content : [])
+        setAdmins(as.status === 'fulfilled' ? as.value : [])
+      }
       if (tab === 'content') setItems((await superAdminApi.content(contentType)).content)
       if (tab === 'modules') setModules(await superAdminApi.modules())
       if (tab === 'audit') setAudit((await superAdminApi.audit()).content)
       if (tab === 'system') setHealth(await superAdminApi.health())
     } catch (err) { setError(err instanceof Error ? err.message : 'Unable to load data') }
     finally { setBusy(false) }
-  }, [tab, contentType])
+  }, [tab, contentType, isSuperAdmin])
   useEffect(() => { void refresh() }, [refresh])
 
   async function run(action: () => Promise<unknown>, success: string) {
@@ -133,11 +212,6 @@ export default function SuperAdminLive() {
     try { await action(); setNotice(success); await refresh() }
     catch (err) { setError(err instanceof Error ? err.message : 'Request failed') }
     finally { setBusy(false) }
-  }
-  async function createAccount(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    await run(() => superAdminApi.createAccount(account), 'Account created successfully')
-    setAccount(emptyAccount)
   }
   function confirmRemoval(item: ContentItem) {
     const reason = window.prompt(`Permanent removal of ${item.type} #${item.id}. Enter a reason (minimum 10 characters):`)
@@ -147,13 +221,13 @@ export default function SuperAdminLive() {
   }
 
   return <div className="cn-sa-layout">
-    <aside className="cn-sa-sidebar" aria-label="SuperAdmin sidebar">
+    <aside className="cn-sa-sidebar" aria-label={`${mode} sidebar`}>
       <div className="cn-sa-sidebar-brand">
-        <strong>SuperAdmin</strong>
+        <strong>{isSuperAdmin ? 'Super Admin' : 'Admin'}</strong>
         <small>Creative Network</small>
       </div>
-      <nav className="cn-sa-tabs" aria-label="SuperAdmin sections">
-        {tabs.map(t => (
+      <nav className="cn-sa-tabs" aria-label={isSuperAdmin ? 'Super Admin sections' : 'Admin sections'}>
+        {tabs.filter(t => isSuperAdmin || !['admins','modules','system'].includes(t.id)).map(t => (
           <button
             key={t.id}
             type="button"
@@ -167,15 +241,15 @@ export default function SuperAdminLive() {
       </nav>
     </aside>
     <section className="cn-sa-panel">
-      <header className="cn-sa-header"><div><h1>SuperAdmin Workspace</h1><p>Creative Network • Live management</p></div><button type="button" disabled={busy} onClick={() => void refresh()}>Refresh</button></header>
+      <header className="cn-sa-header"><div><h1>{isSuperAdmin ? 'Super Admin Dashboard' : 'Admin Dashboard'}</h1><p>Manage users, content and reports</p></div><button type="button" disabled={busy} onClick={() => void refresh()}>Refresh Data</button></header>
     {error && <p className="cn-sa-error" role="alert">{error}</p>}{notice && <p className="cn-sa-success" role="status">{notice}</p>}
     {busy && <p className="cn-sa-loading">Loading or saving…</p>}
-    {tab === 'overview' && <div className="cn-sa-grid">{totals && Object.entries(totals).map(([k,v]) => <div className="cn-sa-card" key={k}><span>{k.replace(/([A-Z])/g,' $1')}</span><strong>{v}</strong></div>)}</div>}
+    {tab === 'overview' && <div className="cn-sa-grid">{totals && Object.entries(totals).map(([k,v]) => <div className="cn-sa-card" key={k}><span>{getTotalLabel(k)}</span><strong>{v}</strong></div>)}</div>}
     {tab === 'analytics' && (
       <section aria-label="Live platform analytics">
         <div className="cn-sa-card">
           <h2>Platform Analytics</h2>
-          <p className="cn-sa-note">Charts and totals use live values from the SuperAdmin analytics API. Monthly trends require a separate historical endpoint.</p>
+          <p className="cn-sa-note">Charts and totals use live values from authorized analytics endpoints. Monthly trends require a separate historical endpoint.</p>
         </div>
         {analytics && (
           <>
@@ -183,7 +257,7 @@ export default function SuperAdminLive() {
           <div className="cn-sa-grid">
             {Object.entries(analytics).map(([key, value]) => (
               <div className="cn-sa-card" key={key}>
-                <span>{key.replace(/([A-Z])/g, ' $1').replace(/^./, letter => letter.toUpperCase())}</span>
+                <span>{getTotalLabel(key)}</span>
                 <strong>{value.toLocaleString()}</strong>
               </div>
             ))}
@@ -237,7 +311,7 @@ export default function SuperAdminLive() {
             </div>
           </section>
         )}
-        <section className="cn-sa-post-monitor" aria-label="Most liked users monitoring">
+        {<section className="cn-sa-post-monitor" aria-label="Most liked users monitoring">
           <div className="cn-sa-card">
             <h2>Most liked users — daily</h2>
             <p className="cn-sa-note">Likes received on a user's posts during each day, not likes they clicked. Ranking is by likes received today.</p>
@@ -274,28 +348,105 @@ export default function SuperAdminLive() {
               </div>
             </>}
           </div>
-        </section>
+        </section>}
+        {postingError && <p className="cn-sa-error">Posting analytics unavailable: {postingError}</p>}
         {!analytics && !busy && !error && <p>No analytics data returned.</p>}
       </section>
     )}
-    {(tab === 'users' || tab === 'admins') && <>
-      <div className="cn-sa-card"><h2>Create an account</h2><form className="cn-sa-form" onSubmit={(e) => void createAccount(e)}>
-        <input required placeholder="Full name" value={account.fullName} onChange={e=>setAccount({...account,fullName:e.target.value})}/>
-        <input required minLength={3} placeholder="Username" value={account.username} onChange={e=>setAccount({...account,username:e.target.value})}/>
-        <input required type="email" placeholder="Email" value={account.email} onChange={e=>setAccount({...account,email:e.target.value})}/>
-        <input required minLength={12} type="password" placeholder="Temporary password (12+ characters)" value={account.temporaryPassword} onChange={e=>setAccount({...account,temporaryPassword:e.target.value})}/>
-        <select value={account.role} onChange={e=>setAccount({...account,role:e.target.value as 'USER'|'ADMIN'})}><option value="USER">USER</option><option value="ADMIN">ADMIN</option></select>
-        <button disabled={busy}>Create account</button>
-      </form><small>Share temporary credentials securely. The backend requires guardian consent before activating accounts under 18.</small></div>
-      <div className="cn-sa-card"><h2>{tab === 'admins' ? 'Administrators' : 'Users'}</h2><div className="cn-sa-tablewrap"><table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead><tbody>{(tab === 'admins' ? admins : users).map(u=><tr key={u.id}><td>{u.fullName || u.username}</td><td>{u.email}</td><td>{u.role}</td><td>{u.active ? 'Active' : 'Inactive'}</td><td><div className="cn-sa-actions">
-        {u.role !== 'SUPER_ADMIN' && <><button disabled={busy} onClick={()=>void run(()=>superAdminApi.setActive(u.id,!u.active),'Account status updated')}>{u.active ? 'Deactivate' : 'Activate'}</button><button disabled={busy} onClick={()=>void run(()=>superAdminApi.changeRole(u.id,u.role==='ADMIN'?'USER':'ADMIN'),'Role updated')}>{u.role==='ADMIN'?'Demote to USER':'Promote to ADMIN'}</button></>}
+    {!isSuperAdmin && tab === 'users' && <div className="cn-sa-card">
+      <div className="cn-sa-section-heading">
+        <div>
+          <h2>Manage Users</h2>
+          <p className="cn-sa-note">Search and manage Creative Network user accounts.</p>
+        </div>
+      </div>
+      <div className="cn-sa-filter-toolbar cn-sa-user-toolbar">
+        <label className="cn-sa-field" htmlFor="cn-sa-user-search">
+          <span>Search users</span>
+          <input id="cn-sa-user-search" type="search" placeholder="Search by name, email or username"
+            value={userSearch} onChange={e => setUserSearch(e.target.value)} />
+        </label>
+        <button type="button" className="cn-sa-clear" disabled={!userSearch}
+          onClick={() => setUserSearch('')}>Clear</button>
+      </div>
+      <div className="cn-sa-tablewrap"><table>
+        <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody>{adminUsers.filter(u => [u.fullName, u.username, u.email]
+          .some(v => String(v ?? '').toLowerCase().includes(userSearch.toLowerCase())))
+          .map(u => <tr key={u.id}>
+            <td>{u.fullName || u.username}</td><td>{u.email}</td>
+            <td>{u.role}</td><td>{u.active ? 'Active' : 'Inactive'}</td>
+            <td>{['USER','ROLE_USER'].includes(u.role)
+              ? <button disabled={busy}
+                  onClick={() => void run(() => adminApi.setUserActive(u.id, !u.active), 'Account status updated')}>
+                  {u.active ? 'Deactivate' : 'Activate'}
+                </button>
+              : 'Protected'}</td>
+          </tr>)}</tbody>
+      </table></div>
+    </div>}
+    {isSuperAdmin && (tab === 'users' || tab === 'admins') && <>
+      <div className="cn-sa-card">
+        <div className="cn-sa-section-heading">
+          <div>
+            <h2>{tab === 'admins' ? 'Manage Administrators' : 'Manage Users'}</h2>
+            <p className="cn-sa-note">Search accounts by name, email or username.</p>
+          </div>
+        </div>
+        <div className="cn-sa-filter-toolbar cn-sa-user-toolbar">
+          <label className="cn-sa-field" htmlFor="cn-sa-super-search">
+            <span>Search {tab === 'admins' ? 'administrators' : 'users'}</span>
+            <input id="cn-sa-super-search" type="search"
+              placeholder="Search by name, email or username"
+              value={userSearch} onChange={e => setUserSearch(e.target.value)} />
+          </label>
+          <button type="button" className="cn-sa-clear" disabled={!userSearch}
+            onClick={() => setUserSearch('')}>Clear</button>
+        </div>
+      </div>
+      <div className="cn-sa-card"><h2>{tab === 'admins' ? 'Administrators' : 'Users'}</h2><div className="cn-sa-tablewrap"><table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead><tbody>{(tab === 'admins' ? admins : users).filter(u => [u.fullName, u.username, u.email].some(v => String(v ?? '').toLowerCase().includes(userSearch.trim().toLowerCase()))).map(u=><tr key={u.id}><td>{u.fullName || u.username}</td><td>{u.email}</td><td>{u.role}</td><td>{u.active ? 'Active' : 'Inactive'}</td><td><div className="cn-sa-actions">
+        {u.role !== 'SUPER_ADMIN' && <><button disabled={busy} onClick={()=>void run(()=>superAdminApi.setActive(u.id,!u.active),'Account status updated')}>{u.active ? 'Deactivate' : 'Activate'}</button><button disabled={busy} onClick={()=>void run(()=>superAdminApi.changeRole(u.id,u.role==='ADMIN'?'USER':'ADMIN'),'Role updated')}>{u.role==='ADMIN'?'Change to User':'Promote to Admin'}</button></>}
       </div></td></tr>)}</tbody></table></div></div>
     </>}
-    {tab === 'reports' && <div className="cn-sa-card"><h2>All reported posts</h2><div className="cn-sa-tablewrap"><table><thead><tr><th>ID</th><th>Post</th><th>Reason</th><th>Status</th><th>Assigned</th><th>Actions</th></tr></thead><tbody>{reports.map(r=><tr key={r.id}><td>{r.id}</td><td>{r.reportedPostId}</td><td>{r.reason}</td><td>{r.status}</td><td>{r.assignedAdminId ?? 'Unassigned'}</td><td><div className="cn-sa-actions"><select disabled={busy || r.status!=='PENDING'} value={r.assignedAdminId ?? ''} onChange={e=>{ if(e.target.value) void run(()=>superAdminApi.assignReport(r.id,Number(e.target.value)),'Report assigned') }}><option value="">Assign admin</option>{admins.filter(a=>a.active).map(a=><option key={a.id} value={a.id}>{a.fullName || a.username}</option>)}</select>{r.status==='PENDING' && <><button disabled={busy} onClick={()=>void run(()=>superAdminApi.resolveReport(r.id,'UPHELD','Reviewed by SuperAdmin'),'Report upheld')}>Uphold</button><button disabled={busy} onClick={()=>void run(()=>superAdminApi.resolveReport(r.id,'DISMISSED','Reviewed by SuperAdmin'),'Report dismissed')}>Dismiss</button></>}</div></td></tr>)}</tbody></table></div><p className="cn-sa-note">Report decisions are recorded; upholding a report does not automatically delete its post.</p></div>}
-    {tab === 'content' && <div className="cn-sa-card"><h2>Content Moderation</h2><select value={contentType} onChange={e=>setContentType(e.target.value as ContentType)}><option value="posts">Posts</option><option value="events">Events</option><option value="opportunities">Collaboration opportunities</option></select><div className="cn-sa-tablewrap"><table><thead><tr><th>ID</th><th>Title</th><th>Owner ID</th><th>Actions</th></tr></thead><tbody>{items.map(item=><tr key={item.id}><td>{item.id}</td><td>{item.title}</td><td>{item.ownerId}</td><td><button disabled={busy} onClick={()=>confirmRemoval(item)}>Remove</button></td></tr>)}</tbody></table></div><p className="cn-sa-note">Removal uses a permanent DELETE API. Review payment, registration and foreign-key dependencies first.</p></div>}
-    {tab === 'modules' && <div className="cn-sa-card"><h2>Module settings</h2><p className="cn-sa-note">Stored settings only; these toggles do not yet block feature APIs.</p>{modules.map(m=><label key={m.moduleKey} className="cn-sa-module"><span>{m.moduleKey}</span><input type="checkbox" checked={m.enabled} disabled={busy} onChange={e=>void run(()=>superAdminApi.setModule(m.moduleKey,e.target.checked),'Module setting saved')}/></label>)}{modules.length===0 && <p>No settings stored yet. Initialise a supported module:</p>}{modules.length===0 && <div className="cn-sa-actions">{['POSTS','EVENTS','COLLABORATIONS','PORTFOLIOS','REGISTRATIONS','REPORTING'].map(key=><button key={key} disabled={busy} onClick={()=>void run(()=>superAdminApi.setModule(key,true),'Module setting saved')}>{key}</button>)}</div>}</div>}
-    {tab === 'audit' && <div className="cn-sa-card"><h2>Admin Audit Logs</h2><div className="cn-sa-tablewrap"><table><thead><tr><th>Time</th><th>Actor ID</th><th>Action</th><th>Target</th><th>Details</th></tr></thead><tbody>{audit.map(a=><tr key={a.id}><td>{a.createdAt}</td><td>{a.actorId}</td><td>{a.action}</td><td>{a.targetType} #{a.targetId ?? '—'}</td><td>{a.details || '—'}</td></tr>)}</tbody></table></div></div>}
-    {tab === 'system' && <div className="cn-sa-card"><h2>System Health</h2>{health && <><p>Service: {health.status}</p><p>Database: {health.database}</p><p>Users: {health.userCount}</p><p>Server: {health.serverTime}</p></>}</div>}
+    {tab === 'reports' && (
+      <>
+        <SupportReportsPanel mode={isSuperAdmin ? 'superadmin' : 'admin'} />
+        <FlaggedCommentsPanel />
+      </>
+    )}
+    {isSuperAdmin && tab === 'reports' && reports.length > 0 && <div className="cn-sa-card"><h2>All reported posts</h2><div className="cn-sa-tablewrap"><table><thead><tr><th>ID</th><th>Post</th><th>Reason</th><th>Status</th><th>Assigned</th><th>Actions</th></tr></thead><tbody>{reports.map(r=><tr key={r.id}><td>{r.id}</td><td>{r.reportedPostId}</td><td>{r.reason}</td><td>{r.status}</td><td>{r.assignedAdminId ?? 'Unassigned'}</td><td><div className="cn-sa-actions"><select disabled={busy || r.status!=='PENDING'} value={r.assignedAdminId ?? ''} onChange={e=>{ if(e.target.value) void run(()=>superAdminApi.assignReport(r.id,Number(e.target.value)),'Report assigned') }}><option value="">Assign admin</option>{admins.filter(a=>a.active).map(a=><option key={a.id} value={a.id}>{a.fullName || a.username}</option>)}</select>{r.status==='PENDING' && <><button disabled={busy} onClick={()=>void run(()=>superAdminApi.resolveReport(r.id,'UPHELD','Reviewed by SuperAdmin'),'Report upheld')}>Uphold</button><button disabled={busy} onClick={()=>void run(()=>superAdminApi.resolveReport(r.id,'DISMISSED','Reviewed by SuperAdmin'),'Report dismissed')}>Dismiss</button></>}</div></td></tr>)}</tbody></table></div><p className="cn-sa-note">Report decisions are recorded; upholding a report does not automatically delete its post.</p></div>}
+    {tab === 'content' && <div className="cn-sa-card">
+      <h2>Content Moderation</h2>
+      <p className="cn-sa-note">Review and remove published posts, events and collaboration opportunities.</p>
+      <div className="cn-sa-filter-toolbar cn-sa-moderation-toolbar">
+        <label className="cn-sa-field" htmlFor="moderation-content-type">
+          <span>Content type</span>
+          <select id="moderation-content-type" value={contentType}
+            onChange={e => setContentType(e.target.value as ContentType)}>
+            <option value="posts">Posts</option>
+            <option value="events">Events</option>
+            <option value="opportunities">Collaboration opportunities</option>
+          </select>
+        </label>
+      </div>
+      <div className="cn-sa-tablewrap"><table>
+        <thead><tr><th>ID</th><th>Title</th><th>Owner ID</th><th>Actions</th></tr></thead>
+        <tbody>{items.map(item=><tr key={item.id}>
+          <td>{item.id}</td><td>{item.title}</td><td>{item.ownerId}</td>
+          <td><button disabled={busy} onClick={()=>confirmRemoval(item)}>Remove</button></td>
+        </tr>)}</tbody>
+      </table></div>
+      {!busy && items.length === 0 && <p>No content found for this category.</p>}
+      <p className="cn-sa-note">Removal is permanent. The API must authorize the authenticated role and record the moderation reason.</p>
+    </div>}
+    {isSuperAdmin && tab === 'modules' && <div className="cn-sa-card"><h2>Module settings</h2><p className="cn-sa-note">Stored settings only; these toggles do not yet block feature APIs.</p>{modules.map(m=><label key={m.moduleKey} className="cn-sa-module"><span>{m.moduleKey}</span><input type="checkbox" checked={m.enabled} disabled={busy} onChange={e=>void run(()=>superAdminApi.setModule(m.moduleKey,e.target.checked),'Module setting saved')}/></label>)}{modules.length===0 && <p>No settings stored yet. Initialise a supported module:</p>}{modules.length===0 && <div className="cn-sa-actions">{['POSTS','EVENTS','COLLABORATIONS','PORTFOLIOS','REGISTRATIONS','REPORTING'].map(key=><button key={key} disabled={busy} onClick={()=>void run(()=>superAdminApi.setModule(key,true),'Module setting saved')}>{key}</button>)}</div>}</div>}
+    {!isSuperAdmin && tab === 'audit' && <div className="cn-sa-card"><h2>Admin Audit Logs</h2>
+      <div className="cn-sa-tablewrap"><table><thead><tr><th>Time</th><th>Actor</th><th>Action</th><th>Target</th><th>Details</th></tr></thead>
+      <tbody>{adminAudit.map(a => <tr key={a.id}><td>{a.createdAt}</td><td>{a.actorId}</td><td>{a.action}</td>
+        <td>{a.targetType} #{a.targetId ?? '—'}</td><td>{a.details ?? '—'}</td></tr>)}</tbody>
+      </table></div></div>}
+    {isSuperAdmin && tab === 'audit' && <div className="cn-sa-card"><h2>Admin Audit Logs</h2><div className="cn-sa-tablewrap"><table><thead><tr><th>Time</th><th>Actor ID</th><th>Action</th><th>Target</th><th>Details</th></tr></thead><tbody>{audit.map(a=><tr key={a.id}><td>{a.createdAt}</td><td>{a.actorId}</td><td>{a.action}</td><td>{a.targetType} #{a.targetId ?? '—'}</td><td>{a.details || '—'}</td></tr>)}</tbody></table></div></div>}
+    {isSuperAdmin && tab === 'system' && <div className="cn-sa-card"><h2>System Health</h2>{health && <><p>Service: {health.status}</p><p>Database: {health.database}</p><p>Users: {health.userCount}</p><p>Server: {health.serverTime}</p></>}</div>}
   </section>
   </div>
 }
