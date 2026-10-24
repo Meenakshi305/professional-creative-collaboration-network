@@ -25,6 +25,8 @@ type DashboardProps = {
   onCollaborationClick: () => void
   onEventsClick: () => void
   onUserClick: (userId: number) => void
+  onEventClick: (eventId: number) => void
+  onOpportunityClick: (opportunityId: number) => void
 }
 
 type DashboardCollaboration = {
@@ -54,7 +56,9 @@ function toDashboardEvent(event: EventResponse): DashboardEvent {
 function Dashboard({
   onCollaborationClick,
   onEventsClick,
-  onUserClick
+  onUserClick,
+  onEventClick,
+  onOpportunityClick
 }: DashboardProps) {
 
   // ============================================
@@ -523,7 +527,7 @@ function Dashboard({
                         key={collaboration.id}
                         type="button"
                         className="search-result-item"
-                        onClick={onCollaborationClick}
+                        onClick={() => onOpportunityClick(collaboration.id)}
                       >
                         <div className="search-result-icon">
                           🤝
@@ -555,7 +559,7 @@ function Dashboard({
                         key={event.id}
                         type="button"
                         className="search-result-item"
-                        onClick={onEventsClick}
+                        onClick={() => onEventClick(event.id)}
                       >
                         <div className="search-result-icon">
                           📅
@@ -901,9 +905,13 @@ function Dashboard({
 
             {collaborations.map(collaboration => (
 
-              <div
+              <button
                 key={collaboration.id}
+                type="button"
                 className="discovery-item"
+                onClick={() => onOpportunityClick(collaboration.id)}
+                aria-label={`View ${collaboration.title}`}
+                style={{ width: '100%', border: 0, background: 'transparent', textAlign: 'left', font: 'inherit', cursor: 'pointer' }}
               >
 
                 <span>🤝</span>
@@ -913,7 +921,7 @@ function Dashboard({
                   <p>{collaboration.description}</p>
                 </div>
 
-              </div>
+              </button>
 
             ))}
 
@@ -938,9 +946,13 @@ function Dashboard({
 
             {events.map(event => (
 
-              <div
+              <button
                 key={event.id}
+                type="button"
                 className="discovery-item"
+                onClick={() => onEventClick(event.id)}
+                aria-label={`View ${event.title}`}
+                style={{ width: '100%', border: 0, background: 'transparent', textAlign: 'left', font: 'inherit', cursor: 'pointer' }}
               >
 
                 <span>📅</span>
@@ -950,7 +962,7 @@ function Dashboard({
                   <p>{event.details}</p>
                 </div>
 
-              </div>
+              </button>
 
             ))}
 

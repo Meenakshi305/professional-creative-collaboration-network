@@ -30,7 +30,7 @@ function getTotalLabel(key: string): string {
   return totalLabels[key] ?? key.replace(/([A-Z])/g, ' $1').replace(/^./, letter => letter.toUpperCase())
 }
 
-// Charts use only the totals returned by /api/superadmin/analytics.
+// Admin and Super Admin share these charts and response types.
 // No fabricated time-series values or sample data.
 function LiveAnalyticsCharts({ data }: { data: Totals }) {
   const content = [
@@ -125,6 +125,32 @@ export default function SuperAdminLive({ mode = 'superadmin' }: { mode?: 'admin'
   const refresh = useCallback(async () => {
     setBusy(true); setError('')
     try {
+      // Shared loader: chart changes apply to both roles. Each endpoint
+      // can fail independently without hiding the other chart sections.
+      if (tab === 'analytics') {
+        setAnalytics(null)
+        setPostMonitoring(null)
+        setLikesMonitoring(null)
+        setPostingError('')
+        setLikesError('')
+        const analyticsMode = isSuperAdmin ? 'superadmin' : 'admin'
+        const [posting, likes] = await Promise.allSettled([
+          superAdminApi.postMonitoring(analyticsMode),
+          superAdminApi.dailyLikesMonitoring(analyticsMode)
+        ])
+        if (posting.status === 'fulfilled') {
+          setPostMonitoring(posting.value)
+        } else {
+          setPostingError(posting.reason instanceof Error
+            ? posting.reason.message : 'Posting analytics unavailable')
+        }
+        if (likes.status === 'fulfilled') {
+          setLikesMonitoring(likes.value)
+        } else {
+          setLikesError(likes.reason instanceof Error
+            ? likes.reason.message : 'Likes analytics unavailable')
+        }
+      }
       if (!isSuperAdmin) {
         if (tab === 'overview' || tab === 'analytics') {
           const [base, reports, people] = await Promise.all([
@@ -146,26 +172,6 @@ export default function SuperAdminLive({ mode = 'superadmin' }: { mode?: 'admin'
           } as Totals
           if (tab === 'overview') setTotals(data)
           else setAnalytics(data)
-          if (tab === 'analytics') {
-            const [posting, likes] = await Promise.allSettled([
-              superAdminApi.postMonitoring('admin'),
-              superAdminApi.dailyLikesMonitoring('admin')
-            ])
-            if (posting.status === 'fulfilled') {
-              setPostMonitoring(posting.value)
-              setPostingError('')
-            } else {
-              setPostMonitoring(null)
-              setPostingError(posting.reason instanceof Error ? posting.reason.message : 'Posting analytics unavailable')
-            }
-            if (likes.status === 'fulfilled') {
-              setLikesMonitoring(likes.value)
-              setLikesError('')
-            } else {
-              setLikesMonitoring(null)
-              setLikesError(likes.reason instanceof Error ? likes.reason.message : 'Likes analytics unavailable')
-            }
-          }
           if (people.totalElements > allPeople.length) {
             setNotice('Administrator count reflects the first page of users only.')
           }
@@ -178,19 +184,7 @@ export default function SuperAdminLive({ mode = 'superadmin' }: { mode?: 'admin'
         return
       }
       if (tab === 'overview') setTotals(await superAdminApi.overview())
-      if (tab === 'analytics') {
-        const [platform, posting] = await Promise.all([superAdminApi.analytics(), superAdminApi.postMonitoring()])
-        setAnalytics(platform)
-        setPostMonitoring(posting)
-        // Keep posting analytics usable if the likes table is not yet mapped.
-        try {
-          setLikesMonitoring(await superAdminApi.dailyLikesMonitoring())
-          setLikesError('')
-        } catch (err) {
-          setLikesMonitoring(null)
-          setLikesError(err instanceof Error ? err.message : 'Unable to fetch daily likes')
-        }
-      }
+      if (tab === 'analytics') setAnalytics(await superAdminApi.analytics())
       if (tab === 'users') setUsers((await superAdminApi.users()).content)
       if (tab === 'admins') setAdmins(await superAdminApi.admins())
       if (tab === 'reports') {
@@ -249,7 +243,7 @@ export default function SuperAdminLive({ mode = 'superadmin' }: { mode?: 'admin'
       <section aria-label="Live platform analytics">
         <div className="cn-sa-card">
           <h2>Platform Analytics</h2>
-          <p className="cn-sa-note">Charts and totals use live values from authorized analytics endpoints. Monthly trends require a separate historical endpoint.</p>
+          <p className="cn-sa-note">View platform totals, report outcomes, posting activity and likes received.</p>
         </div>
         {analytics && (
           <>

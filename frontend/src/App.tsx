@@ -58,6 +58,25 @@ type Page =
 
 
 function CreativeCollabNetwork() {
+  const [selectedEventId, setSelectedEventId] = useState<number | null>(null)
+  const [selectedOpportunityId, setSelectedOpportunityId] = useState<number | null>(null)
+
+  const openEvent = (eventId: number) => {
+    setSelectedEventId(eventId)
+    setSelectedOpportunityId(null)
+    setSelectedUserId(null)
+    setUiMessages('')
+    setCurrentPage('events')
+  }
+
+  const openOpportunity = (opportunityId: number) => {
+    setSelectedOpportunityId(opportunityId)
+    setSelectedEventId(null)
+    setSelectedUserId(null)
+    setUiMessages('')
+    setCurrentPage('collaboration')
+  }
+
 
 
   // ============================================
@@ -836,6 +855,8 @@ function CreativeCollabNetwork() {
 
   const goCollaboration =
     () => {
+      setSelectedOpportunityId(null)
+      setSelectedEventId(null)
 
       setCurrentPage(
         'collaboration'
@@ -849,6 +870,8 @@ function CreativeCollabNetwork() {
 
 
   const goEvents = () => {
+    setSelectedEventId(null)
+    setSelectedOpportunityId(null)
 
     setCurrentPage(
       'events'
@@ -913,6 +936,8 @@ function CreativeCollabNetwork() {
       setUiMessages('You do not have permission to access the admin page.')
       return
     }
+    setSelectedEventId(null)
+    setSelectedOpportunityId(null)
     setCurrentPage(destination[page])
     setSelectedUserId(null)
     setUiMessages('')
@@ -938,6 +963,8 @@ function CreativeCollabNetwork() {
             onCollaborationClick={goCollaboration}
             onEventsClick={goEvents}
             onUserClick={openPublicProfile}
+            onEventClick={openEvent}
+            onOpportunityClick={openOpportunity}
           />
         )
         break
@@ -966,6 +993,7 @@ function CreativeCollabNetwork() {
       case 'collaboration':
         pageContent = (
           <Collaboration
+            initialOpportunityId={selectedOpportunityId}
             onHomeClick={goHome}
             onProfileClick={goProfile}
             onCollaborationClick={goCollaboration}
@@ -976,6 +1004,7 @@ function CreativeCollabNetwork() {
       case 'events':
         pageContent = (
           <Events
+            initialEventId={selectedEventId}
             onHomeClick={goHome}
             onProfileClick={goProfile}
             onCollaborationClick={goCollaboration}

@@ -21,6 +21,7 @@ import {
 } from '../../service/eventService'
 
 type EventsProps = {
+  initialEventId?: number | null
   onHomeClick: () => void
   onProfileClick: () => void
   onCollaborationClick: () => void
@@ -133,6 +134,7 @@ function errorText(error: unknown, fallback: string): string {
 }
 
 function Events({
+  initialEventId = null,
   onHomeClick,
   onProfileClick,
   onCollaborationClick,
@@ -143,6 +145,7 @@ function Events({
     const [events, setEvents] = useState<EventResponse[]>([])
     const [loading, setLoading] = useState(true)
     const [loadError, setLoadError] = useState('')
+    const [linkedEventError, setLinkedEventError] = useState('')
     const [currentUserId, setCurrentUserId] = useState<number | null>(null)
     const [registrations, setRegistrations] = useState<Record<number, EventRegistrationResponse>>({})
     const [selectedEvent, setSelectedEvent] = useState<EventResponse | null>(null)
@@ -240,6 +243,27 @@ function Events({
             console.warn('Event details error:', error)
         }
     }
+
+    // Open the exact event selected on the Dashboard, even if not in the list.
+    useEffect(() => {
+        if (initialEventId == null) return
+        setLinkedEventError('')
+        let cancelled = false
+        setActionError('')
+        setAttendees(null)
+
+        getEvent(initialEventId)
+            .then(event => {
+                if (!cancelled) setSelectedEvent(event)
+            })
+            .catch(error => {
+                if (!cancelled) {
+                    setLinkedEventError(errorText(error, 'This event is no longer available.'))
+                }
+            })
+
+        return () => { cancelled = true }
+    }, [initialEventId])
 
     const closeDetails = () => {
         setSelectedEvent(null)
@@ -385,6 +409,7 @@ function Events({
 
   return (
     <div className="events-screen">
+      {linkedEventError && <p role="alert" className="events-error">{linkedEventError}</p>}
       <NavigationBar
         activePage="events"
         onHomeClick={onHomeClick}

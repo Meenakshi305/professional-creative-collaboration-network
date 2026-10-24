@@ -9,6 +9,7 @@ export type Totals = { users: number; administrators: number; posts: number; eve
 export type ModuleSetting = { moduleKey: string; enabled: boolean; changedById: number | null }
 export type ContentItem = { id: number; title: string; type: string; ownerId: number }
 export type AccountInput = { fullName: string; username: string; email: string; temporaryPassword: string; dateOfBirth?: string | null; role: 'USER' | 'ADMIN' }
+export type AnalyticsMode = 'admin' | 'superadmin'
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const token = getToken()
@@ -50,10 +51,12 @@ export type DailyLikesMonitoring = {
   topUsersToday: LikedUser[]
 }
 
-// Match the actual Java LikesAnalyticsResponse fields to the existing UI.
+// Both roles use the same response mapping and chart components.
 type BackendLikesResponse = {
   startDate?: string
   endDate?: string
+  from?: string
+  through?: string
   timezone?: string
   mostLikedUserToday?: LikedUser | null
   mostLikedToday?: LikedUser | null
@@ -63,8 +66,14 @@ type BackendLikesResponse = {
   dailyWinners?: { date: string; userId: number; username: string; likesReceived: number }[]
 }
 
-async function loadDailyLikesMonitoring(): Promise<DailyLikesMonitoring> {
-  const data = await request<BackendLikesResponse>('/superadmin/analytics/likes/daily?days=7')
+function analyticsPath(mode: AnalyticsMode): string {
+  return mode === 'admin' ? '/admin/analytics' : '/superadmin/analytics'
+}
+
+async function loadDailyLikesMonitoring(
+  mode: AnalyticsMode = 'superadmin'
+): Promise<DailyLikesMonitoring> {
+  const data = await request<BackendLikesResponse>(`${analyticsPath(mode)}/likes/daily?days=7`)
   if (!Array.isArray(data.dailyLikes) && !Array.isArray(data.daily)) {
     throw new Error('Likes response missing dailyLikes; check the deployed backend controller.')
   }
@@ -72,8 +81,8 @@ async function loadDailyLikesMonitoring(): Promise<DailyLikesMonitoring> {
   const points = Array.isArray(data.dailyLikes) ? data.dailyLikes : (data.daily ?? [])
   return {
     timezone: data.timezone ?? 'Server local time',
-    from: data.startDate ?? points[0]?.date ?? '',
-    through: data.endDate ?? points[points.length - 1]?.date ?? '',
+    from: data.startDate ?? data.from ?? points[0]?.date ?? '',
+    through: data.endDate ?? data.through ?? points[points.length - 1]?.date ?? '',
     mostLikedToday: data.mostLikedUserToday ?? data.mostLikedToday ?? null,
     daily: points.map(point => ({
       date: point.date,
@@ -85,10 +94,9 @@ async function loadDailyLikesMonitoring(): Promise<DailyLikesMonitoring> {
   }
 }
 
-
 export const superAdminApi = {
   dailyLikesMonitoring: loadDailyLikesMonitoring,
-  postMonitoring: () => request<PostMonitoring>('/superadmin/analytics/posts/monitor?days=7'),
+  postMonitoring: (mode: AnalyticsMode = 'superadmin') => request<PostMonitoring>(`${analyticsPath(mode)}/posts/monitor?days=7`),
   overview: () => request<Totals>('/superadmin/overview'),
   analytics: () => request<Totals>('/superadmin/analytics'),
   users: (n = 0) => request<PageData<ManagedUser>>(`/superadmin/users${page(n)}`),

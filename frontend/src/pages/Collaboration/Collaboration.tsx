@@ -15,6 +15,7 @@ import {
 } from '../../service/opportunityService'
 
 type CollaborationProps = {
+  initialOpportunityId?: number | null
   onHomeClick: () => void
   onProfileClick: () => void
   onCollaborationClick: () => void
@@ -102,6 +103,7 @@ function errorText(error: unknown, fallback: string): string {
 }
 
 function Collaboration({
+  initialOpportunityId = null,
   onHomeClick,
   onProfileClick,
   onCollaborationClick,
@@ -111,12 +113,45 @@ function Collaboration({
     useState<CollaborationOpportunity[]>([])
   const [opportunitiesLoading, setOpportunitiesLoading] = useState(true)
   const [opportunitiesError, setOpportunitiesError] = useState('')
+  const [linkedOpportunityError, setLinkedOpportunityError] = useState('')
   const [reloadKey, setReloadKey] = useState(0)
   const [currentUserId, setCurrentUserId] = useState<number | null>(null)
 
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [selectedLocation, setSelectedLocation] = useState('All')
+
+  const [detailOpportunity, setDetailOpportunity] =
+    useState<CollaborationOpportunity | null>(null)
+
+  useEffect(() => {
+    if (initialOpportunityId == null) return
+    setLinkedOpportunityError('')
+    let cancelled = false
+
+    getOpportunity(initialOpportunityId)
+      .then(opportunity => {
+        if (!cancelled) {
+          setDetailOpportunity(toCollaborationOpportunity(opportunity))
+        }
+      })
+      .catch(error => {
+        if (!cancelled) {
+          setLinkedOpportunityError(errorText(error, 'This opportunity is no longer available.'))
+        }
+      })
+
+    return () => { cancelled = true }
+  }, [initialOpportunityId])
+
+  useEffect(() => {
+    if (!detailOpportunity) return
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setDetailOpportunity(null)
+    }
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [detailOpportunity])
 
   // Application state
   const [selectedOpportunity, setSelectedOpportunity] =
@@ -519,6 +554,7 @@ function Collaboration({
 
   return (
     <div className="collaboration-screen">
+      {linkedOpportunityError && <p role="alert" className="opportunities-error">{linkedOpportunityError}</p>}
       <NavigationBar
         activePage="collaborations"
         onHomeClick={onHomeClick}
@@ -787,6 +823,71 @@ function Collaboration({
           )}
         </section>
       </main>
+
+      {/* Details for the specific opportunity selected on the Dashboard. */}
+      {detailOpportunity && (
+        <div
+          className="application-modal-backdrop"
+          role="presentation"
+          onMouseDown={event => {
+            if (event.target === event.currentTarget) setDetailOpportunity(null)
+          }}
+        >
+          <section
+            className="application-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="opportunity-detail-title"
+          >
+            <div className="application-modal-header">
+              <div>
+                <p className="application-modal-eyebrow">COLLABORATION OPPORTUNITY</p>
+                <h2 id="opportunity-detail-title">{detailOpportunity.title}</h2>
+                <p>{detailOpportunity.creator} • {detailOpportunity.location}</p>
+              </div>
+              <button
+                type="button"
+                autoFocus
+                className="application-modal-close"
+                aria-label="Close opportunity details"
+                onClick={() => setDetailOpportunity(null)}
+              >×</button>
+            </div>
+            <div style={{ padding: '0 24px 24px', overflowWrap: 'anywhere' }}>
+              <p style={{ whiteSpace: 'pre-wrap' }}>{detailOpportunity.description}</p>
+              <p><strong>Role:</strong> {detailOpportunity.roleRequired}</p>
+              <p><strong>Category:</strong> {detailOpportunity.category}</p>
+              <p><strong>Skills:</strong> {detailOpportunity.skills.join(', ') || 'Not specified'}</p>
+              <p><strong>Closing date:</strong> {detailOpportunity.closingDate}</p>
+              <p><strong>Status:</strong> {detailOpportunity.status}</p>
+              <button
+                type="button"
+                className="apply-button"
+                disabled={currentUserId === null || (
+                  detailOpportunity.creatorId !== currentUserId && (
+                    detailOpportunity.status === 'CLOSED' ||
+                    appliedOpportunityIds.includes(detailOpportunity.id)
+                  )
+                )}
+                onClick={() => {
+                  const opportunity = detailOpportunity
+                  setDetailOpportunity(null)
+                  if (opportunity.creatorId === currentUserId) {
+                    void openManage(opportunity)
+                  } else {
+                    openApplication(opportunity)
+                  }
+                }}
+              >
+                {currentUserId === null ? 'Loading account…'
+                  : detailOpportunity.creatorId === currentUserId ? 'Manage'
+                  : appliedOpportunityIds.includes(detailOpportunity.id) ? 'Applied ✓'
+                  : detailOpportunity.status === 'CLOSED' ? 'Closed' : 'Apply'}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
 
       {/* Application Modal */}
 
