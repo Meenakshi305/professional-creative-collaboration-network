@@ -18,7 +18,6 @@ type Section =
   | 'moderation'
   | 'analytics'
   | 'access'
-  | 'modules'
   | 'system'
   | 'audit'
 
