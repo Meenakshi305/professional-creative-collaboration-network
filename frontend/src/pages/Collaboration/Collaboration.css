@@ -827,3 +827,103 @@
     width: 100%;
   }
 }
+/* ============================================
+   OPPORTUNITY API INTEGRATION: OWNER TOOLS
+   ============================================ */
+
+.opportunity-status.closed {
+  color: #a33d55;
+}
+
+.opportunity-status.closed::before {
+  background: #c9677d;
+}
+
+.apply-button:disabled {
+  cursor: not-allowed;
+}
+
+.apply-button:disabled:not(.applied),
+.apply-button:disabled:not(.applied):hover {
+  border-color: #d9d5e8;
+  background: #f6f5fa;
+  color: #8a86a0;
+}
+
+.submit-application-button:disabled,
+.publish-opportunity-button:disabled,
+.delete-opportunity-button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.manage-applications {
+  margin: 20px 0;
+}
+
+.manage-applications h3 {
+  margin: 0 0 12px;
+  color: #29265f;
+  font-size: 16px;
+}
+
+.manage-applications ul {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.manage-applications li {
+  padding: 14px;
+  border: 1px solid #e6e2f3;
+  border-radius: 12px;
+  background: #faf9fe;
+}
+
+.manage-applications li p {
+  margin: 8px 0;
+  color: #4d4963;
+  font-size: 13px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.manage-applications li small {
+  color: #8a86a0;
+  font-size: 12px;
+}
+
+.manage-application-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.manage-application-top strong {
+  color: #29265f;
+  font-size: 13px;
+}
+
+.manage-application-status {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #f0eefc;
+  color: #6558d9;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.manage-empty {
+  margin: 0;
+  color: #6f6a85;
+  font-size: 13px;
+}
+
+.delete-opportunity-button {
+  border-color: #efc7d0;
+  color: #a33d55;
+}

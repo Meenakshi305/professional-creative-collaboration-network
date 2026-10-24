@@ -1,6 +1,18 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './Collaboration.css'
 import NavigationBar from '../../shared/NavigationBar/NavigationBar'
+import {
+  applyToOpportunity,
+  createOpportunity,
+  deleteOpportunity,
+  getCurrentUserId,
+  getOpportunities,
+  getOpportunity,
+  getOpportunityApplications,
+  updateOpportunity,
+  type OpportunityApplicationResponse,
+  type OpportunityResponse
+} from '../../service/opportunityService'
 
 type CollaborationProps = {
   onHomeClick: () => void
@@ -13,95 +25,81 @@ type CollaborationOpportunity = {
   id: number
   title: string
   creator: string
+  creatorId: number
   description: string
   roleRequired: string
   category: string
   location: string
   skills: string[]
   closingDate: string
+  deadline: string
   status: 'OPEN' | 'CLOSED'
 }
 
-const initialOpportunities: CollaborationOpportunity[] = [
-  {
-    id: 1,
-    title: 'Brand Identity Designer for Creative Startup',
-    creator: 'North Studio',
-    description:
-      'We are looking for a graphic designer to help develop a fresh visual identity for an emerging creative brand. The project includes logo exploration, colour direction and supporting brand assets.',
-    roleRequired: 'Graphic Designer',
-    category: 'Design',
-    location: 'Adelaide, SA',
-    skills: ['Branding', 'Illustrator', 'Graphic Design'],
-    closingDate: '18 Oct 2026',
-    status: 'OPEN'
-  },
-  {
-    id: 2,
-    title: 'Photographer Needed for Live Creative Event',
-    creator: 'Frame Collective',
-    description:
-      'Seeking a photographer to capture a live creative networking event. The collaboration will involve event photography, candid professional portraits and delivery of edited digital images.',
-    roleRequired: 'Event Photographer',
-    category: 'Photography',
-    location: 'Sydney, NSW',
-    skills: ['Photography', 'Lightroom', 'Event Coverage'],
-    closingDate: '22 Oct 2026',
-    status: 'OPEN'
-  },
-  {
-    id: 3,
-    title: 'Composer for Independent Short Film',
-    creator: 'Silverline Films',
-    description:
-      'Our production team is searching for a composer interested in creating an original score for an independent short film. We are looking for someone comfortable working closely with a director.',
-    roleRequired: 'Music Composer',
-    category: 'Music',
-    location: 'Remote',
-    skills: ['Composition', 'Film Scoring', 'Audio Production'],
-    closingDate: '28 Oct 2026',
-    status: 'OPEN'
-  },
-  {
-    id: 4,
-    title: 'Video Editor for Social Campaign',
-    creator: 'Motion House',
-    description:
-      'Join a small creative team producing a digital campaign for social platforms. We need a video editor who can transform supplied footage into engaging short-form content.',
-    roleRequired: 'Video Editor',
-    category: 'Film & Video',
-    location: 'Melbourne, VIC',
-    skills: ['Premiere Pro', 'Video Editing', 'Storytelling'],
-    closingDate: '31 Oct 2026',
-    status: 'OPEN'
-  },
-  {
-    id: 5,
-    title: 'UI/UX Designer for Creative Portfolio Platform',
-    creator: 'Pixel Forge',
-    description:
-      'Looking for a UI/UX designer to collaborate on interface concepts for a portfolio-focused digital product. You will work on user flows, wireframes and polished interface designs.',
-    roleRequired: 'UI/UX Designer',
-    category: 'Digital Design',
-    location: 'Remote',
-    skills: ['Figma', 'UI Design', 'UX Design'],
-    closingDate: '4 Nov 2026',
-    status: 'OPEN'
-  },
-  {
-    id: 6,
-    title: 'Illustrator for Editorial Art Project',
-    creator: 'Canvas Journal',
-    description:
-      'We are seeking an illustrator to produce a small collection of original editorial illustrations for an upcoming digital publication focused on contemporary creative culture.',
-    roleRequired: 'Illustrator',
-    category: 'Illustration',
-    location: 'Brisbane, QLD',
-    skills: ['Illustration', 'Digital Art', 'Photoshop'],
-    closingDate: '8 Nov 2026',
-    status: 'OPEN'
+// ============================================
+// BACKEND MAPPING
+// The backend stores role, category and skills in the
+// free-text `requirements` field, one "Label: value" per line.
+// ============================================
+
+function buildRequirements(role: string, category: string, skills: string[]): string {
+  return `Role: ${role}\nCategory: ${category}\nSkills: ${skills.join(', ')}`
+}
+
+function parseRequirements(requirements: string | null) {
+  const fields: Record<string, string> = {}
+  const otherLines: string[] = []
+
+  ;(requirements ?? '').split('\n').forEach((line) => {
+    const match = line.match(/^\s*(role|category|skills)\s*:\s*(.*)$/i)
+    if (match) fields[match[1].toLowerCase()] = match[2].trim()
+    else if (line.trim()) otherLines.push(line.trim())
+  })
+
+  return {
+    roleRequired: fields.role || otherLines.join(' ') || 'Open role',
+    category: fields.category || 'Other',
+    skills: (fields.skills ?? '')
+      .split(',')
+      .map((skill) => skill.trim())
+      .filter((skill) => skill !== '')
   }
-]
+}
+
+function isPastDeadline(deadline: string | null): boolean {
+  if (!deadline) return false
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  return new Date(`${deadline}T00:00:00`) < today
+}
+
+function toCollaborationOpportunity(opportunity: OpportunityResponse): CollaborationOpportunity {
+  const parsed = parseRequirements(opportunity.requirements)
+  const deadline = opportunity.applicationDeadline ?? ''
+
+  return {
+    id: opportunity.id,
+    title: opportunity.title,
+    creator: opportunity.createdByUsername,
+    creatorId: opportunity.createdById,
+    description: opportunity.description,
+    ...parsed,
+    location: opportunity.location || 'Not specified',
+    closingDate: deadline
+      ? new Date(`${deadline}T00:00:00`).toLocaleDateString('en-AU', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric'
+        })
+      : 'No deadline',
+    deadline,
+    status: isPastDeadline(opportunity.applicationDeadline) ? 'CLOSED' : 'OPEN'
+  }
+}
+
+function errorText(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message ? error.message : fallback
+}
 
 function Collaboration({
   onHomeClick,
@@ -110,7 +108,11 @@ function Collaboration({
   onEventsClick
 }: CollaborationProps) {
   const [opportunities, setOpportunities] =
-    useState<CollaborationOpportunity[]>(initialOpportunities)
+    useState<CollaborationOpportunity[]>([])
+  const [opportunitiesLoading, setOpportunitiesLoading] = useState(true)
+  const [opportunitiesError, setOpportunitiesError] = useState('')
+  const [reloadKey, setReloadKey] = useState(0)
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null)
 
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('All')
@@ -123,11 +125,16 @@ function Collaboration({
   const [coverMessage, setCoverMessage] = useState('')
   const [applicationError, setApplicationError] = useState('')
   const [applicationSuccess, setApplicationSuccess] = useState('')
+  const [applicationSubmitting, setApplicationSubmitting] = useState(false)
+  // The backend has no "my applications" endpoint, so this tracks
+  // applications made (or rejected as duplicates) in this session.
   const [appliedOpportunityIds, setAppliedOpportunityIds] =
     useState<number[]>([])
 
-  // Post opportunity state
+  // Post / edit opportunity state
   const [showPostOpportunity, setShowPostOpportunity] = useState(false)
+  const [editingOpportunityId, setEditingOpportunityId] =
+    useState<number | null>(null)
 
   const [newTitle, setNewTitle] = useState('')
   const [newRole, setNewRole] = useState('')
@@ -139,6 +146,54 @@ function Collaboration({
 
   const [postOpportunityError, setPostOpportunityError] = useState('')
   const [postOpportunitySuccess, setPostOpportunitySuccess] = useState('')
+  const [postSubmitting, setPostSubmitting] = useState(false)
+
+  // Manage (owner) state
+  const [managedOpportunity, setManagedOpportunity] =
+    useState<CollaborationOpportunity | null>(null)
+  const [applications, setApplications] =
+    useState<OpportunityApplicationResponse[] | null>(null)
+  const [manageError, setManageError] = useState('')
+  const [manageBusy, setManageBusy] = useState(false)
+
+  // Load opportunities from the backend
+  useEffect(() => {
+    let cancelled = false
+
+    getOpportunities()
+      .then((list) => {
+        if (cancelled) return
+        setOpportunities(list.map(toCollaborationOpportunity))
+        setOpportunitiesError('')
+      })
+      .catch((error) => {
+        if (cancelled) return
+        setOpportunities([])
+        setOpportunitiesError(errorText(error, 'Unable to load opportunities.'))
+      })
+      .finally(() => {
+        if (!cancelled) setOpportunitiesLoading(false)
+      })
+
+    return () => { cancelled = true }
+  }, [reloadKey])
+
+  useEffect(() => {
+    let cancelled = false
+
+    getCurrentUserId()
+      .then((userId) => {
+        if (!cancelled) setCurrentUserId(userId)
+      })
+      .catch((error) => console.warn('Current user unavailable:', error))
+
+    return () => { cancelled = true }
+  }, [])
+
+  const reloadOpportunities = () => {
+    setOpportunitiesLoading(true)
+    setReloadKey((key) => key + 1)
+  }
 
   // Search/filter data
   const categories = [
@@ -209,7 +264,7 @@ function Collaboration({
     setApplicationSuccess('')
   }
 
-  const submitApplication = (
+  const submitApplication = async (
     event: React.FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault()
@@ -241,20 +296,56 @@ function Collaboration({
       return
     }
 
-    setAppliedOpportunityIds((currentIds) => [
-      ...currentIds,
-      selectedOpportunity.id
-    ])
+    const opportunityId = selectedOpportunity.id
+    setApplicationSubmitting(true)
 
-    setApplicationError('')
-    setApplicationSuccess('Application submitted successfully.')
+    try {
+      await applyToOpportunity(opportunityId, { message: trimmedMessage })
+
+      setAppliedOpportunityIds((currentIds) => [
+        ...currentIds,
+        opportunityId
+      ])
+
+      setApplicationError('')
+      setApplicationSuccess('Application submitted successfully.')
+    } catch (error) {
+      const message = errorText(error, 'Unable to submit your application.')
+
+      if (/already applied/i.test(message)) {
+        setAppliedOpportunityIds((currentIds) => [
+          ...currentIds,
+          opportunityId
+        ])
+      }
+
+      setApplicationError(message)
+    } finally {
+      setApplicationSubmitting(false)
+    }
   }
 
-  // Post opportunity functions
+  // Post / edit opportunity functions
   const openPostOpportunity = () => {
+    resetPostOpportunityForm()
+    setEditingOpportunityId(null)
     setShowPostOpportunity(true)
+    setPostOpportunitySuccess('')
+  }
+
+  const openEditOpportunity = (opportunity: CollaborationOpportunity) => {
+    setEditingOpportunityId(opportunity.id)
+    setNewTitle(opportunity.title)
+    setNewRole(opportunity.roleRequired)
+    setNewCategory(opportunity.category)
+    setNewLocation(opportunity.location === 'Not specified' ? '' : opportunity.location)
+    setNewDescription(opportunity.description)
+    setNewSkills(opportunity.skills.join(', '))
+    setNewClosingDate(opportunity.deadline)
     setPostOpportunityError('')
     setPostOpportunitySuccess('')
+    closeManage()
+    setShowPostOpportunity(true)
   }
 
   const resetPostOpportunityForm = () => {
@@ -270,11 +361,12 @@ function Collaboration({
 
   const closePostOpportunity = () => {
     setShowPostOpportunity(false)
+    setEditingOpportunityId(null)
     resetPostOpportunityForm()
     setPostOpportunitySuccess('')
   }
 
-  const submitOpportunity = (
+  const submitOpportunity = async (
     event: React.FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault()
@@ -344,37 +436,85 @@ function Collaboration({
       return
     }
 
-    const newOpportunity: CollaborationOpportunity = {
-      id:
-        opportunities.length > 0
-          ? Math.max(
-              ...opportunities.map((opportunity) => opportunity.id)
-            ) + 1
-          : 1,
+    const request = {
       title,
-      creator: 'You',
       description,
-      roleRequired: role,
-      category,
+      requirements: buildRequirements(role, category, skills),
       location,
-      skills,
-      closingDate: closingDate.toLocaleDateString('en-AU', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric'
-      }),
-      status: 'OPEN'
+      applicationDeadline: newClosingDate
     }
 
-    setOpportunities((currentOpportunities) => [
-      newOpportunity,
-      ...currentOpportunities
-    ])
+    setPostSubmitting(true)
 
-    setPostOpportunityError('')
-    setPostOpportunitySuccess(
-      'Your collaboration opportunity has been published successfully.'
-    )
+    try {
+      if (editingOpportunityId === null) {
+        await createOpportunity(request)
+      } else {
+        await updateOpportunity(editingOpportunityId, request)
+      }
+
+      setPostOpportunityError('')
+      setPostOpportunitySuccess(
+        editingOpportunityId === null
+          ? 'Your collaboration opportunity has been published successfully.'
+          : 'Your collaboration opportunity has been updated successfully.'
+      )
+      reloadOpportunities()
+    } catch (error) {
+      setPostOpportunityError(
+        errorText(error, 'Unable to save this opportunity.')
+      )
+    } finally {
+      setPostSubmitting(false)
+    }
+  }
+
+  // Manage (owner) functions
+  const openManage = async (opportunity: CollaborationOpportunity) => {
+    setManagedOpportunity(opportunity)
+    setApplications(null)
+    setManageError('')
+    setManageBusy(true)
+
+    try {
+      const [fresh, received] = await Promise.all([
+        getOpportunity(opportunity.id),
+        getOpportunityApplications(opportunity.id)
+      ])
+      setManagedOpportunity(toCollaborationOpportunity(fresh))
+      setApplications(received)
+    } catch (error) {
+      setManageError(errorText(error, 'Unable to load applications.'))
+    } finally {
+      setManageBusy(false)
+    }
+  }
+
+  const closeManage = () => {
+    setManagedOpportunity(null)
+    setApplications(null)
+    setManageError('')
+  }
+
+  const removeOpportunity = async (opportunity: CollaborationOpportunity) => {
+    if (!window.confirm(`Delete "${opportunity.title}"? Its applications will be deleted too.`)) {
+      return
+    }
+
+    setManageBusy(true)
+    setManageError('')
+
+    try {
+      await deleteOpportunity(opportunity.id)
+      setOpportunities((current) =>
+        current.filter((item) => item.id !== opportunity.id)
+      )
+      closeManage()
+    } catch (error) {
+      setManageError(errorText(error, 'Unable to delete this opportunity.'))
+    } finally {
+      setManageBusy(false)
+    }
   }
 
   return (
@@ -502,11 +642,33 @@ function Collaboration({
             </span>
           </div>
 
-          {filteredOpportunities.length > 0 ? (
+          {opportunitiesError ? (
+            <div className="no-opportunities">
+              <div
+                className="no-opportunities-icon"
+                aria-hidden="true"
+              >
+                !
+              </div>
+
+              <h3>Couldn't load opportunities</h3>
+
+              <p>{opportunitiesError}</p>
+
+              <button type="button" onClick={reloadOpportunities}>
+                Try again
+              </button>
+            </div>
+          ) : opportunitiesLoading ? (
+            <div className="no-opportunities">
+              <h3>Loading opportunities…</h3>
+            </div>
+          ) : filteredOpportunities.length > 0 ? (
             <div className="opportunities-grid">
               {filteredOpportunities.map((opportunity) => {
                 const hasApplied =
                   appliedOpportunityIds.includes(opportunity.id)
+                const isOwner = opportunity.creatorId === currentUserId
 
                 return (
                   <article
@@ -518,7 +680,11 @@ function Collaboration({
                         {opportunity.category}
                       </span>
 
-                      <span className="opportunity-status">
+                      <span
+                        className={`opportunity-status ${
+                          opportunity.status === 'CLOSED' ? 'closed' : ''
+                        }`}
+                      >
                         {opportunity.status}
                       </span>
                     </div>
@@ -549,17 +715,19 @@ function Collaboration({
                       </div>
                     </div>
 
-                    <div className="opportunity-skills">
-                      <span className="detail-label">Skills</span>
+                    {opportunity.skills.length > 0 && (
+                      <div className="opportunity-skills">
+                        <span className="detail-label">Skills</span>
 
-                      <div className="skill-list">
-                        {opportunity.skills.map((skill) => (
-                          <span className="skill-tag" key={skill}>
-                            {skill}
-                          </span>
-                        ))}
+                        <div className="skill-list">
+                          {opportunity.skills.map((skill) => (
+                            <span className="skill-tag" key={skill}>
+                              {skill}
+                            </span>
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                    )}
 
                     <div className="opportunity-footer">
                       <div className="closing-date">
@@ -567,16 +735,30 @@ function Collaboration({
                         <strong>{opportunity.closingDate}</strong>
                       </div>
 
-                      <button
-                        className={`apply-button ${
-                          hasApplied ? 'applied' : ''
-                        }`}
-                        type="button"
-                        disabled={hasApplied}
-                        onClick={() => openApplication(opportunity)}
-                      >
-                        {hasApplied ? 'Applied ✓' : 'Apply'}
-                      </button>
+                      {isOwner ? (
+                        <button
+                          className="apply-button manage-button"
+                          type="button"
+                          onClick={() => openManage(opportunity)}
+                        >
+                          Manage
+                        </button>
+                      ) : (
+                        <button
+                          className={`apply-button ${
+                            hasApplied ? 'applied' : ''
+                          }`}
+                          type="button"
+                          disabled={hasApplied || opportunity.status === 'CLOSED'}
+                          onClick={() => openApplication(opportunity)}
+                        >
+                          {hasApplied
+                            ? 'Applied ✓'
+                            : opportunity.status === 'CLOSED'
+                              ? 'Closed'
+                              : 'Apply'}
+                        </button>
+                      )}
                     </div>
                   </article>
                 )
@@ -736,8 +918,9 @@ function Collaboration({
                   <button
                     className="submit-application-button"
                     type="submit"
+                    disabled={applicationSubmitting}
                   >
-                    Send application
+                    {applicationSubmitting ? 'Sending…' : 'Send application'}
                   </button>
                 </div>
               </form>
@@ -767,11 +950,15 @@ function Collaboration({
             <div className="post-modal-header">
               <div>
                 <p className="post-modal-eyebrow">
-                  CREATE OPPORTUNITY
+                  {editingOpportunityId === null
+                    ? 'CREATE OPPORTUNITY'
+                    : 'EDIT OPPORTUNITY'}
                 </p>
 
                 <h2 id="post-modal-title">
-                  Post a Collaboration Opportunity
+                  {editingOpportunityId === null
+                    ? 'Post a Collaboration Opportunity'
+                    : 'Update Your Opportunity'}
                 </h2>
 
                 <p>
@@ -799,7 +986,11 @@ function Collaboration({
                   ✓
                 </div>
 
-                <h3>Opportunity published</h3>
+                <h3>
+                  {editingOpportunityId === null
+                    ? 'Opportunity published'
+                    : 'Opportunity updated'}
+                </h3>
 
                 <p>{postOpportunitySuccess}</p>
 
@@ -884,6 +1075,19 @@ function Collaboration({
                         Animation
                       </option>
                       <option value="Other">Other</option>
+                      {newCategory &&
+                        ![
+                          'Design',
+                          'Photography',
+                          'Music',
+                          'Film & Video',
+                          'Digital Design',
+                          'Illustration',
+                          'Animation',
+                          'Other'
+                        ].includes(newCategory) && (
+                          <option value={newCategory}>{newCategory}</option>
+                        )}
                     </select>
                   </div>
 
@@ -986,12 +1190,129 @@ function Collaboration({
                   <button
                     className="publish-opportunity-button"
                     type="submit"
+                    disabled={postSubmitting}
                   >
-                    Publish opportunity
+                    {postSubmitting
+                      ? 'Saving…'
+                      : editingOpportunityId === null
+                        ? 'Publish opportunity'
+                        : 'Save changes'}
                   </button>
                 </div>
               </form>
             )}
+          </section>
+        </div>
+      )}
+
+      {/* Manage Opportunity Modal (owner) */}
+
+      {managedOpportunity && (
+        <div
+          className="application-modal-backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              closeManage()
+            }
+          }}
+        >
+          <section
+            className="application-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="manage-modal-title"
+          >
+            <div className="application-modal-header">
+              <div>
+                <p className="application-modal-eyebrow">
+                  MANAGE OPPORTUNITY
+                </p>
+
+                <h2 id="manage-modal-title">
+                  {managedOpportunity.title}
+                </h2>
+
+                <p>
+                  {managedOpportunity.roleRequired} •{' '}
+                  {managedOpportunity.location} • Closes{' '}
+                  {managedOpportunity.closingDate}
+                </p>
+              </div>
+
+              <button
+                className="application-modal-close"
+                type="button"
+                aria-label="Close manage opportunity"
+                onClick={closeManage}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="manage-applications">
+              <h3>
+                Applications
+                {applications ? ` (${applications.length})` : ''}
+              </h3>
+
+              {manageError && (
+                <p className="application-error" role="alert">
+                  {manageError}
+                </p>
+              )}
+
+              {applications === null ? (
+                !manageError && <p className="manage-empty">Loading applications…</p>
+              ) : applications.length === 0 ? (
+                <p className="manage-empty">No applications yet.</p>
+              ) : (
+                <ul>
+                  {applications.map((application) => (
+                    <li key={application.applicationId}>
+                      <div className="manage-application-top">
+                        <strong>@{application.applicantUsername}</strong>
+                        <span className="manage-application-status">
+                          {application.status}
+                        </span>
+                      </div>
+
+                      {application.message && (
+                        <p>{application.message}</p>
+                      )}
+
+                      <small>
+                        Applied{' '}
+                        {new Date(application.appliedAt).toLocaleDateString(
+                          'en-AU',
+                          { day: 'numeric', month: 'short', year: 'numeric' }
+                        )}
+                      </small>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div className="application-modal-actions">
+              <button
+                className="cancel-application-button delete-opportunity-button"
+                type="button"
+                disabled={manageBusy}
+                onClick={() => removeOpportunity(managedOpportunity)}
+              >
+                Delete
+              </button>
+
+              <button
+                className="submit-application-button"
+                type="button"
+                disabled={manageBusy}
+                onClick={() => openEditOpportunity(managedOpportunity)}
+              >
+                Edit opportunity
+              </button>
+            </div>
           </section>
         </div>
       )}
