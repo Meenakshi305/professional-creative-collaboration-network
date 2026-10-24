@@ -1,69 +1,159 @@
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState
+} from 'react'
 
-import { useEffect, useRef, useState } from 'react'
+import {
+  Bell,
+  UserRound,
+  Heart,
+  MessageCircle,
+  Handshake,
+  X
+} from 'lucide-react'
+
+import {
+  getNotifications,
+  dismissNotification as dismissNotificationApi,
+  type NotificationItem
+} from '../../service/notificationService'
+
 import './Notifications.css'
 
-type NotificationType = 'follow' | 'like' | 'comment' | 'collaboration'
-
-type NotificationItem = {
-  id: number
-  message: string
-  time: string
-  type: NotificationType
-  createdAt: number
+type NotificationsProps = {
+  enabled?: boolean
+  token: string
 }
 
-const sampleNotifications: NotificationItem[] = [
-  {
-    id: 1,
-    message: 'Vamsi followed you back.',
-    time: '10 min ago',
-    type: 'follow',
-    createdAt: 400
-  },
-  {
-    id: 2,
-    message: 'Khushi liked your post.',
-    time: '25 min ago',
-    type: 'like',
-    createdAt: 300
-  },
-  {
-    id: 3,
-    message: 'Meenakshi commented on your portfolio.',
-    time: '1 hour ago',
-    type: 'comment',
-    createdAt: 200
-  },
-  {
-    id: 4,
-    message: 'Arjun invited you to collaborate.',
-    time: '2 hours ago',
-    type: 'collaboration',
-    createdAt: 100
-  }
-]
+const notificationIcons = {
+  follow: UserRound,
+  like: Heart,
+  comment: MessageCircle,
+  collaboration: Handshake
+}
 
-function Notifications() {
-  const [notifications, setNotifications] =
-    useState<NotificationItem[]>(sampleNotifications)
+function formatTime(createdAt: string): string {
+  const timestamp = new Date(createdAt).getTime()
 
-  const [isOpen, setIsOpen] = useState(false)
-  const containerRef = useRef<HTMLDivElement>(null)
+  if (Number.isNaN(timestamp)) return ''
 
-  const sortedNotifications = [...notifications].sort(
-    (a, b) => b.createdAt - a.createdAt
+  const minutes = Math.floor(
+    Math.max(0, Date.now() - timestamp) / 60000
   )
 
-  const visibleNotifications = sortedNotifications.slice(0, 2)
+  if (minutes < 1) return 'Just now'
+  if (minutes < 60) return `${minutes} min ago`
 
-  const dismissNotification = (id: number) => {
-    setNotifications(previous =>
-      previous.filter(notification => notification.id !== id)
-    )
+  const hours = Math.floor(minutes / 60)
+
+  if (hours < 24) {
+    return `${hours} ${hours === 1 ? 'hour' : 'hours'} ago`
   }
 
+  return new Date(createdAt).toLocaleString()
+}
+
+export default function Notifications({
+  enabled = true,
+  token
+}: NotificationsProps) {
+  const [notifications, setNotifications] =
+    useState<NotificationItem[]>([])
+
+  const [isOpen, setIsOpen] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [dismissingId, setDismissingId] =
+    useState<number | null>(null)
+
+  const containerRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+
+  // Prevent an older polling response from restoring dismissed items.
+  const dismissedIds = useRef(new Set<number>())
+  const dismissalInProgress = useRef(false)
+  const accountVersion = useRef(0)
+
+  const dropdownId = useId()
+
   useEffect(() => {
-    const handleOutsideClick = (event: MouseEvent) => {
+    accountVersion.current += 1
+    dismissedIds.current.clear()
+    dismissalInProgress.current = false
+    setNotifications([])
+    setDismissingId(null)
+    setIsOpen(false)
+    setError('')
+    setLoading(true)
+  }, [token])
+
+  useEffect(() => {
+    if (!enabled) {
+      setIsOpen(false)
+      return
+    }
+
+    if (!token) {
+      setLoading(false)
+      setError('Please sign in to view notifications.')
+      return
+    }
+
+    let cancelled = false
+    let fetching = false
+
+    const controller = new AbortController()
+
+    async function loadNotifications() {
+      if (fetching) return
+      fetching = true
+
+      try {
+        const data = await getNotifications(
+          token,
+          controller.signal
+        )
+
+        if (!cancelled) {
+          setNotifications(
+            data.filter(item => !dismissedIds.current.has(item.id))
+          )
+          setError('')
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : 'Unable to load notifications.'
+          )
+        }
+      } finally {
+        fetching = false
+
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    void loadNotifications()
+
+    const interval = window.setInterval(() => {
+      void loadNotifications()
+    }, 30000)
+
+    return () => {
+      cancelled = true
+      controller.abort()
+      window.clearInterval(interval)
+    }
+  }, [enabled, token, isOpen])
+
+  useEffect(() => {
+    if (!isOpen || !enabled) return
+
+    function handleOutsideClick(event: PointerEvent) {
       if (
         containerRef.current &&
         !containerRef.current.contains(event.target as Node)
@@ -72,90 +162,172 @@ function Notifications() {
       }
     }
 
-    document.addEventListener('mousedown', handleOutsideClick)
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setIsOpen(false)
+        triggerRef.current?.focus()
+      }
+    }
+
+    document.addEventListener('pointerdown', handleOutsideClick)
+    document.addEventListener('keydown', handleEscape)
 
     return () => {
-      document.removeEventListener('mousedown', handleOutsideClick)
+      document.removeEventListener(
+        'pointerdown',
+        handleOutsideClick
+      )
+      document.removeEventListener('keydown', handleEscape)
     }
-  }, [])
+  }, [isOpen, enabled])
 
-  const getIcon = (type: NotificationType) => {
-    switch (type) {
-      case 'follow':
-        return '👤'
-      case 'like':
-        return '❤️'
-      case 'comment':
-        return '💬'
-      case 'collaboration':
-        return '🤝'
+  async function handleDismiss(id: number) {
+    if (dismissalInProgress.current || !token) return
+
+    const version = accountVersion.current
+
+    dismissalInProgress.current = true
+    setDismissingId(id)
+    setError('')
+
+    try {
+      await dismissNotificationApi(id, token)
+
+      if (version !== accountVersion.current) return
+
+      dismissedIds.current.add(id)
+
+      setNotifications(previous =>
+        previous.filter(item => item.id !== id)
+      )
+
+      triggerRef.current?.focus()
+    } catch (err) {
+      if (version !== accountVersion.current) return
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Unable to dismiss notification.'
+      )
+    } finally {
+      if (version === accountVersion.current) {
+        dismissalInProgress.current = false
+        setDismissingId(null)
+      }
     }
   }
+
+  const visibleNotifications = notifications.slice(0, 2)
 
   return (
     <div className="notifications-wrapper" ref={containerRef}>
       <button
+        ref={triggerRef}
         type="button"
-        className="nav-item notification-trigger"
-        onDoubleClick={() => setIsOpen(previous => !previous)}
+        className={`notification-trigger${
+          isOpen ? ' is-open' : ''
+        }`}
+        disabled={!enabled}
+        onClick={() => setIsOpen(previous => !previous)}
         aria-label={`Notifications, ${notifications.length} remaining`}
-        aria-expanded={isOpen}
-        aria-haspopup="true"
+        aria-expanded={isOpen && enabled}
+        aria-controls={dropdownId}
+        title="Notifications"
       >
-        <span className="notification-bell">
-          🔔
-          {notifications.length > 0 && (
-            <span className="notification-badge">
-              {notifications.length}
-            </span>
-          )}
-        </span>
-        <small>Notifications</small>
+        <Bell
+          size={24}
+          strokeWidth={1.9}
+          aria-hidden="true"
+        />
+
+        {notifications.length > 0 && (
+          <span
+            className="notification-badge"
+            aria-hidden="true"
+          >
+            {notifications.length > 99
+              ? '99+'
+              : notifications.length}
+          </span>
+        )}
       </button>
 
-      {isOpen && (
-        <div className="notifications-dropdown">
+      {isOpen && enabled && (
+        <section
+          id={dropdownId}
+          className="notifications-dropdown"
+          aria-label="Notifications"
+          aria-busy={loading}
+        >
           <div className="notifications-heading">
             <h3>Notifications</h3>
-            <span>{notifications.length} remaining</span>
+
+            <span aria-live="polite">
+              {notifications.length} remaining
+            </span>
           </div>
 
-          {visibleNotifications.length === 0 ? (
+          {error && (
+            <p className="notifications-error" role="alert">
+              {error}
+            </p>
+          )}
+
+          {loading && notifications.length === 0 ? (
+            <div className="notifications-empty" role="status">
+              Loading notifications...
+            </div>
+          ) : visibleNotifications.length === 0 ? (
             <div className="notifications-empty">
-              No notifications remaining
+              {error
+                ? 'Notifications could not be loaded.'
+                : "You're all caught up."}
             </div>
           ) : (
             <div className="notifications-list">
-              {visibleNotifications.map(notification => (
-                <div
-                  className="notifications-item"
-                  key={notification.id}
-                >
-                  <span className="notifications-type-icon">
-                    {getIcon(notification.type)}
-                  </span>
+              {visibleNotifications.map(notification => {
+                const Icon =
+                  notificationIcons[notification.type] ?? Bell
 
-                  <div className="notifications-message">
-                    <p>{notification.message}</p>
-                    <small>{notification.time}</small>
-                  </div>
-
-                  <button
-                    type="button"
-                    className="notifications-dismiss"
-                    aria-label={`Dismiss ${notification.message}`}
-                    onClick={() => dismissNotification(notification.id)}
+                return (
+                  <div
+                    className="notifications-item"
+                    key={notification.id}
                   >
-                    ×
-                  </button>
-                </div>
-              ))}
+                    <span
+                      className={`notifications-type-icon notifications-type-${notification.type}`}
+                      aria-hidden="true"
+                    >
+                      <Icon size={18} strokeWidth={1.9} />
+                    </span>
+
+                    <div className="notifications-message">
+                      <p>{notification.message}</p>
+
+                      <small>
+                        {formatTime(notification.createdAt)}
+                      </small>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="notifications-dismiss"
+                      disabled={dismissingId !== null}
+                      aria-label={`Dismiss: ${notification.message}`}
+                      onClick={() => {
+                        void handleDismiss(notification.id)
+                      }}
+                    >
+                      <X size={16} aria-hidden="true" />
+                    </button>
+                  </div>
+                )
+              })}
             </div>
           )}
-        </div>
+        </section>
       )}
     </div>
   )
 }
-
-export default Notifications

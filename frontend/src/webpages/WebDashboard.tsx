@@ -1,6 +1,8 @@
 import { getFeedPosts, createPost, mediaUrl, type Post } from '../service/postService'
 import { getCurrentUser, type CurrentUserResponse } from '../service/authService'
 import { getUserProfile, type ProfileResponse } from '../service/profileService'
+import { getEvents, type EventResponse } from '../service/eventService'
+import { getOpportunities } from '../service/opportunityService'
 
 import { useEffect, useRef, useState } from 'react'
 
@@ -25,31 +27,29 @@ type DashboardProps = {
   onUserClick: (userId: number) => void
 }
 
-const collaborations = [
-  {
-    id: 1,
-    title: 'Music Video Production',
-    description: 'Looking for a creative video editor.'
-  },
-  {
-    id: 2,
-    title: 'Brand Campaign Design',
-    description: 'Graphic designer required for a new campaign.'
-  }
-]
+type DashboardCollaboration = {
+  id: number
+  title: string
+  description: string
+}
 
-const events = [
-  {
-    id: 1,
-    title: 'Creative Networking Meetup',
-    details: '24 Sep • Adelaide • In-person'
-  },
-  {
-    id: 2,
-    title: 'Digital Art Workshop',
-    details: '10 Oct • Online'
+type DashboardEvent = {
+  id: number
+  title: string
+  details: string
+}
+
+// Published events from the backend, shaped for the search dropdown.
+function toDashboardEvent(event: EventResponse): DashboardEvent {
+  const date = new Date(event.startDateTime)
+    .toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
+  const online = /online/i.test(event.city) || /online/i.test(event.venue ?? '')
+  return {
+    id: event.id,
+    title: event.title,
+    details: online ? `${date} • Online` : `${date} • ${event.city} • In-person`
   }
-]
+}
 
 function Dashboard({
   onCollaborationClick,
@@ -66,6 +66,30 @@ function Dashboard({
     useState<SearchUser[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [searchError, setSearchError] = useState('')
+  const [collaborations, setCollaborations] = useState<DashboardCollaboration[]>([])
+  const [events, setEvents] = useState<DashboardEvent[]>([])
+
+  useEffect(() => {
+    let cancelled = false
+    getEvents({ status: 'PUBLISHED' })
+      .then(published => {
+        if (!cancelled) setEvents(published.map(toDashboardEvent))
+      })
+      .catch(error => console.warn('Dashboard events unavailable:', error))
+    return () => { cancelled = true }
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    getOpportunities()
+      .then(list => {
+        if (!cancelled) {
+          setCollaborations(list.map(({ id, title, description }) => ({ id, title, description })))
+        }
+      })
+      .catch(error => console.warn('Dashboard collaborations unavailable:', error))
+    return () => { cancelled = true }
+  }, [])
 
   // ============================================
   // SUGGESTED CREATIVES

@@ -2,6 +2,7 @@ package com.creative.collaboration.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -36,14 +37,10 @@ public class SecurityConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-
-        CorsConfiguration configuration =
-                new CorsConfiguration();
+        CorsConfiguration configuration = new CorsConfiguration();
 
         configuration.setAllowedOriginPatterns(
-                List.of(
-                        "http://localhost:*"
-                )
+                List.of("http://localhost:*")
         );
 
         configuration.setAllowedMethods(
@@ -62,14 +59,10 @@ public class SecurityConfig {
         );
 
         configuration.setExposedHeaders(
-                List.of(
-                        "Authorization"
-                )
+                List.of("Authorization")
         );
 
-        configuration.setAllowCredentials(
-                true
-        );
+        configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source =
                 new UrlBasedCorsConfigurationSource();
@@ -88,87 +81,77 @@ public class SecurityConfig {
     ) throws Exception {
 
         http
-                .cors(
-                        cors ->
-                                cors.configurationSource(
-                                        corsConfigurationSource()
-                                )
+                .cors(cors -> cors.configurationSource(
+                        corsConfigurationSource()
+                ))
+
+                .csrf(csrf -> csrf.disable())
+
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(
+                                SessionCreationPolicy.STATELESS
+                        )
                 )
 
-                .csrf(
-                        csrf ->
-                                csrf.disable()
+                .authorizeHttpRequests(auth -> auth
+
+                        // CORS preflight requests.
+                        .requestMatchers(HttpMethod.OPTIONS, "/**")
+                        .permitAll()
+
+                        // Public authentication endpoints.
+                        .requestMatchers(
+                                "/api/auth/signup",
+                                "/api/auth/login",
+                                "/api/auth/signin",
+                                "/error"
+                        )
+                        .permitAll()
+
+                        // Super Admin only.
+                        .requestMatchers(
+                                "/api/super-admin/**",
+                                "/api/superadmin/**"
+                        )
+                        .hasRole("SUPER_ADMIN")
+
+                        // Admin or Super Admin.
+                        .requestMatchers("/api/admin/**")
+                        .hasAnyRole("ADMIN", "SUPER_ADMIN")
+
+                        // Authenticated account endpoints.
+                        .requestMatchers(
+                                "/api/auth/me",
+                                "/api/auth/password",
+                                "/api/auth/signout"
+                        )
+                        .authenticated()
+
+                        // Notification list and dismissal.
+                        .requestMatchers(
+                                "/api/notifications",
+                                "/api/notifications/**"
+                        )
+                        .authenticated()
+
+                        .requestMatchers(
+                                "/api/posts/**",
+                                "/api/feed/**"
+                        )
+                        .authenticated()
+
+                        // Existing temporary rule for other APIs.
+                        .requestMatchers("/api/**")
+                        .permitAll()
+
+                        .anyRequest()
+                        .authenticated()
                 )
 
-                .sessionManagement(
-                        session ->
-                                session.sessionCreationPolicy(
-                                        SessionCreationPolicy.STATELESS
-                                )
-                )
-
-                .authorizeHttpRequests(
-                        auth ->
-                                auth
-
-                                        // PUBLIC AUTH ENDPOINTS
-                                        .requestMatchers(
-                                                "/api/auth/signup",
-                                                "/api/auth/login",
-                                                "/api/auth/signin",
-                                                "/error"
-                                        )
-                                        .permitAll()
-
-                                        // SUPER ADMIN ONLY
-                                        .requestMatchers(
-                                                "/api/super-admin/**"
-                                        )
-                                        .hasRole(
-                                                "SUPER_ADMIN"
-                                        )
-
-                                        // ADMIN OR SUPER ADMIN
-                                        .requestMatchers(
-                                                "/api/admin/**"
-                                        )
-                                        .hasAnyRole(
-                                                "ADMIN",
-                                                "SUPER_ADMIN"
-                                        )
-
-                                        // AUTHENTICATED USER ENDPOINTS
-                                        .requestMatchers(
-                                                "/api/auth/me",
-                                                "/api/auth/password",
-                                                "/api/auth/signout"
-                                        )
-                                        .authenticated()
-
-                                        .requestMatchers(
-                                                "/api/posts/**"
-                                        )
-                                        .authenticated()
-
-                                        .requestMatchers(
-                                                "/api/feed/**"
-                                        )
-                                        .authenticated()
-
-                                        // TEMPORARY WHILE OTHER APIs ARE INTEGRATED
-                                        .requestMatchers(
-                                                "/api/**"
-                                        )
-                                        .permitAll()
-
-                                        .anyRequest()
-                                        .authenticated()
+                .addFilterBefore(
+                        jwtAuthenticationFilter,
+                        UsernamePasswordAuthenticationFilter.class
                 );
-
-        http.addFilterBefore(
-                jwtAuthenticationFilter,
-                UsernamePasswordAuthenticationFilter.class
-        );
 
         return http.build();
     }

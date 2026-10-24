@@ -5,8 +5,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/superadmin/analytics/posts")
-@PreAuthorize("hasRole('SUPER_ADMIN')")
+@RequestMapping({"/api/superadmin/analytics/posts", "/api/admin/analytics/posts"})
+@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
 public class SuperAdminPostMonitoringController {
     private final SuperAdminPostMonitoringService monitoringService;
 

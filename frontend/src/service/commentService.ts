@@ -15,7 +15,7 @@ export type PostComment = {
 
 async function request<T>(
   path: string,
-  method = 'GET',
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET',
   body?: object
 ): Promise<T> {
   const token = getToken()
@@ -28,11 +28,13 @@ async function request<T>(
     method,
     headers: {
       Authorization: `Bearer ${token}`,
-      ...(body
+      ...(body !== undefined
         ? { 'Content-Type': 'application/json' }
         : {})
     },
-    ...(body ? { body: JSON.stringify(body) } : {})
+    ...(body !== undefined
+      ? { body: JSON.stringify(body) }
+      : {})
   })
 
   if (!response.ok) {
@@ -50,9 +52,7 @@ async function request<T>(
 }
 
 export const getPostComments = (postId: number) =>
-  request<PostComment[]>(
-    `/posts/${postId}/comments`
-  )
+  request<PostComment[]>(`/posts/${postId}/comments`)
 
 export const addPostComment = (
   postId: number,
@@ -61,7 +61,18 @@ export const addPostComment = (
   request<PostComment>(
     `/posts/${postId}/comments`,
     'POST',
-    { content }
+    { content: content.trim() }
+  )
+
+export const updatePostComment = (
+  postId: number,
+  commentId: number,
+  content: string
+) =>
+  request<PostComment>(
+    `/posts/${postId}/comments/${commentId}`,
+    'PUT',
+    { content: content.trim() }
   )
 
 export const deletePostComment = (

@@ -167,3 +167,201 @@
     padding: 22px;
   }
 }
+
+/* Additional styles for Settings features.
+   Existing colours, fonts and layout remain unchanged. */
+
+.settings-content textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  border: 1px solid #d6ccf9;
+  border-radius: 12px;
+  padding: 12px;
+  margin-top: 8px;
+  font: inherit;
+}
+
+.settings-faq {
+  padding: 14px 0;
+  border-bottom: 1px solid #e7e3f1;
+}
+
+.settings-faq summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.settings-faq p {
+  margin: 12px 0 2px;
+  line-height: 1.6;
+}
+
+.settings-content li {
+  margin: 12px 0;
+  line-height: 1.55;
+}
+
+.settings-save:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Report form and feedback */
+
+.settings-content textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  resize: vertical;
+  padding: 14px;
+  margin-top: 10px;
+  border: 1px solid #d8d0fa;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.settings-content textarea:focus,
+.settings-content input:focus,
+.settings-content select:focus {
+  outline: 2px solid #795de8;
+  outline-offset: 1px;
+}
+
+.settings-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.settings-error {
+  color: #a6263e;
+  font-weight: 600;
+}
+
+.settings-faq {
+  padding: 16px 0;
+  border-bottom: 1px solid #e7e0f4;
+}
+
+.settings-faq summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.settings-faq p {
+  margin-top: 12px;
+  line-height: 1.6;
+}
+
+.settings-content li {
+  margin-bottom: 12px;
+  line-height: 1.6;
+}
+
+/* Existing Creative Network user search styling */
+
+.settings-user-search {
+  position: relative;
+  width: 100%;
+}
+
+.settings-user-search input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.settings-user-results {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  right: 0;
+  z-index: 100;
+
+  max-height: 280px;
+  overflow-y: auto;
+
+  padding: 6px;
+
+  background: #fff;
+  border: 1px solid #d8ccff;
+  border-radius: 12px;
+
+  box-shadow: 0 8px 24px rgba(31, 26, 91, 0.14);
+}
+
+.settings-user-result {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+
+  width: 100%;
+  padding: 12px;
+
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+
+  color: #211955;
+  text-align: left;
+  cursor: pointer;
+
+  font: inherit;
+}
+
+.settings-user-result:hover,
+.settings-user-result:focus-visible {
+  background: #eee9ff;
+}
+
+.settings-user-result strong {
+  font-weight: 600;
+}
+
+.settings-user-result span {
+  color: #746b92;
+  font-size: 13px;
+}
+
+.settings-selected-user {
+  margin-top: 10px;
+  color: #5343bb;
+  font-weight: 600;
+}
+
+.settings-search-status {
+  margin-top: 8px;
+  color: #746b92;
+  font-size: 13px;
+}
+
+.settings-error {
+  color: #b42342;
+}
+
+.settings-content textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px;
+  resize: vertical;
+  font: inherit;
+  border: 1px solid #d8ccff;
+  border-radius: 14px;
+}
+
+.settings-faq {
+  padding: 15px 0;
+  border-bottom: 1px solid #e7e0f4;
+}
+
+.settings-faq summary {
+  cursor: pointer;
+}
+
+.settings-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

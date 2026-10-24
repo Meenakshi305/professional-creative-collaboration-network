@@ -801,3 +801,273 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+/* ============================================
+   EVENT API INTEGRATION: HOSTING, STATUS, FORMS
+   ============================================ */
+
+.event-filters .events-host-button {
+  background: linear-gradient(135deg, #514aa6, #7567df);
+  border-color: transparent;
+  color: white;
+}
+
+.event-filters .events-host-button:hover {
+  box-shadow: 0 8px 18px rgba(81, 74, 166, 0.22);
+}
+
+.event-status-badge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+
+  padding: 5px 10px;
+
+  border-radius: 999px;
+
+  background: rgba(255, 255, 255, 0.9);
+
+  color: #6557c9;
+
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.event-status-badge.cancelled {
+  color: #b2475f;
+}
+
+.events-retry-button {
+  width: auto;
+  margin-top: 14px;
+  padding: 10px 22px;
+}
+
+.event-action-error {
+  margin: 0 0 14px;
+  padding: 10px 14px;
+
+  border-radius: 12px;
+
+  background: rgba(193, 71, 95, 0.08);
+
+  color: #a33d55;
+
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.event-register-button:disabled,
+.checkout-pay-button:disabled,
+.event-owner-actions button:disabled,
+.event-cancel-registration:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.event-cancel-registration {
+  width: 100%;
+  margin-top: 10px;
+  padding: 11px 18px;
+
+  border: 1px solid rgba(193, 71, 95, 0.3);
+  border-radius: 20px;
+
+  background: transparent;
+
+  color: #a33d55;
+
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.event-cancel-registration:hover {
+  background: rgba(193, 71, 95, 0.06);
+}
+
+.event-owner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.event-owner-actions button {
+  flex: 1 1 130px;
+
+  padding: 11px 14px;
+
+  border: 1px solid rgba(117, 103, 223, 0.25);
+  border-radius: 16px;
+
+  background: rgba(117, 103, 223, 0.07);
+
+  color: #393453;
+
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.event-owner-actions button:hover {
+  background: rgba(117, 103, 223, 0.14);
+}
+
+.event-owner-actions button.danger {
+  border-color: rgba(193, 71, 95, 0.3);
+  background: rgba(193, 71, 95, 0.06);
+  color: #a33d55;
+}
+
+.event-attendees {
+  margin-top: 18px;
+  padding: 16px;
+
+  border: 1px solid rgba(117, 103, 223, 0.16);
+  border-radius: 16px;
+
+  background: white;
+}
+
+.event-attendees h4 {
+  margin: 0 0 10px;
+
+  color: #29265f;
+
+  font-size: 13px;
+}
+
+.event-attendees p {
+  margin: 0;
+
+  color: #69647b;
+
+  font-size: 12.5px;
+}
+
+.event-attendees ul {
+  margin: 0;
+  padding: 0;
+
+  list-style: none;
+}
+
+.event-attendees li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+
+  padding: 8px 0;
+
+  border-bottom: 1px solid rgba(117, 103, 223, 0.1);
+
+  color: #393453;
+
+  font-size: 12.5px;
+}
+
+.event-attendees li:last-child {
+  border-bottom: none;
+}
+
+.event-attendees em {
+  font-style: normal;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.event-attendees em.confirmed {
+  color: #477565;
+}
+
+.event-attendees em.pending {
+  color: #b07a2a;
+}
+
+.event-attendees em.cancelled {
+  color: #a33d55;
+}
+
+.event-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+
+  width: min(620px, 100%);
+}
+
+.event-form .checkout-heading,
+.event-form-full {
+  grid-column: 1 / -1;
+}
+
+.event-form .checkout-heading {
+  margin-bottom: 6px;
+}
+
+.event-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  color: #393453;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.event-form input,
+.event-form select,
+.event-form textarea {
+  padding: 10px 12px;
+
+  border: 1px solid rgba(117, 103, 223, 0.22);
+  border-radius: 12px;
+
+  background: white;
+
+  color: #29265f;
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+
+  box-sizing: border-box;
+}
+
+.event-form textarea {
+  resize: vertical;
+}
+
+.event-form input:focus,
+.event-form select:focus,
+.event-form textarea:focus {
+  outline: none;
+  border-color: #7567df;
+  box-shadow: 0 0 0 3px rgba(117, 103, 223, 0.15);
+}
+
+.event-form .event-form-check {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+
+  font-weight: 600;
+}
+
+.event-form .event-form-check input {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+}
+
+@media (max-width: 600px) {
+  .event-form {
+    grid-template-columns: 1fr;
+  }
+}

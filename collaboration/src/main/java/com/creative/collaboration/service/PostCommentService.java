@@ -5,8 +5,12 @@ import com.creative.collaboration.dto.PostCommentResponse;
 import com.creative.collaboration.entity.Post;
 import com.creative.collaboration.entity.PostComment;
 import com.creative.collaboration.entity.User;
+
 import com.creative.collaboration.repository.PostCommentRepository;
 import com.creative.collaboration.repository.PostRepository;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -19,33 +23,84 @@ import java.util.List;
 @Service
 public class PostCommentService {
 
+    private static final Logger log =
+            LoggerFactory.getLogger(PostCommentService.class);
+
     private final PostCommentRepository comments;
     private final PostRepository posts;
     private final CurrentUserService currentUserService;
+    private final CommentWordModerationService moderationService;
+    private final NotificationService notificationService;
+
+    // ==========================================
+    // CONSTRUCTOR
+    // ==========================================
 
     public PostCommentService(
             PostCommentRepository comments,
             PostRepository posts,
-            CurrentUserService currentUserService
+            CurrentUserService currentUserService,
+            CommentWordModerationService moderationService,
+            NotificationService notificationService
     ) {
         this.comments = comments;
         this.posts = posts;
         this.currentUserService = currentUserService;
+        this.moderationService = moderationService;
+        this.notificationService = notificationService;
     }
 
-    private Post findPost(Long id) {
-        return posts.findById(id).orElseThrow(() ->
-                new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Post not found"
-                )
-        );
+    // ==========================================
+    // FIND POST
+    // ==========================================
+
+    private Post findPost(Long postId) {
+
+        return posts.findById(postId)
+                .orElseThrow(() ->
+                        new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
+                                "Post not found"
+                        )
+                );
     }
+
+    // ==========================================
+    // VALIDATE COMMENT
+    // ==========================================
+
+    private String validateContent(String content) {
+
+        String clean = content == null
+                ? ""
+                : content.trim();
+
+        if (clean.isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Comment cannot be empty"
+            );
+        }
+
+        if (clean.length() > 1000) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Comment cannot exceed 1000 characters"
+            );
+        }
+
+        return clean;
+    }
+
+    // ==========================================
+    // CONVERT ENTITY TO RESPONSE
+    // ==========================================
 
     private PostCommentResponse toResponse(
             PostComment comment,
             Long viewerId
     ) {
+
         return new PostCommentResponse(
                 comment.getId(),
                 comment.getPost().getId(),
@@ -57,12 +112,16 @@ public class PostCommentService {
         );
     }
 
-    // Fetch comments belonging to one post
+    // ==========================================
+    // 1. GET COMMENTS FOR POST
+    // ==========================================
+
     @Transactional(readOnly = true)
     public List<PostCommentResponse> getComments(
             Long postId,
             Authentication authentication
     ) {
+
         findPost(postId);
 
         Long viewerId = currentUserService
@@ -71,32 +130,28 @@ public class PostCommentService {
         return comments
                 .findByPost_IdOrderByCreatedAtAscIdAsc(postId)
                 .stream()
-                .map(c -> toResponse(c, viewerId))
+                .map(comment -> toResponse(comment, viewerId))
                 .toList();
     }
 
-    // Create a comment using the JWT account
+    // ==========================================
+    // 2. ADD COMMENT
+    // AUTOMATIC PROFANITY SCAN
+    // ==========================================
+
     @Transactional
     public PostCommentResponse addComment(
             Long postId,
             String content,
             Authentication authentication
     ) {
+
         User user = currentUserService
                 .getCurrentUser(authentication);
 
         Post post = findPost(postId);
 
-        String clean = content == null
-                ? ""
-                : content.trim();
-
-        if (clean.isEmpty() || clean.length() > 1000) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Comment must contain 1-1000 characters"
-            );
-        }
+        String clean = validateContent(content);
 
         PostComment comment = PostComment.builder()
                 .post(post)
@@ -104,19 +159,115 @@ public class PostCommentService {
                 .content(clean)
                 .build();
 
-        return toResponse(
-                comments.saveAndFlush(comment),
-                user.getId()
+        // Save comment and generate ID.
+        PostComment saved = comments.saveAndFlush(comment);
+
+        log.info(
+                "[COMMENTS] Created comment {} on post {}",
+                saved.getId(),
+                postId
         );
+
+        // Scan using CommentWordModerationService.
+        // That service reads badwords.txt.
+        // Matching comments create PENDING flags.
+        moderationService.checkAndFlag(
+                saved.getId(),
+                saved.getPost().getId(),
+                saved.getUser().getId(),
+                saved.getContent()
+        );
+
+        log.info(
+                "[COMMENTS] Moderation scan completed for comment {}",
+                saved.getId()
+        );
+
+        // Notify only for a new comment, not edits or deletions.
+        notificationService.create(
+                post.getUser().getEmail(),
+                user.getEmail(),
+                user.getFullName(),
+                "comment"
+        );
+
+        return toResponse(saved, user.getId());
     }
 
-    // Delete only your own comment
+    // ==========================================
+    // 3. UPDATE COMMENT
+    // AUTOMATIC PROFANITY SCAN
+    // ==========================================
+
+    @Transactional
+    public PostCommentResponse updateComment(
+            Long postId,
+            Long commentId,
+            String content,
+            Authentication authentication
+    ) {
+
+        User user = currentUserService
+                .getCurrentUser(authentication);
+
+        PostComment comment = comments.findById(commentId)
+                .orElseThrow(() ->
+                        new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
+                                "Comment not found"
+                        )
+                );
+
+        // Confirm comment belongs to this post.
+        if (!comment.getPost().getId().equals(postId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Comment does not belong to this post"
+            );
+        }
+
+        // Only comment author can edit.
+        if (!comment.getUser().getId().equals(user.getId())) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "You can only edit your own comment"
+            );
+        }
+
+        String clean = validateContent(content);
+
+        comment.setContent(clean);
+
+        PostComment saved = comments.saveAndFlush(comment);
+
+        log.info(
+                "[COMMENTS] Updated comment {} on post {}",
+                saved.getId(),
+                postId
+        );
+
+        // Scan the updated content.
+        moderationService.checkAndFlag(
+                saved.getId(),
+                saved.getPost().getId(),
+                saved.getUser().getId(),
+                saved.getContent()
+        );
+
+        return toResponse(saved, user.getId());
+    }
+
+    // ==========================================
+    // 4. USER DELETES OWN COMMENT
+    // ==========================================
+
     @Transactional
     public void deleteComment(
             Long postId,
             Long commentId,
             Authentication authentication
     ) {
+
         Long viewerId = currentUserService
                 .getCurrentUserId(authentication);
 
@@ -131,7 +282,7 @@ public class PostCommentService {
         if (!comment.getPost().getId().equals(postId)) {
             throw new ResponseStatusException(
                     HttpStatus.NOT_FOUND,
-                    "Comment not found on this post"
+                    "Comment does not belong to this post"
             );
         }
 
@@ -143,5 +294,75 @@ public class PostCommentService {
         }
 
         comments.delete(comment);
+        comments.flush();
+
+        log.info(
+                "[COMMENTS] User {} deleted comment {} from post {}",
+                viewerId,
+                commentId,
+                postId
+        );
+    }
+
+    // ==========================================
+    // 5. ADMIN / SUPERADMIN REMOVES COMMENT
+    // ==========================================
+    //
+    // Called only by secured moderation controller.
+    //
+    // Example:
+    //
+    // postComments.removeCommentByModeration(
+    //     flag.getPostId(),
+    //     flag.getCommentId(),
+    //     flag.getCommentUserId()
+    // );
+    //
+    // ==========================================
+
+    @Transactional
+    public void removeCommentByModeration(
+            Long postId,
+            Long commentId,
+            Long authorId
+    ) {
+
+        PostComment comment = comments.findById(commentId)
+                .orElseThrow(() ->
+                        new ResponseStatusException(
+                                HttpStatus.CONFLICT,
+                                "Original comment no longer exists"
+                        )
+                );
+
+        // Ensure flag refers to the correct post.
+        if (!comment.getPost().getId().equals(postId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Flag post ID does not match comment"
+            );
+        }
+
+        // Ensure flag refers to the correct author.
+        if (!comment.getUser().getId().equals(authorId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Flag author ID does not match comment"
+            );
+        }
+
+        // Delete the original post comment.
+        comments.delete(comment);
+
+        // Flush so deletion errors surface during review.
+        comments.flush();
+
+        log.info(
+                "[MODERATION] Admin removed comment {} from post {} " +
+                        "(original author {})",
+                commentId,
+                postId,
+                authorId
+        );
     }
 }

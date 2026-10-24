@@ -24,7 +24,6 @@ export type AdminReport = {
   reporterId: number
   reason: string
   status: 'PENDING' | 'UPHELD' | 'DISMISSED'
-  assignedAdminId: number | null
   resolvedById: number | null
   resolutionNote: string | null
   createdAt: string
@@ -71,10 +70,9 @@ export const adminApi = {
     method: 'PATCH', body: JSON.stringify({ active }),
   }),
   reports: (page = 0, size = 100) => api<PageResult<AdminReport>>(`/admin/reports?page=${page}&size=${size}`),
-  assignedReports: (page = 0, size = 100) => api<PageResult<AdminReport>>(`/admin/reports/assigned?page=${page}&size=${size}`),
-  assignReport: (id: number, adminId: number) => api<AdminReport>(`/admin/reports/${id}/assign`, {
-    method: 'PATCH', body: JSON.stringify({ adminId }),
-  }),
+  // Compatibility alias for existing Admin dashboard callers.
+  // The backend no longer has an assigned-only route.
+  assignedReports: (page = 0, size = 100) => api<PageResult<AdminReport>>(`/admin/reports?page=${page}&size=${size}`),
   resolveReport: (id: number, decision: 'UPHELD' | 'DISMISSED', note = '') =>
     api<AdminReport>(`/admin/reports/${id}/resolve`, {
       method: 'PATCH', body: JSON.stringify({ decision, note }),
