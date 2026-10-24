@@ -9,10 +9,26 @@ import FlaggedCommentsPanel from '../Admin/FlaggedCommentsPanel'
 type Tab = 'overview' | 'users' | 'admins' | 'reports' | 'content' | 'analytics' | 'modules' | 'audit' | 'system'
 type ContentType = 'posts' | 'events' | 'opportunities'
 const tabs: { id: Tab; label: string }[] = [
-  { id: 'overview', label: 'Overview' }, { id: 'users', label: 'Users' }, { id: 'admins', label: 'Manage Admins' },
+  { id: 'overview', label: 'Overview' }, { id: 'users', label: 'Users' }, { id: 'admins', label: 'Manage Administrators' },
   { id: 'reports', label: 'Reports' }, { id: 'content', label: 'Moderation' },
   { id: 'analytics', label: 'Analytics' },  { id: 'audit', label: 'Audit Logs' }, { id: 'system', label: 'System' },
 ]
+
+// Display labels are separate from backend field names.
+const totalLabels: Record<string, string> = {
+  users: 'Total Users',
+  administrators: 'Administrators',
+  posts: 'Total Posts',
+  events: 'Total Events',
+  reports: 'Total Reports',
+  pendingReports: 'Pending Reports',
+  upheldReports: 'Upheld Reports',
+  dismissedReports: 'Dismissed Reports',
+}
+
+function getTotalLabel(key: string): string {
+  return totalLabels[key] ?? key.replace(/([A-Z])/g, ' $1').replace(/^./, letter => letter.toUpperCase())
+}
 
 // Charts use only the totals returned by /api/superadmin/analytics.
 // No fabricated time-series values or sample data.
@@ -207,10 +223,10 @@ export default function SuperAdminLive({ mode = 'superadmin' }: { mode?: 'admin'
   return <div className="cn-sa-layout">
     <aside className="cn-sa-sidebar" aria-label={`${mode} sidebar`}>
       <div className="cn-sa-sidebar-brand">
-        <strong>{isSuperAdmin ? 'SuperAdmin' : 'Admin'}</strong>
+        <strong>{isSuperAdmin ? 'Super Admin' : 'Admin'}</strong>
         <small>Creative Network</small>
       </div>
-      <nav className="cn-sa-tabs" aria-label="SuperAdmin sections">
+      <nav className="cn-sa-tabs" aria-label={isSuperAdmin ? 'Super Admin sections' : 'Admin sections'}>
         {tabs.filter(t => isSuperAdmin || !['admins','modules','system'].includes(t.id)).map(t => (
           <button
             key={t.id}
@@ -225,10 +241,10 @@ export default function SuperAdminLive({ mode = 'superadmin' }: { mode?: 'admin'
       </nav>
     </aside>
     <section className="cn-sa-panel">
-      <header className="cn-sa-header"><div><h1>{isSuperAdmin ? 'SuperAdmin Workspace' : 'Admin Workspace'}</h1><p>Creative Network • Live management</p></div><button type="button" disabled={busy} onClick={() => void refresh()}>Refresh</button></header>
+      <header className="cn-sa-header"><div><h1>{isSuperAdmin ? 'Super Admin Dashboard' : 'Admin Dashboard'}</h1><p>Manage users, content and reports</p></div><button type="button" disabled={busy} onClick={() => void refresh()}>Refresh Data</button></header>
     {error && <p className="cn-sa-error" role="alert">{error}</p>}{notice && <p className="cn-sa-success" role="status">{notice}</p>}
     {busy && <p className="cn-sa-loading">Loading or saving…</p>}
-    {tab === 'overview' && <div className="cn-sa-grid">{totals && Object.entries(totals).map(([k,v]) => <div className="cn-sa-card" key={k}><span>{k.replace(/([A-Z])/g,' $1')}</span><strong>{v}</strong></div>)}</div>}
+    {tab === 'overview' && <div className="cn-sa-grid">{totals && Object.entries(totals).map(([k,v]) => <div className="cn-sa-card" key={k}><span>{getTotalLabel(k)}</span><strong>{v}</strong></div>)}</div>}
     {tab === 'analytics' && (
       <section aria-label="Live platform analytics">
         <div className="cn-sa-card">
@@ -241,7 +257,7 @@ export default function SuperAdminLive({ mode = 'superadmin' }: { mode?: 'admin'
           <div className="cn-sa-grid">
             {Object.entries(analytics).map(([key, value]) => (
               <div className="cn-sa-card" key={key}>
-                <span>{key.replace(/([A-Z])/g, ' $1').replace(/^./, letter => letter.toUpperCase())}</span>
+                <span>{getTotalLabel(key)}</span>
                 <strong>{value.toLocaleString()}</strong>
               </div>
             ))}
@@ -389,7 +405,7 @@ export default function SuperAdminLive({ mode = 'superadmin' }: { mode?: 'admin'
         </div>
       </div>
       <div className="cn-sa-card"><h2>{tab === 'admins' ? 'Administrators' : 'Users'}</h2><div className="cn-sa-tablewrap"><table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead><tbody>{(tab === 'admins' ? admins : users).filter(u => [u.fullName, u.username, u.email].some(v => String(v ?? '').toLowerCase().includes(userSearch.trim().toLowerCase()))).map(u=><tr key={u.id}><td>{u.fullName || u.username}</td><td>{u.email}</td><td>{u.role}</td><td>{u.active ? 'Active' : 'Inactive'}</td><td><div className="cn-sa-actions">
-        {u.role !== 'SUPER_ADMIN' && <><button disabled={busy} onClick={()=>void run(()=>superAdminApi.setActive(u.id,!u.active),'Account status updated')}>{u.active ? 'Deactivate' : 'Activate'}</button><button disabled={busy} onClick={()=>void run(()=>superAdminApi.changeRole(u.id,u.role==='ADMIN'?'USER':'ADMIN'),'Role updated')}>{u.role==='ADMIN'?'Demote to USER':'Promote to ADMIN'}</button></>}
+        {u.role !== 'SUPER_ADMIN' && <><button disabled={busy} onClick={()=>void run(()=>superAdminApi.setActive(u.id,!u.active),'Account status updated')}>{u.active ? 'Deactivate' : 'Activate'}</button><button disabled={busy} onClick={()=>void run(()=>superAdminApi.changeRole(u.id,u.role==='ADMIN'?'USER':'ADMIN'),'Role updated')}>{u.role==='ADMIN'?'Change to User':'Promote to Admin'}</button></>}
       </div></td></tr>)}</tbody></table></div></div>
     </>}
     {tab === 'reports' && (

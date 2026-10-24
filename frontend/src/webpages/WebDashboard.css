@@ -341,21 +341,8 @@
 }
 
 .create-post-card::before {
-  content: "";
-
-  position: absolute;
-  top: 0;
-  left: 0;
-
-  width: 100%;
-  height: 4px;
-
-  background: linear-gradient(
-    90deg,
-    #7567df,
-    #a77ed7,
-    #dc8ca0
-  );
+  content: none;
+  display: none;
 }
 
 .create-post-top {
@@ -1698,3 +1685,37 @@
 .cp-composer-avatar img {width:100%;height:100%;display:block;object-fit:cover;border-radius:50%;}
 @media(max-width:1050px){ .dashboard-page .dashboard-container {grid-template-columns:minmax(0,1.45fr) minmax(240px,1fr) !important;gap:16px !important;} }
 @media(max-width:760px){ .dashboard-page .dashboard-container {grid-template-columns:minmax(0,1fr) !important;width:calc(100% - 28px) !important;gap:18px !important;} .dashboard-page .dashboard-feed,.dashboard-page .dashboard-right {grid-column:1;} .cp-home-heading,.cp-dashboard-search-row{width:calc(100% - 28px);} .cp-home-heading {padding-top:14px;} }
+/* Notification bell: top-right corner */
+.dashboard-notifications {
+  position: fixed;
+  top: 20px;
+  right: 24px;
+  z-index: 1000;
+}
+
+/* Anchor the notification dropdown */
+.dashboard-notifications .notification-dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: min(360px, calc(100vw - 32px));
+  max-height: 70vh;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  box-shadow: 0 8px 28px rgb(0 0 0 / 15%);
+}
+
+@media (max-width: 600px) {
+  .dashboard-notifications {
+    top: 12px;
+    right: 16px;
+  }
+}
+/* Keep the notification dropdown within the screen on small devices. */
+.dashboard-notifications .notification-dropdown {
+  box-sizing: border-box;
+  max-width: calc(100vw - 32px);
+  overscroll-behavior: contain;
+}

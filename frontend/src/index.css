@@ -1,4 +1,6 @@
 :root {
+  --app-font: "Segoe UI", Arial, sans-serif;
+
   --creative-background:
     radial-gradient(
       circle at 18% 8%,
@@ -24,4 +26,50 @@
       #5662ad 84%,
       #3f70a5 100%
     );
+}
+
+html,
+body,
+#root {
+  font-family: var(--app-font);
+  font-size: 14px;
+  line-height: 1.5;
+  color: #282447;
+}
+
+/* Consistent text font without overriding icon fonts */
+#root :is(
+  h1, h2, h3, h4, h5, h6,
+  p, a, label, button, input,
+  textarea, select, option,
+  th, td, li, small, strong
+) {
+  font-family: var(--app-font);
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+h1 {
+  font-size: clamp(26px, 3vw, 34px);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+h2 {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+h3 {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+button {
+  font-weight: 600;
 }
