@@ -1,0 +1,147 @@
+
+.notifications-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.notification-trigger {
+  position: relative;
+  cursor: pointer;
+}
+
+.notification-bell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -10px;
+  right: -14px;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 4px;
+  border-radius: 20px;
+  background: #b83b4b;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notifications-dropdown {
+  position: absolute;
+  top: calc(100% + 14px);
+  right: 0;
+  width: 355px;
+  max-width: calc(100vw - 24px);
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+  color: #202632;
+  z-index: 9999;
+}
+
+.notifications-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.notifications-heading h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.notifications-heading span {
+  color: #777;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.notifications-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.notifications-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 2px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.notifications-item:last-child {
+  border-bottom: none;
+}
+
+.notifications-type-icon {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #f3f5f8;
+  border-radius: 50%;
+  font-size: 18px;
+}
+
+.notifications-message {
+  flex: 1;
+  min-width: 0;
+}
+
+.notifications-message p {
+  margin: 0 0 5px;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.notifications-message small {
+  color: #888;
+  font-size: 11px;
+}
+
+.notifications-dismiss {
+  border: none;
+  background: transparent;
+  color: #777;
+  font-size: 24px;
+  padding: 5px 8px;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.notifications-dismiss:hover {
+  color: #b83b4b;
+  background: #fff1f2;
+}
+
+.notifications-empty {
+  text-align: center;
+  padding: 28px 10px;
+  color: #888;
+  font-size: 13px;
+}
+
+@media (max-width: 600px) {
+  .notifications-dropdown {
+    width: min(330px, calc(100vw - 24px));
+    right: -40px;
+  }
+}
