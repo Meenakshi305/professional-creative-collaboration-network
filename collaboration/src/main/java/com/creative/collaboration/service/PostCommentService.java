@@ -30,6 +30,7 @@ public class PostCommentService {
     private final PostRepository posts;
     private final CurrentUserService currentUserService;
     private final CommentWordModerationService moderationService;
+    private final NotificationService notificationService;
 
     // ==========================================
     // CONSTRUCTOR
@@ -39,12 +40,14 @@ public class PostCommentService {
             PostCommentRepository comments,
             PostRepository posts,
             CurrentUserService currentUserService,
-            CommentWordModerationService moderationService
+            CommentWordModerationService moderationService,
+            NotificationService notificationService
     ) {
         this.comments = comments;
         this.posts = posts;
         this.currentUserService = currentUserService;
         this.moderationService = moderationService;
+        this.notificationService = notificationService;
     }
 
     // ==========================================
@@ -178,6 +181,14 @@ public class PostCommentService {
         log.info(
                 "[COMMENTS] Moderation scan completed for comment {}",
                 saved.getId()
+        );
+
+        // Notify only for a new comment, not edits or deletions.
+        notificationService.create(
+                post.getUser().getEmail(),
+                user.getEmail(),
+                user.getFullName(),
+                "comment"
         );
 
         return toResponse(saved, user.getId());

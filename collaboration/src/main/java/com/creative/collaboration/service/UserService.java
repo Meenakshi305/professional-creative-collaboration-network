@@ -36,6 +36,8 @@ public class UserService {
 
     private final MegaStorageService megaStorageService;
 
+    private final NotificationService notificationService;
+
 
     // ==========================================
     // PROFILE IMAGE CACHE
@@ -73,7 +75,9 @@ public class UserService {
 
             UserFollowRepository userFollowRepository,
 
-            MegaStorageService megaStorageService
+            MegaStorageService megaStorageService,
+
+            NotificationService notificationService
 
     ) {
 
@@ -88,6 +92,8 @@ public class UserService {
 
         this.megaStorageService =
                 megaStorageService;
+
+        this.notificationService = notificationService;
     }
 
 
@@ -999,6 +1005,14 @@ public class UserService {
 
         userFollowRepository.save(
                 follow
+        );
+
+        // Uses email identities, matching the notification JWT principal.
+        notificationService.create(
+                following.getEmail(),
+                follower.getEmail(),
+                follower.getFullName(),
+                "follow"
         );
     }
 

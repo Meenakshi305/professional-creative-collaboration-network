@@ -1,7 +1,8 @@
-
 package com.creative.collaboration.service;
 
 import com.creative.collaboration.dto.PostLikeResponse;
+import com.creative.collaboration.entity.Post;
+import com.creative.collaboration.entity.User;
 import com.creative.collaboration.repository.PostLikeRepository;
 import com.creative.collaboration.repository.PostRepository;
 import com.creative.collaboration.repository.UserRepository;
@@ -17,15 +18,18 @@ public class PostLikeService {
     private final PostLikeRepository likeRepository;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     public PostLikeService(
             PostLikeRepository likeRepository,
             PostRepository postRepository,
-            UserRepository userRepository
+            UserRepository userRepository,
+            NotificationService notificationService
     ) {
         this.likeRepository = likeRepository;
         this.postRepository = postRepository;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
     }
 
     private void checkPost(Long postId) {
@@ -80,10 +84,29 @@ public class PostLikeService {
         checkPost(postId);
         checkUser(userId);
 
-        likeRepository.insertLikeIfAbsent(
+        int inserted = likeRepository.insertLikeIfAbsent(
                 postId,
                 userId
         );
+
+        // Repeated requests for an existing like do not notify again.
+        if (inserted > 0) {
+            Post post = postRepository.findById(postId)
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.NOT_FOUND, "Post not found"
+                    ));
+            User actor = userRepository.findById(userId)
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.NOT_FOUND, "User not found"
+                    ));
+
+            notificationService.create(
+                    post.getUser().getEmail(),
+                    actor.getEmail(),
+                    actor.getFullName(),
+                    "like"
+            );
+        }
 
         return status(postId, userId);
     }

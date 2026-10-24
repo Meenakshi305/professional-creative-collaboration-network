@@ -1,7 +1,10 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { Bell } from 'lucide-react'
-import { getCurrentUser } from '../../service/authService'
+import {
+  getCurrentUser,
+  getToken
+} from '../../service/authService'
 import Sidebar, { type MainPage } from './Sidebar'
+import Notifications from '../Notifications/Notifications'
 import SuperAdminLive from '../../pages/SuperAdmin/SuperAdminLive'
 import './CreativeAppShell.css'
 
@@ -58,7 +61,9 @@ export default function CreativeAppShell({
     )
   }
 
-  if (!user) {
+  const token = getToken()
+
+  if (!user || !token) {
     return (
       <div className="cp-shell-loading">
         Session expired. Please sign in again.
@@ -87,23 +92,15 @@ export default function CreativeAppShell({
       />
 
       <div className="cp-shell-main">
-        {showNotifications && (
-          <div className="cp-top-notifications">
-            <button
-              type="button"
-              className="cp-notification-button"
-              onClick={() => onNavigate('notifications')}
-              aria-label="Open notifications"
-              title="Notifications"
-            >
-              <Bell
-                size={24}
-                strokeWidth={1.9}
-                aria-hidden="true"
-              />
-            </button>
-          </div>
-        )}
+        <div
+          className="cp-top-notifications"
+          hidden={!showNotifications}
+        >
+          <Notifications
+            enabled={showNotifications}
+            token={token}
+          />
+        </div>
 
         {activePage === 'admin' ? (
           canAccessAdmin ? (
