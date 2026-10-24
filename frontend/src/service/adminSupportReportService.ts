@@ -1,12 +1,9 @@
 
 import { getToken } from './authService'
 
-const BASE =
-  'http://localhost:8080/api/admin/support-reports'
+const BASE = 'http://localhost:8080/api/admin/support-reports'
 
-// ==========================================
-// REPORT SUMMARY
-// ==========================================
+export type ReportStatus = 'PENDING' | 'UPHELD' | 'DISMISSED'
 
 export type SupportReportSummary = {
   reports: number
@@ -15,15 +12,11 @@ export type SupportReportSummary = {
   dismissedReports: number
 }
 
-// ==========================================
-// REPORT DETAILS
-// ==========================================
-
 export type SupportReport = {
   id: number
   reportType: 'ISSUE' | 'USER'
   description: string
-  status: 'PENDING' | 'UPHELD' | 'DISMISSED'
+  status: ReportStatus
 
   reporterUserId: number
   reporterUsername: string
@@ -33,19 +26,17 @@ export type SupportReport = {
 
   resolutionNote: string | null
   resolvedBy: number | null
+
   createdAt: string
   resolvedAt: string | null
 }
-
-// ==========================================
-// REQUEST HANDLER
-// ==========================================
 
 async function request<T>(
   path: string,
   method: 'GET' | 'PATCH' = 'GET',
   body?: unknown
 ): Promise<T> {
+
   const token = getToken()
 
   if (!token) {
@@ -66,37 +57,28 @@ async function request<T>(
   })
 
   if (!response.ok) {
-    const detail = await response.text()
+    const details = await response.text()
 
     throw new Error(
-      `Report API failed (${response.status}): ${detail}`
+      `Settings report request failed (${response.status}): ${details}`
     )
-  }
-
-  if (response.status === 204) {
-    return undefined as T
   }
 
   return response.json() as Promise<T>
 }
 
-// ==========================================
-// ADMIN / SUPERADMIN REPORT APIs
-// ==========================================
-
 export const adminSupportReportApi = {
 
-  // Dashboard counters
   summary: () =>
     request<SupportReportSummary>('/summary'),
 
-  // All reports visible to every Admin and SuperAdmin
-  all: (status: 'ALL' | 'PENDING' | 'UPHELD' | 'DISMISSED' = 'ALL') =>
+  all: (
+    status: 'ALL' | ReportStatus = 'ALL'
+  ) =>
     request<SupportReport[]>(
       `?status=${encodeURIComponent(status)}`
     ),
 
-  // Any Admin or SuperAdmin can resolve a pending report
   resolve: (
     id: number,
     decision: 'UPHELD' | 'DISMISSED',
