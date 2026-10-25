@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import './Collaboration.css'
+import { getToken } from '../../service/authService'
 import NavigationBar from '../../shared/NavigationBar/NavigationBar'
 import {
   applyToOpportunity,
@@ -161,10 +162,73 @@ function Collaboration({
   const [applicationError, setApplicationError] = useState('')
   const [applicationSuccess, setApplicationSuccess] = useState('')
   const [applicationSubmitting, setApplicationSubmitting] = useState(false)
-  // The backend has no "my applications" endpoint, so this tracks
-  // applications made (or rejected as duplicates) in this session.
+  // Restore previous applications from the backend on every page mount.
   const [appliedOpportunityIds, setAppliedOpportunityIds] =
     useState<number[]>([])
+
+  const [applicationsLoading, setApplicationsLoading] = useState(true)
+  const [applicationsLoadError, setApplicationsLoadError] = useState('')
+  const [applicationsReloadKey, setApplicationsReloadKey] = useState(0)
+
+  useEffect(() => {
+    let cancelled = false
+    const controller = new AbortController()
+    setApplicationsLoading(true)
+    setApplicationsLoadError('')
+
+    async function loadMyApplications() {
+      try {
+        const token = getToken()
+        if (!token) throw new Error('Please sign in to check your applications.')
+        const userId = await getCurrentUserId()
+        if (cancelled) return
+        const response = await fetch(
+          'http://localhost:8080/api/opportunities/my-applications',
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'X-User-Id': String(userId),
+              Accept: 'application/json'
+            },
+            signal: controller.signal
+          }
+        )
+        if (!response.ok) {
+          throw new Error(`Unable to check your applications (${response.status}).`)
+        }
+        const data: unknown = await response.json()
+        if (!Array.isArray(data)) {
+          throw new Error('Unexpected applications response. Expected a list.')
+        }
+        const ids = data.map((item: unknown) => {
+          if (
+            typeof item !== 'object' || item === null ||
+            !('opportunityId' in item) ||
+            typeof item.opportunityId !== 'number' ||
+            !Number.isSafeInteger(item.opportunityId) || item.opportunityId <= 0
+          ) {
+            throw new Error('Applications response must include a numeric opportunityId.')
+          }
+          return item.opportunityId
+        })
+        if (!cancelled) {
+          setAppliedOpportunityIds(previous => [...new Set([...previous, ...ids])])
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setApplicationsLoadError(errorText(error, 'Unable to check your applications.'))
+        }
+      } finally {
+        if (!cancelled) setApplicationsLoading(false)
+      }
+    }
+
+    void loadMyApplications()
+    return () => {
+      cancelled = true
+      controller.abort()
+    }
+  }, [applicationsReloadKey])
 
   // Post / edit opportunity state
   const [showPostOpportunity, setShowPostOpportunity] = useState(false)
@@ -282,7 +346,11 @@ function Collaboration({
 
   // Application functions
   const openApplication = (opportunity: CollaborationOpportunity) => {
-    if (appliedOpportunityIds.includes(opportunity.id)) {
+    if (
+      applicationsLoading || applicationsLoadError ||
+      opportunity.status === 'CLOSED' ||
+      appliedOpportunityIds.includes(opportunity.id)
+    ) {
       return
     }
 
@@ -304,7 +372,11 @@ function Collaboration({
   ) => {
     event.preventDefault()
 
-    if (!selectedOpportunity) {
+    if (!selectedOpportunity || applicationSubmitting) {
+      return
+    }
+    if (applicationsLoading || applicationsLoadError) {
+      setApplicationError('Please wait until your applications have been checked.')
       return
     }
 
@@ -337,10 +409,7 @@ function Collaboration({
     try {
       await applyToOpportunity(opportunityId, { message: trimmedMessage })
 
-      setAppliedOpportunityIds((currentIds) => [
-        ...currentIds,
-        opportunityId
-      ])
+      setAppliedOpportunityIds(currentIds => [...new Set([...currentIds, opportunityId])])
 
       setApplicationError('')
       setApplicationSuccess('Application submitted successfully.')
@@ -348,10 +417,7 @@ function Collaboration({
       const message = errorText(error, 'Unable to submit your application.')
 
       if (/already applied/i.test(message)) {
-        setAppliedOpportunityIds((currentIds) => [
-          ...currentIds,
-          opportunityId
-        ])
+        setAppliedOpportunityIds(currentIds => [...new Set([...currentIds, opportunityId])])
       }
 
       setApplicationError(message)
@@ -678,6 +744,16 @@ function Collaboration({
             </span>
           </div>
 
+          {applicationsLoadError && (
+            <div role="alert" style={{ marginBottom: 16 }}>
+              <p>{applicationsLoadError} Applying is disabled until this check succeeds.</p>
+              <button type="button" disabled={applicationsLoading}
+                onClick={() => setApplicationsReloadKey(key => key + 1)}>
+                {applicationsLoading ? 'Checking…' : 'Retry application check'}
+              </button>
+            </div>
+          )}
+
           {opportunitiesError ? (
             <div className="no-opportunities">
               <div
@@ -785,14 +861,14 @@ function Collaboration({
                             hasApplied ? 'applied' : ''
                           }`}
                           type="button"
-                          disabled={hasApplied || opportunity.status === 'CLOSED'}
+                          disabled={applicationsLoading || Boolean(applicationsLoadError) || hasApplied || opportunity.status === 'CLOSED'}
                           onClick={() => openApplication(opportunity)}
                         >
                           {hasApplied
                             ? 'Applied ✓'
-                            : opportunity.status === 'CLOSED'
-                              ? 'Closed'
-                              : 'Apply'}
+                            : applicationsLoading ? 'Checking…'
+                            : applicationsLoadError ? 'Unavailable'
+                            : opportunity.status === 'CLOSED' ? 'Closed' : 'Apply'}
                         </button>
                       )}
                     </div>
@@ -865,6 +941,7 @@ function Collaboration({
                 className="apply-button"
                 disabled={currentUserId === null || (
                   detailOpportunity.creatorId !== currentUserId && (
+                    applicationsLoading || Boolean(applicationsLoadError) ||
                     detailOpportunity.status === 'CLOSED' ||
                     appliedOpportunityIds.includes(detailOpportunity.id)
                   )
@@ -882,6 +959,8 @@ function Collaboration({
                 {currentUserId === null ? 'Loading account…'
                   : detailOpportunity.creatorId === currentUserId ? 'Manage'
                   : appliedOpportunityIds.includes(detailOpportunity.id) ? 'Applied ✓'
+                  : applicationsLoading ? 'Checking…'
+                  : applicationsLoadError ? 'Unavailable'
                   : detailOpportunity.status === 'CLOSED' ? 'Closed' : 'Apply'}
               </button>
             </div>
