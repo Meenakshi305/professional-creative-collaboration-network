@@ -6,6 +6,7 @@ import {
 } from 'react'
 
 import CreativeAppShell from './shared/Sidebar/CreativeAppShell'
+import Settings from './pages/Settings/Settings'
 import type { MainPage } from './shared/Sidebar/Sidebar'
 
 
@@ -1016,7 +1017,7 @@ function CreativeCollabNetwork() {
         pageContent = <main className="cp-pending-page"><h1>Notifications</h1><p>Notification page integration pending.</p></main>
         break
       case 'settings':
-        pageContent = <main className="cp-pending-page"><h1>Settings</h1><p>Settings page integration pending.</p></main>
+        pageContent = <Settings />
         break
       case 'admin':
         // CreativeAppShell renders AdminLayout (with its own second sidebar).
