@@ -1,4 +1,3 @@
-
 package com.creative.collaboration.controller;
 
 import com.creative.collaboration.dto.*;
@@ -50,7 +49,6 @@ public class OpportunityController {
     }
 
     // GET MY APPLICATIONS
-    // Keep this route before the variable /{id} route.
     @GetMapping("/my-applications")
     public ResponseEntity<List<OpportunityApplicationResponse>>
     getMyApplications(
@@ -65,7 +63,7 @@ public class OpportunityController {
     @PatchMapping("/applications/{applicationId}/status")
     public ResponseEntity<OpportunityApplicationResponse>
     updateApplicationStatus(
-            @PathVariable Long applicationId,
+            @PathVariable("applicationId") Long applicationId,
             @RequestHeader("X-User-Id") Long userId,
             @Valid @RequestBody UpdateApplicationStatusRequest request
     ) {
@@ -81,7 +79,7 @@ public class OpportunityController {
     // GET SINGLE OPPORTUNITY
     @GetMapping("/{id}")
     public ResponseEntity<OpportunityResponse> getOpportunity(
-            @PathVariable Long id
+            @PathVariable("id") Long id
     ) {
         return ResponseEntity.ok(
                 opportunityService.getOpportunity(id)
@@ -91,7 +89,7 @@ public class OpportunityController {
     // UPDATE OPPORTUNITY
     @PutMapping("/{id}")
     public ResponseEntity<OpportunityResponse> updateOpportunity(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @RequestHeader("X-User-Id") Long userId,
             @RequestBody UpdateOpportunityRequest request
     ) {
@@ -107,7 +105,7 @@ public class OpportunityController {
     // DELETE OPPORTUNITY
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteOpportunity(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @RequestHeader("X-User-Id") Long userId
     ) {
         opportunityService.deleteOpportunity(id, userId);
@@ -118,7 +116,7 @@ public class OpportunityController {
     // APPLY TO OPPORTUNITY
     @PostMapping("/{id}/apply")
     public ResponseEntity<OpportunityApplicationResponse> apply(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @RequestHeader("X-User-Id") Long applicantId,
             @RequestBody(required = false)
             ApplyOpportunityRequest request
@@ -138,7 +136,7 @@ public class OpportunityController {
     @GetMapping("/{id}/applications")
     public ResponseEntity<List<OpportunityApplicationResponse>>
     getApplications(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @RequestHeader("X-User-Id") Long userId
     ) {
         return ResponseEntity.ok(
