@@ -54,6 +54,10 @@ public class Event {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
+    // Optional image stored in MEGA for this event
+    @Column(name = "image_storage_key", length = 1000)
+    private String imageStorageKey;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", nullable = false)
     private User createdBy;

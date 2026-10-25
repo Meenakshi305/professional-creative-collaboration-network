@@ -1,5 +1,7 @@
 package com.creative.collaboration.security;
 
+import org.springframework.http.HttpMethod;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -152,6 +154,13 @@ public class SecurityConfig {
 
                                         .requestMatchers(
                                                 "/api/feed/**"
+                                        )
+                                        .authenticated()
+
+                                        // EVENT IMAGE UPLOADS REQUIRE LOGIN
+                                        .requestMatchers(
+                                                HttpMethod.POST,
+                                                "/api/events/*/image"
                                         )
                                         .authenticated()
 

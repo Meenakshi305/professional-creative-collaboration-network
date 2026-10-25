@@ -9,6 +9,7 @@ import com.creative.collaboration.repository.UserRepository;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -24,12 +25,14 @@ public class EventService {
             registrationRepository;
 
     private final UserRepository userRepository;
+    private final EventImageStorageService eventImageStorageService;
 
 
     public EventService(
             EventRepository eventRepository,
             EventRegistrationRepository registrationRepository,
-            UserRepository userRepository
+            UserRepository userRepository,
+            EventImageStorageService eventImageStorageService
     ) {
 
         this.eventRepository =
@@ -40,6 +43,8 @@ public class EventService {
 
         this.userRepository =
                 userRepository;
+        this.eventImageStorageService =
+        eventImageStorageService;
     }
 
 
@@ -688,6 +693,66 @@ public class EventService {
         );
     }
 
+    // =========================================================
+// UPLOAD EVENT IMAGE
+// =========================================================
+
+public EventResponse uploadEventImage(
+        Long eventId,
+        String authenticatedEmail,
+        MultipartFile file
+) {
+    Event event = findEvent(eventId);
+
+    if (authenticatedEmail == null
+            || !event.getCreatedBy().getEmail()
+                    .equalsIgnoreCase(authenticatedEmail)) {
+        throw new org.springframework.security.access.AccessDeniedException(
+                "Only the event organiser can upload an image.");
+    }
+
+    // Save the uploaded image
+    String filename = eventImageStorageService.saveImage(file);
+
+    // Associate the image with the event
+    event.setImageStorageKey(filename);
+
+    Event savedEvent = eventRepository.save(event);
+
+    return convertToEventResponse(savedEvent);
+}
+
+// =========================================================
+// GET EVENT IMAGE
+// =========================================================
+
+@Transactional(readOnly = true)
+public EventImageContent getEventImage(Long eventId) {
+
+    Event event = findEvent(eventId);
+
+    String filename = event.getImageStorageKey();
+
+    if (filename == null || filename.isBlank()) {
+        throw new ResourceNotFoundException(
+                "This event does not have an image."
+        );
+    }
+
+    byte[] imageBytes =
+            eventImageStorageService.loadImage(filename);
+
+    String contentType =
+            eventImageStorageService.getContentType(filename);
+
+    return new EventImageContent(imageBytes, contentType);
+}
+
+// Holds the image data and its content type
+public record EventImageContent(
+        byte[] bytes,
+        String contentType
+) {}
 
     // =========================================================
     // FIND EVENT
@@ -819,7 +884,11 @@ public class EventService {
 
                 event.getCreatedAt(),
 
-                event.getUpdatedAt()
+                event.getUpdatedAt(),
+                event.getImageStorageKey() != null
+        && !event.getImageStorageKey().isBlank()
+        ? "/api/events/" + event.getId() + "/image"
+        : null
         );
     }
 

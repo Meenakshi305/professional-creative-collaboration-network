@@ -1,0 +1,8 @@
+# Event images uploaded by users
+uploads/events/
+
+# Local environment files
+.env
+.env.local
+
+collaboration/uploads/events/

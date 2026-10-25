@@ -1,5 +1,9 @@
 package com.creative.collaboration.controller;
 
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.security.core.Authentication;
 import com.creative.collaboration.dto.CreateEventRequest;
 import com.creative.collaboration.dto.EventRegistrationResponse;
 import com.creative.collaboration.dto.EventResponse;
@@ -9,7 +13,6 @@ import com.creative.collaboration.entity.EventType;
 import com.creative.collaboration.service.EventService;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -241,4 +244,46 @@ public class EventController {
                         )
         );
     }
+
+    // =========================================================
+// UPLOAD EVENT IMAGE
+// POST /api/events/{eventId}/image
+// =========================================================
+
+@PostMapping(
+        value = "/{eventId}/image",
+        consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+)
+public ResponseEntity<EventResponse> uploadEventImage(
+        @PathVariable Long eventId,
+        @RequestParam("file") MultipartFile file,
+        Authentication authentication
+) {
+    EventResponse response = eventService.uploadEventImage(
+            eventId,
+            authentication.getName(),
+            file
+    );
+
+    return ResponseEntity.ok(response);
+}
+// =========================================================
+// VIEW EVENT IMAGE
+// GET /api/events/{eventId}/image
+// =========================================================
+
+@GetMapping("/{eventId}/image")
+public ResponseEntity<byte[]> viewEventImage(
+        @PathVariable Long eventId
+) {
+
+    EventService.EventImageContent image =
+            eventService.getEventImage(eventId);
+
+    return ResponseEntity.ok()
+            .contentType(
+                    MediaType.parseMediaType(image.contentType())
+            )
+            .body(image.bytes());
+}
 }
