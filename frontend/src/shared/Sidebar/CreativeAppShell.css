@@ -1,0 +1,79 @@
+.cp-app-shell { display: flex; align-items: stretch; min-height: 100dvh; width: 100%; background: #f5f3fb; }
+.cp-shell-main { flex: 1; min-width: 0; }
+.cp-shell-loading,.cp-no-access { padding: 35px; color: #302a68; }
+@media(max-width:700px) { .cp-shell-main { padding-bottom:72px; } }
+/* Append to src/shared/Sidebar/CreativeAppShell.css */
+/* Existing pages currently render their own NavigationBar. Hide those
+   duplicates while migrating pages to the single shared sidebar. */
+.cp-app-shell .dashboard-header { display: none !important; }
+/* Existing top-of-page spacing can be reduced for the sidebar layout. */
+.cp-shell-main .profile-page { padding-top: 22px; }
+.cp-pending-page { padding: 32px; }
+.cp-app-message { margin: 12px 24px; padding: 12px 16px; border-radius: 10px; background: #efeaff; color: #36266c; }
+@media (max-width: 700px) { .cp-shell-main .profile-page { padding: 16px; } }
+/* Notification bell in the top-right corner */
+.cp-top-notifications {
+  position: fixed;
+  top: 20px;
+  right: 28px;
+  z-index: 100;
+}
+
+.cp-notification-button {
+  width: 46px;
+  height: 46px;
+  padding: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid #ded8ef;
+  border-radius: 50%;
+
+  background: #ffffff;
+  color: #453780;
+  box-shadow: 0 4px 14px rgb(44 37 88 / 12%);
+
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.cp-notification-button:hover,
+.cp-notification-button.is-active {
+  background: #7567df;
+  color: #ffffff;
+}
+
+.cp-notification-button:focus-visible {
+  outline: 3px solid #7567df;
+  outline-offset: 3px;
+}
+
+/* Leave room beside the dashboard heading */
+.cp-shell-main .cp-home-heading {
+  box-sizing: border-box;
+  padding-right: 64px;
+}
+
+/* Keep the admin Refresh button clear of the bell */
+.cp-shell-main .cn-sa-header {
+  padding-right: 68px;
+}
+
+@media (max-width: 600px) {
+  .cp-top-notifications {
+    top: 12px;
+    right: 16px;
+  }
+
+  .cp-notification-button {
+    width: 40px;
+    height: 40px;
+  }
+}
+.cp-shell-main .cn-sa-header {
+  padding-right: 68px;
+}

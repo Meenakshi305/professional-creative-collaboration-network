@@ -1,0 +1,324 @@
+/* Creative Network - shared compact sidebar */
+.cp-sidebar {
+  width: 110px;
+  flex: 0 0 110px;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  background: #302a68;
+  color: #fff;
+  padding: 15px 9px 12px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.cp-side-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 0 19px;
+  text-align: center;
+}
+
+.cp-side-logo {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  border-radius: 50%;
+  background: white;
+}
+
+.cp-side-brand strong {
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.25;
+  color: white;
+}
+
+.cp-side-brand small {
+  font-size: 8px;
+  line-height: 1.35;
+  color: #d8d0fa;
+}
+
+.cp-side-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.cp-side-link {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 64px;
+  padding: 9px 3px;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: 11px;
+  background: transparent;
+  color: #e9e5ff;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.18s ease, color 0.18s ease;
+}
+
+.cp-side-link:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.cp-side-link.is-active {
+  background: #7566d2;
+  color: #fff;
+}
+
+.cp-side-link:focus-visible {
+  outline: 2px solid #e1d9ff;
+  outline-offset: 2px;
+}
+
+.cp-side-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+}
+
+.cp-side-icon svg {
+  display: block;
+  width: 22px;
+  height: 22px;
+}
+
+.cp-side-label {
+  display: block;
+  width: 100%;
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1.25;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.cp-side-bottom {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.cp-side-user {
+  width: 100%;
+  color: #eeeaff;
+  font-size: 10px;
+  font-weight: 650;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cp-side-logout:hover {
+  background: rgba(244, 126, 156, 0.16);
+}
+
+@media (max-width: 650px) {
+  .cp-sidebar {
+    width: 76px;
+    flex-basis: 76px;
+    padding: 10px 4px;
+  }
+  .cp-side-logo { width: 39px; height: 39px; }
+  .cp-side-brand { padding-bottom: 12px; }
+  .cp-side-brand strong { font-size: 10px; }
+  .cp-side-brand small { display: none; }
+  .cp-side-link { min-height: 57px; padding: 7px 2px; }
+  .cp-side-label { font-size: 9px; }
+}
+/* Creative Network - Option 1: white & lavender typography.
+   Full replacement of Sidebar.css; no changes to sidebar callbacks or layout. */
+
+.cp-sidebar {
+  width: 110px;
+  flex: 0 0 110px;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  background: #302a68;
+  color: #ffffff;
+  font-family: var(--cp-font-family, Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif);
+  padding: 15px 9px 12px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.cp-side-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 0 19px;
+  text-align: center;
+}
+
+.cp-side-logo {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  border-radius: 50%;
+  background: white;
+}
+
+.cp-side-brand strong {
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+  color: white;
+}
+
+.cp-side-brand small {
+  font-size: 8px;
+  line-height: 1.35;
+  color: #dad3fa;
+}
+
+.cp-side-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.cp-side-link {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 64px;
+  padding: 9px 3px;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: 11px;
+  background: transparent;
+  color: #dad3fa;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.18s ease, color 0.18s ease;
+}
+
+.cp-side-link:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-family: var(--cp-font-family, Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif);
+}
+
+.cp-side-link.is-active {
+  background: #7566d2;
+  color: #ffffff;
+  font-family: var(--cp-font-family, Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif);
+}
+
+.cp-side-link:focus-visible {
+  outline: 2px solid #e1d9ff;
+  outline-offset: 2px;
+}
+
+.cp-side-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+}
+
+.cp-side-icon svg {
+  display: block;
+  width: 22px;
+  height: 22px;
+}
+
+.cp-side-label {
+  display: block;
+  width: 100%;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.005em;
+  line-height: 1.25;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.cp-side-bottom {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.cp-side-user {
+  width: 100%;
+  color: #dad3fa;
+  font-size: 10px;
+  font-weight: 650;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cp-side-logout:hover {
+  background: rgba(244, 126, 156, 0.16);
+}
+
+@media (max-width: 650px) {
+  .cp-sidebar {
+    width: 76px;
+    flex-basis: 76px;
+    padding: 10px 4px;
+  }
+  .cp-side-logo { width: 39px; height: 39px; }
+  .cp-side-brand { padding-bottom: 12px; }
+  .cp-side-brand strong { font-size: 10px; }
+  .cp-side-brand small { display: none; }
+  .cp-side-link { min-height: 57px; padding: 7px 2px; }
+  .cp-side-label { font-size: 9px; }
+}
+
+/* Option 1: active icons and text always bright white */
+.cp-sidebar .cp-side-link.is-active .cp-side-icon,
+.cp-sidebar .cp-side-link.is-active .cp-side-label { color: #fff; }
+.cp-sidebar .cp-side-link:not(.is-active) .cp-side-icon,
+.cp-sidebar .cp-side-link:not(.is-active) .cp-side-label { color: #dad3fa; }
+.cp-sidebar .cp-side-link:not(.is-active):hover .cp-side-icon,
+.cp-sidebar .cp-side-link:not(.is-active):hover .cp-side-label { color: #fff; }
+.cp-sidebar .cp-side-brand strong { color: #fff; }
+.cp-sidebar .cp-side-brand small { color: #dad3fa; }
+@media (prefers-reduced-motion: reduce) {
+  .cp-side-link { transition: none; }
+}

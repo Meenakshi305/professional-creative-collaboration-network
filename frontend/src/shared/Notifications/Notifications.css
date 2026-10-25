@@ -1,0 +1,216 @@
+/* Visible only on Dashboard and Profile */
+.cp-top-notifications {
+  position: fixed;
+  top: 20px;
+  right: 28px;
+  z-index: 100;
+}
+
+.cp-top-notifications[hidden] {
+  display: none;
+}
+
+.notifications-wrapper {
+  position: relative;
+  font-family: var(--app-font, "Segoe UI", Arial, sans-serif);
+}
+
+.notification-trigger {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 46px;
+  height: 46px;
+  padding: 0;
+
+  border: 1px solid #ded8ef;
+  border-radius: 50%;
+
+  background: #ffffff;
+  color: #453780;
+  box-shadow: 0 4px 14px rgb(44 37 88 / 12%);
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.notification-trigger:hover,
+.notification-trigger.is-open {
+  background: #7567df;
+  color: #ffffff;
+}
+
+.notification-trigger:focus-visible,
+.notifications-dismiss:focus-visible {
+  outline: 3px solid #7567df;
+  outline-offset: 3px;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 21px;
+  height: 21px;
+  padding: 0 5px;
+  box-sizing: border-box;
+
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+
+  background: #dc3545;
+  color: #ffffff;
+
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.notifications-dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+
+  width: min(360px, calc(100vw - 40px));
+  max-height: 70vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  box-sizing: border-box;
+
+  border: 1px solid #e5e1ee;
+  border-radius: 16px;
+
+  background: #ffffff;
+  color: #282447;
+  box-shadow: 0 12px 32px rgb(44 37 88 / 18%);
+}
+
+.notifications-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  padding: 16px;
+  border-bottom: 1px solid #eeebf4;
+}
+
+.notifications-heading h3 {
+  margin: 0;
+  color: #302a68;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.notifications-heading > span {
+  color: #77718a;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.notifications-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 16px;
+}
+
+.notifications-item + .notifications-item {
+  border-top: 1px solid #eeebf4;
+}
+
+.notifications-type-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+
+  border-radius: 50%;
+  background: #efebfc;
+  color: #6554c5;
+}
+
+.notifications-type-like {
+  background: #fceaf0;
+  color: #c64673;
+}
+
+.notifications-message {
+  flex: 1;
+  min-width: 0;
+}
+
+.notifications-message p {
+  margin: 0 0 5px;
+  color: #35304c;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.notifications-message small {
+  color: #827b92;
+  font-size: 11px;
+}
+
+.notifications-dismiss {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  flex-shrink: 0;
+
+  border: none;
+  border-radius: 50%;
+
+  background: transparent;
+  color: #827b92;
+  cursor: pointer;
+}
+
+.notifications-dismiss:hover {
+  background: #f0edf7;
+  color: #453780;
+}
+
+.notifications-empty {
+  padding: 28px 16px;
+  color: #77718a;
+  font-size: 13px;
+  text-align: center;
+}
+
+/* Leave space beside the Discover heading */
+.cp-shell-main .cp-home-heading {
+  box-sizing: border-box;
+  padding-right: 64px;
+}
+
+@media (max-width: 600px) {
+  .cp-top-notifications {
+    top: 12px;
+    right: 16px;
+  }
+
+  .notification-trigger {
+    width: 40px;
+    height: 40px;
+  }
+}

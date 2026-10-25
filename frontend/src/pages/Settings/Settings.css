@@ -1,0 +1,367 @@
+
+.settings-page {
+  min-height: 100vh;
+  padding: 50px 24px;
+  background: linear-gradient(135deg, #e8e7fa, #fce8e4);
+  color: #29245d;
+  font-family: inherit;
+}
+
+.settings-container {
+  max-width: 1150px;
+  margin: 0 auto;
+}
+
+.settings-header {
+  margin-bottom: 32px;
+}
+
+.settings-eyebrow {
+  color: #6755cc;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.settings-header h1 {
+  font-size: 42px;
+  margin: 12px 0;
+}
+
+.settings-header p,
+.settings-description {
+  color: #77718e;
+  line-height: 1.6;
+}
+
+.settings-layout {
+  display: grid;
+  grid-template-columns: 270px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.settings-sidebar,
+.settings-content {
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid #e5def8;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 12px 35px rgba(61, 46, 115, 0.08);
+}
+
+.settings-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings-tab {
+  border: none;
+  border-radius: 12px;
+  padding: 15px;
+  background: transparent;
+  color: #454067;
+  text-align: left;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.settings-tab:hover {
+  background: #f1edff;
+}
+
+.settings-tab.active {
+  background: linear-gradient(135deg, #5545bd, #8066e9);
+  color: white;
+  font-weight: 600;
+}
+
+.settings-content {
+  min-height: 350px;
+  padding: 32px;
+}
+
+.settings-content h2 {
+  margin-top: 0;
+  font-size: 26px;
+}
+
+.settings-label {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin: 24px 0;
+  font-weight: 600;
+}
+
+.settings-label input,
+.settings-label select {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #d8d0f1;
+  border-radius: 10px;
+  padding: 14px;
+  background: #faf9ff;
+  color: #29245d;
+  font: inherit;
+}
+
+.settings-label input:focus,
+.settings-label select:focus {
+  outline: 2px solid #8972eb;
+}
+
+.settings-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 0;
+  border-bottom: 1px solid #eeeaf6;
+}
+
+.settings-toggle input {
+  width: 20px;
+  height: 20px;
+  accent-color: #6755cc;
+}
+
+.settings-save {
+  margin-top: 20px;
+  padding: 13px 24px;
+  background: linear-gradient(135deg, #5545bd, #8066e9);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.settings-save:hover {
+  filter: brightness(1.08);
+}
+
+.settings-message {
+  margin-top: 20px;
+  padding: 14px;
+  border-radius: 10px;
+  background: #f0ecff;
+  color: #5545bd;
+}
+
+@media (max-width: 768px) {
+  .settings-page {
+    padding: 24px 14px;
+  }
+
+  .settings-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-header h1 {
+    font-size: 32px;
+  }
+
+  .settings-content {
+    padding: 22px;
+  }
+}
+
+/* Additional styles for Settings features.
+   Existing colours, fonts and layout remain unchanged. */
+
+.settings-content textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  border: 1px solid #d6ccf9;
+  border-radius: 12px;
+  padding: 12px;
+  margin-top: 8px;
+  font: inherit;
+}
+
+.settings-faq {
+  padding: 14px 0;
+  border-bottom: 1px solid #e7e3f1;
+}
+
+.settings-faq summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.settings-faq p {
+  margin: 12px 0 2px;
+  line-height: 1.6;
+}
+
+.settings-content li {
+  margin: 12px 0;
+  line-height: 1.55;
+}
+
+.settings-save:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Report form and feedback */
+
+.settings-content textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  resize: vertical;
+  padding: 14px;
+  margin-top: 10px;
+  border: 1px solid #d8d0fa;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.settings-content textarea:focus,
+.settings-content input:focus,
+.settings-content select:focus {
+  outline: 2px solid #795de8;
+  outline-offset: 1px;
+}
+
+.settings-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.settings-error {
+  color: #a6263e;
+  font-weight: 600;
+}
+
+.settings-faq {
+  padding: 16px 0;
+  border-bottom: 1px solid #e7e0f4;
+}
+
+.settings-faq summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.settings-faq p {
+  margin-top: 12px;
+  line-height: 1.6;
+}
+
+.settings-content li {
+  margin-bottom: 12px;
+  line-height: 1.6;
+}
+
+/* Existing Creative Network user search styling */
+
+.settings-user-search {
+  position: relative;
+  width: 100%;
+}
+
+.settings-user-search input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.settings-user-results {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  right: 0;
+  z-index: 100;
+
+  max-height: 280px;
+  overflow-y: auto;
+
+  padding: 6px;
+
+  background: #fff;
+  border: 1px solid #d8ccff;
+  border-radius: 12px;
+
+  box-shadow: 0 8px 24px rgba(31, 26, 91, 0.14);
+}
+
+.settings-user-result {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+
+  width: 100%;
+  padding: 12px;
+
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+
+  color: #211955;
+  text-align: left;
+  cursor: pointer;
+
+  font: inherit;
+}
+
+.settings-user-result:hover,
+.settings-user-result:focus-visible {
+  background: #eee9ff;
+}
+
+.settings-user-result strong {
+  font-weight: 600;
+}
+
+.settings-user-result span {
+  color: #746b92;
+  font-size: 13px;
+}
+
+.settings-selected-user {
+  margin-top: 10px;
+  color: #5343bb;
+  font-weight: 600;
+}
+
+.settings-search-status {
+  margin-top: 8px;
+  color: #746b92;
+  font-size: 13px;
+}
+
+.settings-error {
+  color: #b42342;
+}
+
+.settings-content textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px;
+  resize: vertical;
+  font: inherit;
+  border: 1px solid #d8ccff;
+  border-radius: 14px;
+}
+
+.settings-faq {
+  padding: 15px 0;
+  border-bottom: 1px solid #e7e0f4;
+}
+
+.settings-faq summary {
+  cursor: pointer;
+}
+
+.settings-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
