@@ -1225,3 +1225,182 @@
     padding: 28px 18px;
   }
 }
+/* OPPORTUNITY POPUP */
+.collaboration-screen .post-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+  background: rgba(28, 24, 51, 0.55);
+  backdrop-filter: blur(5px);
+}
+
+.collaboration-screen .post-modal {
+  width: min(680px, 100%);
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
+
+  border: 1px solid #e9e3f2;
+  border-radius: 22px;
+  background: #ffffff;
+  color: var(--app-text, #403a54);
+  font-family: var(--app-font, "Segoe UI", Arial, sans-serif);
+
+  box-shadow: 0 24px 70px rgba(28, 24, 51, 0.25);
+}
+
+/* HEADER */
+.collaboration-screen .post-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+
+  padding: 26px;
+  border-bottom: 1px solid #eee9f5;
+}
+
+.collaboration-screen .post-modal-eyebrow {
+  margin: 0 0 10px;
+  color: #7567df;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.collaboration-screen .post-modal-header h2 {
+  margin: 0 0 10px;
+  color: #29265f;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.collaboration-screen .post-modal-header p:last-child {
+  margin: 0;
+  color: #756d84;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.collaboration-screen .post-modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  padding: 0;
+
+  border: none;
+  border-radius: 10px;
+  background: #f2eef9;
+  color: #655b78;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.collaboration-screen .post-modal-close:hover {
+  background: #e8e1f5;
+}
+
+/* SUCCESS PANEL */
+.collaboration-screen .post-success {
+  margin: 24px;
+  padding: 32px 24px;
+
+  border: 1px solid #d8eadd;
+  border-radius: 16px;
+  background: #f2faf5;
+  text-align: center;
+}
+
+.collaboration-screen .post-success-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 58px;
+  height: 58px;
+  margin: 0 auto 20px;
+
+  border-radius: 50%;
+  background: #dff1e5;
+  color: #34815a;
+  font-size: 28px;
+  font-weight: 600;
+
+  box-shadow: 0 0 0 7px #eaf7ef;
+}
+
+.collaboration-screen .post-success h3 {
+  margin: 0 0 12px;
+  color: #28533d;
+  font-size: 23px;
+  font-weight: 700;
+}
+
+.collaboration-screen .post-success p {
+  max-width: 390px;
+  margin: 0 auto 24px;
+
+  color: #587363;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+/* VIEW OPPORTUNITIES BUTTON */
+.collaboration-screen .post-success button {
+  min-height: 44px;
+  padding: 12px 24px;
+
+  border: none;
+  border-radius: 11px;
+  background: #7567df;
+  color: #ffffff;
+
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+
+  box-shadow: 0 5px 14px rgba(117, 103, 223, 0.2);
+  cursor: pointer;
+}
+
+.collaboration-screen .post-success button:hover {
+  background: #6253c7;
+}
+
+.collaboration-screen .post-modal button:focus-visible {
+  outline: 3px solid #b9a9ef;
+  outline-offset: 3px;
+}
+
+@media (max-width: 600px) {
+  .collaboration-screen .post-modal-backdrop {
+    padding: 12px;
+  }
+
+  .collaboration-screen .post-modal {
+    max-height: calc(100dvh - 24px);
+  }
+
+  .collaboration-screen .post-modal-header {
+    padding: 20px;
+  }
+
+  .collaboration-screen .post-modal-header h2 {
+    font-size: 22px;
+  }
+
+  .collaboration-screen .post-success {
+    margin: 18px;
+    padding: 28px 18px;
+  }
+}
