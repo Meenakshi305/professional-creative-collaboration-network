@@ -12,6 +12,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -138,7 +139,7 @@ public class MegaStorageService {
             // Upload temporary file to MEGA
             runMegaCommand(
 
-                    "mega-put.bat",
+                    "mega-put",
 
                     localTempFile.toString(),
 
@@ -215,7 +216,7 @@ public class MegaStorageService {
             // Download original file from MEGA
             runMegaCommand(
 
-                    "mega-get.bat",
+                    "mega-get",
 
                     storageKey,
 
@@ -287,7 +288,7 @@ public class MegaStorageService {
 
         runMegaCommand(
 
-                "mega-rm.bat",
+                "mega-rm",
 
                 "-f",
 
@@ -303,7 +304,7 @@ public class MegaStorageService {
     public String whoAmI() {
 
         return runMegaCommand(
-                "mega-whoami.bat"
+                "mega-whoami"
         );
     }
 
@@ -320,156 +321,76 @@ public class MegaStorageService {
 
     ) {
 
-        Path command =
-                commandPath.resolve(
-                        commandName
-                );
+        boolean windows = System.getProperty("os.name", "")
+                .toLowerCase(Locale.ROOT).startsWith("windows");
 
+        // Windows MEGAcmd uses batch launchers; macOS/Linux use executables.
+        Path command = commandPath.resolve(
+                commandName + (windows ? ".bat" : "")
+        ).toAbsolutePath().normalize();
 
-        /*
-         * Check command exists.
-         *
-         * Example:
-         *
-         * C:\Users\...\AppData\Local\MEGAcmd\mega-put.bat
-         */
-
-        if (
-                !Files.exists(
-                        command
-                )
-        ) {
-
-            throw new IllegalStateException(
-                    "MEGA command not found: "
-                            + command
-            );
+        if (!Files.isRegularFile(command)) {
+            throw new IllegalStateException("MEGA command not found: " + command
+                    + ". Check mega.command-path points to the MEGAcmd directory.");
+        }
+        if (!windows && !Files.isExecutable(command)) {
+            throw new IllegalStateException("MEGA command is not executable: " + command);
         }
 
-
-        List<String> processCommand =
-                new ArrayList<>();
-
-
-        /*
-         * Windows BAT files need to run
-         * through cmd.exe.
-         */
-
-        processCommand.add(
-                "cmd.exe"
-        );
-
-        processCommand.add(
-                "/c"
-        );
-
-        processCommand.add(
-                command.toString()
-        );
-
-
-        // Add command arguments
-        for (
-                String argument
-                :
-                arguments
-        ) {
-
-            processCommand.add(
-                    argument
-            );
+        List<String> processCommand = new ArrayList<>();
+        if (windows) {
+            processCommand.add("cmd.exe");
+            processCommand.add("/d");
+            processCommand.add("/c");
+        }
+        processCommand.add(command.toString());
+        for (String argument : arguments) {
+            processCommand.add(argument);
         }
 
-
-        ProcessBuilder processBuilder =
-                new ProcessBuilder(
-                        processCommand
-                );
-
-
-        /*
-         * Combine stdout and stderr.
-         */
-
-        processBuilder.redirectErrorStream(
-                true
-        );
-
-
+        Path outputFile = null;
+        Process process = null;
         try {
+            // Drain output to disk while the command runs, avoiding a full pipe.
+            outputFile = Files.createTempFile("creative-mega-output-", ".log");
+            ProcessBuilder processBuilder = new ProcessBuilder(processCommand);
+            processBuilder.redirectErrorStream(true);
+            processBuilder.redirectOutput(outputFile.toFile());
+            process = processBuilder.start();
 
-            Process process =
-                    processBuilder.start();
-
-
-            /*
-             * Allow large files some time
-             * to upload/download.
-             */
-
-            boolean finished =
-                    process.waitFor(
-                            5,
-                            TimeUnit.MINUTES
-                    );
-
-
-            if (!finished) {
-
-                process.destroyForcibly();
-
-                throw new IllegalStateException(
-                        "MEGA command timed out"
-                );
+            if (!process.waitFor(5, TimeUnit.MINUTES)) {
+                stopProcess(process);
+                throw new IllegalStateException("MEGA command timed out: " + commandName);
             }
 
-
-            String output =
-                    new String(
-
-                            process
-                                    .getInputStream()
-                                    .readAllBytes(),
-
-                            StandardCharsets.UTF_8
-                    );
-
-
-            if (
-                    process.exitValue()
-                            != 0
-            ) {
-
-                throw new IllegalStateException(
-                        "MEGA command failed: "
-                                + output
-                );
+            String output = Files.readString(outputFile, StandardCharsets.UTF_8);
+            if (process.exitValue() != 0) {
+                throw new IllegalStateException("MEGA command failed ("
+                        + commandName + ", exit " + process.exitValue() + "): " + output);
             }
-
-
             return output.trim();
-
-
         } catch (InterruptedException exception) {
-
-            Thread.currentThread()
-                    .interrupt();
-
-
-            throw new IllegalStateException(
-                    "MEGA command was interrupted",
-                    exception
-            );
-
-
+            if (process != null) stopProcess(process);
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("MEGA command was interrupted", exception);
         } catch (IOException exception) {
-
-            throw new IllegalStateException(
-                    "Unable to execute MEGA command",
-                    exception
-            );
+            throw new IllegalStateException("Unable to execute MEGA command: " + command,
+                    exception);
+        } finally {
+            if (process != null && process.isAlive()) stopProcess(process);
+            if (outputFile != null) {
+                try {
+                    Files.deleteIfExists(outputFile);
+                } catch (IOException ignored) {
+                    // Cleanup failure must not hide the command result.
+                }
+            }
         }
+    }
+
+    private void stopProcess(Process process) {
+        process.descendants().forEach(child -> child.destroyForcibly());
+        process.destroyForcibly();
     }
 
 
