@@ -1,3 +1,4 @@
+
 package com.creative.collaboration.repository;
 
 import com.creative.collaboration.entity.OpportunityApplication;
@@ -13,9 +14,12 @@ public interface OpportunityApplicationRepository
             Long applicantId
     );
 
-    List<OpportunityApplication>
-    findByOpportunity_Id(
+    List<OpportunityApplication> findByOpportunity_Id(
             Long opportunityId
+    );
+
+    List<OpportunityApplication> findByApplicant_Id(
+            Long applicantId
     );
 
     void deleteByOpportunity_Id(
