@@ -226,15 +226,6 @@
 .event-card-icon {
   font-size: 48px;
 }
-/* Uploaded event image */
-.event-card-image {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
 
 .event-category {
   position: absolute;
@@ -460,15 +451,6 @@
 .event-modal-visual > span {
   font-size: 52px;
 }
-/* Uploaded image in Event Details popup */
-.event-modal-image {
-  width: 120px;
-  height: 90px;
-  flex-shrink: 0;
-  object-fit: cover;
-  border-radius: 12px;
-  display: block;
-}
 
 .event-modal-visual small {
   font-size: 11px;
@@ -581,7 +563,6 @@
 
 .event-registered-badge {
   position: absolute;
-  z-index: 2;
   top: 14px;
   right: 14px;
 
@@ -836,7 +817,6 @@
 
 .event-status-badge {
   position: absolute;
-  z-index: 2;
   top: 14px;
   left: 14px;
 
@@ -1090,4 +1070,46 @@
   .event-form {
     grid-template-columns: 1fr;
   }
+}
+
+/* Frontend-only payment demo; uses the existing app theme. */
+.stripe-demo-form { display:grid; gap:14px; margin:18px 0; }
+.stripe-demo-form label { display:grid; gap:6px; color:var(--app-heading,#29265f); font-size:13px; font-weight:600; }
+.stripe-demo-form input,.stripe-demo-form select { box-sizing:border-box; width:100%; min-width:0; padding:11px 12px; border:1px solid #d8d0f1; border-radius:9px; background:#faf9ff; color:var(--app-text,#403a54); font:inherit; }
+.stripe-demo-form input[readonly] { color:var(--app-muted,#6e667e); }
+.stripe-demo-fields { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+
+.demo-payment-success { display:grid; place-items:center; min-height:75vh; }
+.demo-success-card { max-width:650px; width:100%; box-sizing:border-box; padding:32px; border:1px solid #e5def8; border-radius:20px; background:var(--creative-card-background,rgba(255,255,255,.94)); box-shadow:0 12px 35px rgba(61,46,115,.08); color:var(--app-text,#403a54); text-align:center; }
+.demo-success-icon { display:grid; place-items:center; width:60px; height:60px; border-radius:50%; margin:0 auto 18px; background:#e9f7ed; color:#267448; font-size:32px; }
+.demo-success-card h1 { margin:0 0 8px; color:var(--app-heading,#29265f); }
+.demo-success-card h2 { margin:0 0 18px; color:#267448; }
+.demo-success-details { text-align:left; margin:22px 0; }
+.demo-success-details>div { display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px 20px; padding:12px 0; border-bottom:1px solid #e5def8; }
+.demo-success-details dt { color:var(--app-muted,#6e667e); }
+.demo-success-details dd { margin:0; font-weight:600; overflow-wrap:anywhere; min-width:0; }
+.demo-success-note { color:var(--app-muted,#6e667e); font-size:13px; line-height:1.6; }
+@media(max-width:600px) { .demo-success-card { padding:22px 18px; } }
+
+/* Keep event images inside the original card visual area. */
+.events-screen .event-card {
+  min-width: 0;
+}
+
+.events-screen .event-card-visual {
+  height: 145px;
+  min-height: 145px;
+  max-height: 145px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.events-screen .event-card-visual > .event-card-image {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  object-fit: cover;
 }

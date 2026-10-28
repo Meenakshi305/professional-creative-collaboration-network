@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import './Events.css'
 import NavigationBar from '../../shared/NavigationBar/NavigationBar'
 import {
@@ -141,7 +141,8 @@ function toApiDateTime(value: string): string {
   return value.length === 16 ? `${value}:00` : value
 }
 
-function registrationLabel(registration: EventRegistrationResponse): string {
+function registrationLabel(registration: EventRegistrationResponse, demoPaid = false): string {
+  if (demoPaid) return '✓ Registered • Demo paid'
   return registration.status === 'PENDING' ? '⏳ Pending' : '✓ Registered'
 }
 
@@ -181,6 +182,17 @@ function Events({
     const [registrations, setRegistrations] = useState<Record<number, EventRegistrationResponse>>({})
     const [selectedEvent, setSelectedEvent] = useState<EventResponse | null>(null)
     const [checkoutEvent, setCheckoutEvent] = useState<EventResponse | null>(null)
+    // Demo payments affect the frontend only; backend payment status is unchanged.
+    const [paymentSuccess, setPaymentSuccess] = useState<EventResponse | null>(null)
+    const [demoPayments, setDemoPayments] = useState<Record<number, boolean>>({})
+    const paymentInFlight = useRef(false)
+
+    const closeCheckout = () => {
+        if (paymentInFlight.current) return
+        setCheckoutEvent(null)
+        setActionError('')
+    }
+
     const [actionError, setActionError] = useState('')
     const [actionBusy, setActionBusy] = useState(false)
     const [attendees, setAttendees] = useState<EventRegistrationResponse[] | null>(null)
@@ -321,10 +333,44 @@ function Events({
         setRegistrations((current) => ({ ...current, [event.id]: registration }))
     }, 'Unable to register for this event.')
 
+    const openCheckout = (event: EventResponse) => {
+        setActionError('')
+        setPaymentSuccess(null)
+        setCheckoutEvent(event)
+        setSelectedEvent(null)
+    }
+
+    const handleDemoPayment = async () => {
+        if (!checkoutEvent || paymentInFlight.current || actionBusy) return
+        const event = checkoutEvent
+        paymentInFlight.current = true
+        setActionBusy(true)
+        setActionError('')
+        try {
+            // Save registration through the existing API. Never mark a real
+            // payment as confirmed from the frontend.
+            const registration = registrations[event.id] ?? await registerForEvent(event.id)
+            setRegistrations((current) => ({ ...current, [event.id]: registration }))
+            setDemoPayments((current) => ({ ...current, [event.id]: true }))
+            setCheckoutEvent(null)
+            setPaymentSuccess(event)
+        } catch (error) {
+            setActionError(errorText(error, 'Unable to complete registration. Please try again.'))
+        } finally {
+            paymentInFlight.current = false
+            setActionBusy(false)
+        }
+    }
+
     const handleCancelRegistration = (event: EventResponse) => runAction(async () => {
         const registration = registrations[event.id]
         if (!registration) return
         await cancelRegistration(registration.id)
+        setDemoPayments((current) => {
+            const next = { ...current }
+            delete next[event.id]
+            return next
+        })
         setRegistrations((current) => {
             const next = { ...current }
             delete next[event.id]
@@ -575,7 +621,7 @@ function Events({
 
                             {registrations[event.id] && (
                                 <span className="event-registered-badge">
-                                    {registrationLabel(registrations[event.id])}
+                                    {registrationLabel(registrations[event.id], demoPayments[event.id])}
                                 </span>
                             )}
 
@@ -766,10 +812,18 @@ function Events({
                                     className="event-register-button registered"
                                     disabled
                                     >
-                                    {selectedRegistration.status === 'PENDING'
+                                    {demoPayments[selectedEvent.id]
+                                        ? '✓ Registered • Demo payment successful'
+                                        : selectedRegistration.status === 'PENDING'
                                         ? '⏳ Registered • Payment pending confirmation'
                                         : '✓ Registered'}
                                 </button>
+                                {selectedRegistration.status === 'PENDING' && !demoPayments[selectedEvent.id] && (
+                                    <button type="button" className="checkout-pay-button" disabled={actionBusy}
+                                        onClick={() => openCheckout(selectedEvent)}>
+                                        Complete demo payment
+                                    </button>
+                                )}
                                 <button
                                     type="button"
                                     className="event-cancel-registration"
@@ -787,8 +841,7 @@ function Events({
                                         if (eventPrice(selectedEvent) === 0) {
                                             handleRegister(selectedEvent)
                                         } else {
-                                            setCheckoutEvent(selectedEvent)
-                                            setSelectedEvent(null)
+                                            openCheckout(selectedEvent)
                                         }
                                     }}
                                     disabled={actionBusy || selectedEvent.status !== 'PUBLISHED'}
@@ -807,23 +860,26 @@ function Events({
                     {checkoutEvent && (
                         <div
                             className="checkout-overlay"
-                            onClick={() => setCheckoutEvent(null)}
+                            onClick={closeCheckout}
                         >
                             <div
                             className="checkout-modal"
+                            role="dialog" aria-modal="true" aria-label="Demo payment checkout"
                             onClick={(e) => e.stopPropagation()}
                             >
                             <button
                                 type="button"
                                 className="checkout-close"
-                                onClick={() => setCheckoutEvent(null)}
+                                disabled={actionBusy}
+                                aria-label="Close checkout"
+                                onClick={closeCheckout}
                             >
                                 ✕
                             </button>
 
                             <div className="checkout-heading">
-                                <span>🎟️ Event Registration</span>
-                                <h2>Complete Registration</h2>
+                                <span style={{ color: '#7567df', fontWeight: 700 }}>Stripe-style checkout · DEMO</span>
+                                <h2>Complete Payment</h2>
                                 <p>{checkoutEvent.title}</p>
                             </div>
 
@@ -851,13 +907,20 @@ function Events({
                                 <strong>${eventPrice(checkoutEvent)}</strong>
                             </div>
 
+                            <div style={{ padding: 18, borderRadius: 14, background: '#eeebf8', color: '#282447', margin: '16px 0' }}>
+                                <strong>Demo card</strong>
+                                <p style={{ margin: '12px 0', fontSize: 20, letterSpacing: 2 }}>4242 4242 4242 4242</p>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <span>Expiry: 12/30</span>
+                                    <span>CVC: 123</span>
+                                </div>
+                            </div>
                             <div className="checkout-demo-notice">
                                 <span>🔒</span>
-
                                 <p>
-                                Payment is simulated for this frontend prototype.
-                                No real payment will be processed. Your registration
-                                is saved as pending until payment is confirmed.
+                                    Frontend demo only. This checkout simulates a successful payment;
+                                    it does not contact Stripe or charge money. Registration is saved
+                                    through your existing API. Backend payment status is unchanged.
                                 </p>
                             </div>
 
@@ -869,26 +932,35 @@ function Events({
                                 type="button"
                                 className="checkout-pay-button"
                                 disabled={actionBusy}
-                                onClick={async () => {
-                                    const event = checkoutEvent
-                                    setActionBusy(true)
-                                    setActionError('')
-                                    try {
-                                        const registration = await registerForEvent(event.id)
-                                        setRegistrations((current) => ({ ...current, [event.id]: registration }))
-                                        setCheckoutEvent(null)
-                                    } catch (error) {
-                                        setActionError(errorText(error, 'Unable to register for this event.'))
-                                    } finally {
-                                        setActionBusy(false)
-                                    }
-                                }}
+                                onClick={handleDemoPayment}
                             >
-                                {actionBusy ? 'Processing…' : `Simulate Payment • $${eventPrice(checkoutEvent)}`}
+                                {actionBusy ? 'Processing…' : `Pay $${eventPrice(checkoutEvent).toFixed(2)} · Demo`}
                             </button>
                             </div>
                         </div>
                         )}
+                    {paymentSuccess && (
+                        <div className="checkout-overlay" onClick={() => setPaymentSuccess(null)}>
+                            <div className="checkout-modal" role="dialog" aria-modal="true"
+                                aria-labelledby="demo-payment-success-title" onClick={(e) => e.stopPropagation()}>
+                                <button type="button" className="checkout-close" aria-label="Close payment success"
+                                    onClick={() => setPaymentSuccess(null)}>✕</button>
+                                <div role="status" style={{ textAlign: 'center', padding: '20px 0' }}>
+                                    <div style={{ width: 64, height: 64, margin: '0 auto 18px', borderRadius: '50%', background: '#eeebf8', color: '#7567df', display: 'grid', placeItems: 'center', fontSize: 36 }}>✓</div>
+                                    <h2 id="demo-payment-success-title">Payment successful</h2>
+                                    <p>Your demo payment for <strong>{paymentSuccess.title}</strong> is complete.</p>
+                                    <strong style={{ color: '#7567df', fontSize: 26 }}>${eventPrice(paymentSuccess).toFixed(2)}</strong>
+                                    <p>Registration saved. No money was charged.</p>
+                                    <small>Simulated payment only. Backend payment confirmation remains unchanged.</small>
+                                </div>
+                                <button type="button" className="checkout-pay-button" onClick={() => {
+                                    const event = paymentSuccess
+                                    setPaymentSuccess(null)
+                                    void openDetails(event)
+                                }}>View registration</button>
+                            </div>
+                        </div>
+                    )}
                     {formOpen && (
                         <div
                             className="checkout-overlay"

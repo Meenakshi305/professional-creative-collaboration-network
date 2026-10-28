@@ -3,6 +3,7 @@ import {
   getCurrentUser,
   getToken
 } from '../../service/authService'
+import { getConsentRequests, getLinkedChildren } from '../../service/guardianService'
 import Sidebar, { type MainPage } from './Sidebar'
 import Notifications from '../Notifications/Notifications'
 import SuperAdminLive from '../../pages/SuperAdmin/SuperAdminLive'
@@ -29,6 +30,7 @@ export default function CreativeAppShell({
   } | null>(null)
 
   const [loading, setLoading] = useState(true)
+  const [hasGuardianLinks, setHasGuardianLinks] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -54,6 +56,27 @@ export default function CreativeAppShell({
       cancelled = true
     }
   }, [])
+
+  useEffect(() => {
+    if (!user?.dateOfBirth || user.guardianConsentRequired) return
+    let live = true
+    async function refreshGuardianLinks() {
+      try {
+        const [requests, children] = await Promise.all([getConsentRequests(), getLinkedChildren()])
+        if (live) setHasGuardianLinks(requests.length > 0 || children.length > 0)
+      } catch { /* Keep the last known state during temporary connectivity failures. */ }
+    }
+    void refreshGuardianLinks()
+    const timer = window.setInterval(() => void refreshGuardianLinks(), 15000)
+    const refresh = () => { void refreshGuardianLinks() }
+    window.addEventListener('focus', refresh)
+    window.addEventListener('guardian-links-changed', refresh)
+    return () => {
+      live = false; window.clearInterval(timer)
+      window.removeEventListener('focus', refresh)
+      window.removeEventListener('guardian-links-changed', refresh)
+    }
+  }, [user])
 
   if (loading) {
     return (
@@ -88,7 +111,7 @@ export default function CreativeAppShell({
       <Sidebar
         activePage={activePage}
         isAdmin={canAccessAdmin}
-        canUseGuardian={!!user.dateOfBirth && !user.guardianConsentRequired}
+        canUseGuardian={!!user.dateOfBirth && !user.guardianConsentRequired && hasGuardianLinks}
         onNavigate={onNavigate}
         onLogout={onLogout}
         displayName={user.fullName ?? undefined}

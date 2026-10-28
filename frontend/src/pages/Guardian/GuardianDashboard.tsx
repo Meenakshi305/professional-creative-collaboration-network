@@ -86,7 +86,7 @@ export default function GuardianDashboard({ embedded = false }: { embedded?: boo
   }, [])
   async function act(action: () => Promise<void>, success: string) {
     setBusy(true); setError(''); setNotice('')
-    try { await action(); await load(); setNotice(success) }
+    try { await action(); await load(); setNotice(success); window.dispatchEvent(new Event('guardian-links-changed')) }
     catch (e) { setError(message(e)) }
     finally { setBusy(false) }
   }

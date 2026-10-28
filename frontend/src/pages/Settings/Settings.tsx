@@ -22,11 +22,11 @@ type SettingsTab =
   | 'guidelines'
 
 const tabs: { id: SettingsTab; label: string }[] = [
-  { id: 'account', label: '👤 Account Settings' },
-  { id: 'report', label: '🚩 Report Issue or User' },
-  { id: 'security', label: '🔒 Account Security' },
-  { id: 'help', label: '❓ Help & Support' },
-  { id: 'guidelines', label: '📜 Community Guidelines' }
+  { id: 'account', label: 'Account Settings' },
+  { id: 'report', label: 'Report Issue or User' },
+  { id: 'security', label: 'Account Security' },
+  { id: 'help', label: 'Help & Support' },
+  { id: 'guidelines', label: 'Community Guidelines' }
 ]
 
 export default function Settings() {
