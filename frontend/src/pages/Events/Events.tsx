@@ -4,6 +4,7 @@ import NavigationBar from '../../shared/NavigationBar/NavigationBar'
 import {
   cancelRegistration,
   createEvent,
+  uploadEventImage,
   deleteEvent,
   getCurrentUserId,
   getEvent,
@@ -78,6 +79,36 @@ const categoryIcons: Record<string, string> = {
 
 function eventIcon(category: string): string {
   return categoryIcons[category.trim().toLowerCase()] ?? '📅'
+}
+const eventImageUrl = (event: EventResponse): string | null => {
+    if (!event.imageUrl) return null
+
+    if (event.imageUrl.startsWith('http')) {
+        return event.imageUrl
+    }
+
+    return `http://localhost:8080${event.imageUrl}`
+}
+const eventFallbackImage = (category: string): string => {
+    const normalizedCategory = category.trim().toLowerCase()
+
+    const fallbackImages: Record<string, string> = {
+        networking: 'networking.jpg',
+        workshop: 'workshop.jpg',
+        art: 'art.jpg',
+        photography: 'photography.jpg',
+        music: 'music.jpg',
+        exhibition: 'exhibition.jpg',
+        career: 'career.jpg',
+        film: 'film.jpg',
+        design: 'design.jpg',
+        writing: 'writing.jpg',
+        dance: 'dance.jpg'
+    }
+
+    const filename = fallbackImages[normalizedCategory] ?? 'default.jpg'
+
+    return `/event-images/${filename}`
 }
 
 function isOnline(event: EventResponse): boolean {
@@ -156,7 +187,9 @@ function Events({
     const [formOpen, setFormOpen] = useState(false)
     const [editingEventId, setEditingEventId] = useState<number | null>(null)
     const [form, setForm] = useState<EventFormState>(emptyForm)
+    const [selectedImage, setSelectedImage] = useState<File | null>(null)
     const [formError, setFormError] = useState('')
+
 
     // ============================================
     // LOAD EVENTS + MY REGISTRATIONS
@@ -328,6 +361,7 @@ function Events({
     const openCreateForm = () => {
         setEditingEventId(null)
         setForm(emptyForm)
+        setSelectedImage(null)
         setFormError('')
         setFormOpen(true)
     }
@@ -347,6 +381,7 @@ function Events({
             price: event.eventType === 'PAID' ? String(event.price) : '',
             publishNow: event.status === 'PUBLISHED'
         })
+        setSelectedImage(null)
         setFormError('')
         setSelectedEvent(null)
         setFormOpen(true)
@@ -386,12 +421,23 @@ function Events({
         try {
             if (editingEventId === null) {
                 const created = await createEvent(request)
-                if (form.publishNow) await publishEvent(created.id)
+                // Upload the selected image before publishing.
+                if (selectedImage) {
+                    await uploadEventImage(created.id, selectedImage)
+                }
+                if (form.publishNow) {
+                    await publishEvent(created.id)
+                }
             } else {
                 await updateEvent(editingEventId, {
                     ...request,
                     ...(form.publishNow ? { status: 'PUBLISHED' as const } : {})
                 })
+
+                // Replace the event image only if a new file was selected.
+                if (selectedImage) {
+                    await uploadEventImage(editingEventId, selectedImage)
+                }
             }
             setFormOpen(false)
             setLoading(true)
@@ -514,7 +560,18 @@ function Events({
                     {filteredEvents.map((event) => (
                         <article className="event-card" key={event.id}>
                         <div className="event-card-visual">
-                            <span className="event-card-icon">{eventIcon(event.category)}</span>
+                            {eventImageUrl(event) || eventFallbackImage(event.category) ? (
+                                <img
+                                    className="event-card-image"
+                                    src={eventImageUrl(event) || eventFallbackImage(event.category)}
+                                    alt={event.title}
+                                    loading="lazy"
+                                />
+                            ) : (
+                                <span className="event-card-icon">
+                                    {eventIcon(event.category)}
+                                </span>
+                            )}
 
                             {registrations[event.id] && (
                                 <span className="event-registered-badge">
@@ -591,7 +648,18 @@ function Events({
                         </button>
 
                         <div className="event-modal-visual">
-                            <span>{eventIcon(selectedEvent.category)}</span>
+                            {eventImageUrl(selectedEvent) || eventFallbackImage(selectedEvent.category) ? (
+                                <img
+                                    className="event-modal-image"
+                                    src={
+                                        eventImageUrl(selectedEvent) ||
+                                        eventFallbackImage(selectedEvent.category)
+                                    }
+                                    alt={selectedEvent.title}
+                                />
+                            ) : (
+                                <span>{eventIcon(selectedEvent.category)}</span>
+                            )}
 
                             <div>
                             <small>{selectedEvent.category}</small>
@@ -898,6 +966,29 @@ function Events({
                                 Description
                                 <textarea rows={4} value={form.description} onChange={(e) => updateForm('description', e.target.value)} maxLength={2000} />
                             </label>
+                            <label className="event-form-full">
+    Event Image (Optional)
+    <input
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        onChange={(e) => {
+            const file = e.target.files?.[0] ?? null
+
+            if (file && file.size > 5 * 1024 * 1024) {
+                setFormError('Event image must be 5 MB or smaller.')
+                e.target.value = ''
+                setSelectedImage(null)
+                return
+            }
+
+            setSelectedImage(file)
+            setFormError('')
+        }}
+    />
+    <small>
+        Upload a JPG, PNG or WebP image (maximum 5 MB).
+    </small>
+</label>
 
                             <label className="event-form-full event-form-check">
                                 <input type="checkbox" checked={form.publishNow} onChange={(e) => updateForm('publishNow', e.target.checked)} />

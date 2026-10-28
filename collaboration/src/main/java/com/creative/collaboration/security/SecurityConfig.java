@@ -3,16 +3,12 @@ package com.creative.collaboration.security;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -40,7 +36,10 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         configuration.setAllowedOriginPatterns(
-                List.of("http://localhost:*")
+                List.of(
+                        "http://localhost:*",
+                        "http://127.0.0.1:*"
+                )
         );
 
         configuration.setAllowedMethods(
@@ -54,23 +53,14 @@ public class SecurityConfig {
                 )
         );
 
-        configuration.setAllowedHeaders(
-                List.of("*")
-        );
-
-        configuration.setExposedHeaders(
-                List.of("Authorization")
-        );
-
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setExposedHeaders(List.of("Authorization"));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source =
                 new UrlBasedCorsConfigurationSource();
 
-        source.registerCorsConfiguration(
-                "/**",
-                configuration
-        );
+        source.registerCorsConfiguration("/**", configuration);
 
         return source;
     }
@@ -95,7 +85,7 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
-                        // CORS preflight requests.
+                        // Allow CORS preflight requests.
                         .requestMatchers(HttpMethod.OPTIONS, "/**")
                         .permitAll()
 
@@ -108,46 +98,39 @@ public class SecurityConfig {
                         )
                         .permitAll()
 
-                        // Browser image elements cannot attach JWT headers. Keep existing public media reads.
-                        .requestMatchers(HttpMethod.GET, "/api/media/*/view", "/api/media/*/download", "/api/users/*/profile/image")
+                        // Public media reads for browser image elements.
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/media/*/view",
+                                "/api/media/*/download",
+                                "/api/users/*/profile/image"
+                        )
                         .permitAll()
 
-                        .requestMatchers("/api/guardian/**")
-                        .authenticated()
-
-                        // Super Admin only.
+                        // Super Admin endpoints.
                         .requestMatchers(
                                 "/api/super-admin/**",
                                 "/api/superadmin/**"
                         )
                         .hasRole("SUPER_ADMIN")
 
-                        // Admin or Super Admin.
+                        // Admin and Super Admin endpoints.
                         .requestMatchers("/api/admin/**")
                         .hasAnyRole("ADMIN", "SUPER_ADMIN")
 
-                        // Authenticated account endpoints.
+                        // Guardian endpoints.
+                        .requestMatchers("/api/guardian/**")
+                        .authenticated()
+
+                        // Event image uploads.
                         .requestMatchers(
-                                "/api/auth/me",
-                                "/api/auth/password",
-                                "/api/auth/signout"
+                                HttpMethod.POST,
+                                "/api/events/*/image"
                         )
                         .authenticated()
 
-                        // Notification list and dismissal.
-                        .requestMatchers(
-                                "/api/notifications",
-                                "/api/notifications/**"
-                        )
-                        .authenticated()
-
-                        .requestMatchers(
-                                "/api/posts/**",
-                                "/api/feed/**"
-                        )
-                        .authenticated()
-
-                        // No anonymous bypass of pending/withdrawn guardian consent.
+                        // All remaining APIs, including event registration
+                        // and demo payments, require authentication.
                         .requestMatchers("/api/**")
                         .authenticated()
 

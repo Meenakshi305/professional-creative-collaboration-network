@@ -36,7 +36,9 @@ public record EventResponse(
 
         LocalDateTime createdAt,
 
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+
+        String imageUrl
 
 ) {
 }

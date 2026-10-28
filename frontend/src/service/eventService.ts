@@ -31,6 +31,7 @@ export type EventResponse = {
   createdBy: number
   createdAt: string
   updatedAt: string
+  imageUrl: string | null
 }
 
 // CreateEventRequest.java
@@ -164,6 +165,45 @@ export async function getEvent(eventId: number): Promise<EventResponse> {
 // POST /api/events  (new events are created as DRAFT)
 export async function createEvent(request: CreateEventRequest): Promise<EventResponse> {
   return eventRequest<EventResponse>('/events', { method: 'POST', body: request, withUserId: true })
+}
+// POST /api/events/{eventId}/image
+// Uploads an image for an event owned by the logged-in user.
+export async function uploadEventImage(
+  eventId: number,
+  file: File
+): Promise<EventResponse> {
+  const token = getToken()
+
+  if (!token) {
+    throw new Error('Please log in to upload an event image.')
+  }
+
+  const formData = new FormData()
+  formData.append('file', file)
+
+  let response: Response
+
+  try {
+    response = await fetch(`${API_BASE_URL}/events/${eventId}/image`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      body: formData
+    })
+  } catch {
+    throw new Error('Unable to connect to Spring Boot at localhost:8080.')
+  }
+
+  const data = await readResponse(response)
+
+  if (!response.ok) {
+    throw new Error(
+      getErrorMessage(data, `Image upload failed (${response.status}).`)
+    )
+  }
+
+  return data as EventResponse
 }
 
 // PATCH /api/events/{eventId}
