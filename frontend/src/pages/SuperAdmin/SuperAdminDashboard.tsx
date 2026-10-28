@@ -476,7 +476,7 @@ function SuperAdminDashboard() {
   const [moderationItems, setModerationItems] =
     useState<ModerationItem[]>(initialModerationItems)
 
-  const [modules, setModules] =
+  const [modules] =
     useState(initialModules)
 
   const [auditLogs, setAuditLogs] =
@@ -1562,46 +1562,6 @@ function SuperAdminDashboard() {
       addAudit(
         'UPDATE_ADMIN_ACCESS',
         `${admin?.name ?? 'Admin'} · ${field}`
-      )
-    }
-
-
-  const toggleModule =
-    (
-      moduleId: string
-    ) => {
-
-      const module =
-        modules.find(
-          item =>
-            item.id ===
-            moduleId
-        )
-
-      if (!module) {
-        return
-      }
-
-      setModules(
-        current =>
-          current.map(
-            item =>
-              item.id ===
-              moduleId
-                ? {
-                    ...item,
-                    enabled:
-                      !item.enabled,
-                  }
-                :
-                  item
-          )
-      )
-
-
-      addAudit(
-        'UPDATE_MODULE',
-        `${module.name} → ${module.enabled ? 'OFF' : 'ON'}`
       )
     }
 

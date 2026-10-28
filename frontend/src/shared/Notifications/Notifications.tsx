@@ -7,6 +7,7 @@ import {
 
 import {
   Bell,
+  ShieldCheck,
   UserRound,
   Heart,
   MessageCircle,
@@ -28,6 +29,7 @@ type NotificationsProps = {
 }
 
 const notificationIcons = {
+  guardian: ShieldCheck,
   follow: UserRound,
   like: Heart,
   comment: MessageCircle,

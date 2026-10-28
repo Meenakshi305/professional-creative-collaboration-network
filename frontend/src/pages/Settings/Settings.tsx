@@ -320,7 +320,7 @@ export default function Settings() {
     <main className="settings-page">
       <div className="settings-container">
         <header className="settings-header">
-          <h1>⚙️ Settings</h1>
+          <h1>Settings</h1>
           <p>
             Manage your account, report issues and access support.
           </p>
@@ -335,6 +335,7 @@ export default function Settings() {
                 className={`settings-tab ${
                   activeTab === tab.id ? 'active' : ''
                 }`}
+                aria-current={activeTab === tab.id ? 'page' : undefined}
                 onClick={() => changeTab(tab.id)}
               >
                 {tab.label}
@@ -345,6 +346,7 @@ export default function Settings() {
           <section className="settings-content">
 
             {loading && <p>Loading settings...</p>}
+
 
             {!loading && activeTab === 'account' && (
               <div>

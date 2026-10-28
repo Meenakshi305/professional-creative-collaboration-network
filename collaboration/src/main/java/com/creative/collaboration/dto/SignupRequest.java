@@ -34,7 +34,13 @@ public record SignupRequest(
 
         @NotNull(message = "Date of birth is required")
         @Past(message = "Date of birth must be in the past")
-        LocalDate dateOfBirth
+        LocalDate dateOfBirth,
+
+        @Email(message = "Invalid guardian email")
+        @Size(max = 150)
+        String guardianEmail,
+
+        boolean guardianAccount
 
 ) {
 }

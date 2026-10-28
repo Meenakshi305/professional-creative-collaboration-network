@@ -26,13 +26,15 @@ public class AuthService {
     private final UserProfileRepository userProfileRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final com.creative.collaboration.guardian.GuardianService guardianService;
 
 
     public AuthService(
             UserRepository userRepository,
             UserProfileRepository userProfileRepository,
             PasswordEncoder passwordEncoder,
-            JwtService jwtService
+            JwtService jwtService,
+            com.creative.collaboration.guardian.GuardianService guardianService
     ) {
 
         this.userRepository =
@@ -44,8 +46,8 @@ public class AuthService {
         this.passwordEncoder =
                 passwordEncoder;
 
-        this.jwtService =
-                jwtService;
+        this.jwtService = jwtService;
+        this.guardianService = guardianService;
     }
 
 
@@ -96,13 +98,18 @@ public class AuthService {
         }
 
 
+        if (request.dateOfBirth() == null || !request.dateOfBirth().isBefore(com.creative.collaboration.guardian.GuardianService.today()))
+            throw new IllegalArgumentException("Date of birth must be in the past");
+        boolean minor = request.dateOfBirth().isAfter(com.creative.collaboration.guardian.GuardianService.today().minusYears(18));
+        if (minor && request.guardianAccount()) throw new IllegalArgumentException("Guardian accounts must belong to adults");
+
         User user = User.builder()
                 .fullName(request.fullName())
                 .username(username)
                 .email(email)
                 .passwordHash(passwordEncoder.encode(request.password()))
                 .dateOfBirth(request.dateOfBirth())
-                .role("USER")
+                .role(request.guardianAccount() ? "GUARDIAN" : "USER")
                 .active(true)
                 .build();
 
@@ -129,6 +136,8 @@ public class AuthService {
         );
 
 
+        if (minor) guardianService.requestConsent(savedUser, request.guardianEmail());
+
         /*
          * Signup creates the account,
          * but the frontend will still
@@ -149,7 +158,8 @@ public class AuthService {
         return createAuthResponse(
                 savedUser,
                 token,
-                "Signup successful"
+                minor ? "Account created. Your parent must sign in or create an account using the guardian email and approve consent. You can sign in to check the status."
+                    : request.guardianAccount() ? "Parent account created. Sign in and open Settings > Parental Controls to review consent requests." : "Signup successful"
         );
     }
 
@@ -258,7 +268,9 @@ public class AuthService {
 
                 user.getRole(),
 
-                user.isActive()
+                user.isActive(),
+                guardianService.status(email).required(),
+                guardianService.status(email).status()
         );
     }
 

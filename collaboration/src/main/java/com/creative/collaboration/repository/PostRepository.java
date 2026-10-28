@@ -9,6 +9,9 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface PostRepository extends JpaRepository<Post, Long> {
+    long countByUser_Id(Long userId);
+    List<Post> findByUser_IdOrderByCreatedAtDesc(Long userId, org.springframework.data.domain.Pageable page);
+
 
     // My posts / another user's profile posts
     List<Post> findByUser_IdOrderByCreatedAtDesc(Long userId);

@@ -16,7 +16,9 @@ public record CurrentUserResponse(
 
         String role,
 
-        boolean active
+        boolean active,
+        boolean guardianConsentRequired,
+        String guardianConsentStatus
 
 ) {
 }

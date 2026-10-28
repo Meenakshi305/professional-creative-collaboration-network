@@ -29,13 +29,19 @@ public class JwtAuthenticationFilter
 
     private final JwtService jwtService;
     private final CustomUserDetailsService userDetailsService;
+    private final com.creative.collaboration.guardian.GuardianService guardianService;
+    private final com.creative.collaboration.repository.UserRepository users;
 
     public JwtAuthenticationFilter(
             JwtService jwtService,
-            CustomUserDetailsService userDetailsService
+            CustomUserDetailsService userDetailsService,
+            com.creative.collaboration.guardian.GuardianService guardianService,
+            com.creative.collaboration.repository.UserRepository users
     ) {
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
+        this.guardianService = guardianService;
+        this.users = users;
     }
 
     @Override
@@ -69,6 +75,30 @@ public class JwtAuthenticationFilter
 
                     UserDetails userDetails =
                             userDetailsService.loadUserByUsername(email);
+
+                    String path = request.getServletPath();
+                    boolean limitedAccountEndpoint =
+                        (request.getMethod().equals("GET") && (path.equals("/api/auth/me") || path.equals("/api/guardian/status")))
+                        || (request.getMethod().equals("POST") && path.equals("/api/auth/signout"));
+                    if (path.startsWith("/api/") && !limitedAccountEndpoint && !guardianService.canUsePlatform(email)) {
+                        response.setStatus(403);
+                        response.setContentType("application/json");
+                        response.getWriter().write("{\"message\":\"Guardian consent is required before you can use the platform.\",\"code\":\"GUARDIAN_CONSENT_REQUIRED\"}");
+                        return;
+                    }
+                    if (path.startsWith("/api/") && !limitedAccountEndpoint && !guardianService.actionAllowed(email, request.getMethod(), path)) {
+                        response.setStatus(403);
+                        response.setContentType("application/json");
+                        response.getWriter().write("{\"message\":\"This action is disabled by your parent in Parental Controls.\",\"code\":\"PARENT_CONTROL_RESTRICTED\"}");
+                        return;
+                    }
+                    String claimedId = request.getHeader("X-User-Id");
+                    if (claimedId != null && !claimedId.equals(users.findByEmail(email).orElseThrow().getId().toString())) {
+                        response.setStatus(403);
+                        response.setContentType("application/json");
+                        response.getWriter().write("{\"message\":\"User identity does not match your login.\"}");
+                        return;
+                    }
 
                     UsernamePasswordAuthenticationToken authentication =
                             new UsernamePasswordAuthenticationToken(

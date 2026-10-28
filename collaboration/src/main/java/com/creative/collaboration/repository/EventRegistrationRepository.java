@@ -8,6 +8,9 @@ import java.util.Optional;
 
 public interface EventRegistrationRepository
         extends JpaRepository<EventRegistration, Long> {
+    long countByUser_Id(Long userId);
+    List<EventRegistration> findByUser_IdOrderByRegisteredAtDesc(Long userId, org.springframework.data.domain.Pageable page);
+
 
     boolean existsByEventIdAndUserId(
             Long eventId,

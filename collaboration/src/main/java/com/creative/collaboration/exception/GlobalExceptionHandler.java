@@ -9,6 +9,17 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
+    public ResponseEntity<Map<String, String>> handleStatus(org.springframework.web.server.ResponseStatusException ex) {
+        return ResponseEntity.status(ex.getStatusCode()).body(Map.of("message", ex.getReason() == null ? "Request failed" : ex.getReason()));
+    }
+    @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, String>> handleValidation(org.springframework.web.bind.MethodArgumentNotValidException ex) {
+        String message = ex.getBindingResult().getFieldErrors().stream()
+            .map(e -> e.getDefaultMessage()).findFirst().orElse("Invalid request");
+        return ResponseEntity.badRequest().body(Map.of("message", message));
+    }
+
 
     @ExceptionHandler(
             ResourceNotFoundException.class
@@ -22,8 +33,8 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.NOT_FOUND)
                 .body(
                         Map.of(
-                                "error",
-                                exception.getMessage()
+                                "message", exception.getMessage(),
+                                "error", exception.getMessage()
                         )
                 );
     }
@@ -40,8 +51,8 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.BAD_REQUEST)
                 .body(
                         Map.of(
-                                "error",
-                                exception.getMessage()
+                                "message", exception.getMessage(),
+                                "error", exception.getMessage()
                         )
                 );
     }
@@ -58,8 +69,8 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.CONFLICT)
                 .body(
                         Map.of(
-                                "error",
-                                exception.getMessage()
+                                "message", exception.getMessage(),
+                                "error", exception.getMessage()
                         )
                 );
     }

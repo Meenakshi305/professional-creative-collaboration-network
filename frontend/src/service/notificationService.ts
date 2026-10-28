@@ -3,6 +3,7 @@ export type NotificationType =
   | 'like'
   | 'comment'
   | 'collaboration'
+  | 'guardian'
 
 export type NotificationItem = {
   id: number

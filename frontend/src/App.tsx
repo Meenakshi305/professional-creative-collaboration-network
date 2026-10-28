@@ -7,6 +7,8 @@ import {
 
 import CreativeAppShell from './shared/Sidebar/CreativeAppShell'
 import Settings from './pages/Settings/Settings'
+import GuardianDashboard from './pages/Guardian/GuardianDashboard'
+import PendingConsent from './pages/Guardian/PendingConsent'
 import type { MainPage } from './shared/Sidebar/Sidebar'
 
 
@@ -56,9 +58,11 @@ type Page =
   | 'admin'
   | 'notifications'
   | 'settings'
+  | 'guardian'
 
 
 function CreativeCollabNetwork() {
+  const [guardianAccount, setGuardianAccount] = useState(() => new URLSearchParams(window.location.search).has('guardian'))
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null)
   const [selectedOpportunityId, setSelectedOpportunityId] = useState<number | null>(null)
 
@@ -88,7 +92,7 @@ function CreativeCollabNetwork() {
     currentPage,
     setCurrentPage
   ] = useState<Page>(
-    'dashboard'
+    new URLSearchParams(window.location.search).has('guardian') ? 'guardian' : 'dashboard'
   )
 
 
@@ -296,6 +300,17 @@ function CreativeCollabNetwork() {
   // ============================================
   // LOAD CURRENT USER
   // ============================================
+
+  useEffect(() => {
+    if (!isLogIn) return
+    let live = true
+    const timer = window.setInterval(() => {
+      getCurrentUser().then(user => { if (live) setCurrentUser(user) }).catch(() => {
+        if (live) { clearLoginSession(); setCurrentUser(null); setIsLogIn(false) }
+      })
+    }, 15000)
+    return () => { live = false; window.clearInterval(timer) }
+  }, [isLogIn])
 
   const loadCurrentUser =
     async () => {
@@ -560,8 +575,9 @@ function CreativeCollabNetwork() {
 
             password,
 
-            dateOfBirth:
-              dofBirth
+            dateOfBirth: dofBirth,
+            guardianEmail: isUnder18 ? emailOfGuardian.trim() : undefined,
+            guardianAccount: !isUnder18 && guardianAccount
 
           })
 
@@ -702,7 +718,7 @@ function CreativeCollabNetwork() {
 
 
         setCurrentPage(
-          'dashboard'
+          user.role === 'GUARDIAN' || new URLSearchParams(window.location.search).has('guardian') ? 'guardian' : 'dashboard'
         )
 
 
@@ -931,7 +947,8 @@ function CreativeCollabNetwork() {
       events: 'events',
       notifications: 'notifications',
       settings: 'settings',
-      admin: 'admin'
+      admin: 'admin',
+      guardian: 'guardian'
     }
     if (page === 'admin' && !['ADMIN', 'SUPER_ADMIN'].includes(currentUser?.role?.replace(/^ROLE_/i, '').toUpperCase() ?? '')) {
       setUiMessages('You do not have permission to access the admin page.')
@@ -942,6 +959,11 @@ function CreativeCollabNetwork() {
     setCurrentPage(destination[page])
     setSelectedUserId(null)
     setUiMessages('')
+  }
+
+  if (isLogIn && currentUser && currentUser.guardianConsentRequired && currentUser.guardianConsentStatus !== 'APPROVED') {
+    return <PendingConsent status={currentUser.guardianConsentStatus} onRefresh={loadCurrentUser}
+      onLogout={() => { void handleLogout() }} />
   }
 
   if (isLogIn && currentUser) {
@@ -1015,6 +1037,9 @@ function CreativeCollabNetwork() {
         break
       case 'notifications':
         pageContent = <main className="cp-pending-page"><h1>Notifications</h1><p>Notification page integration pending.</p></main>
+        break
+      case 'guardian':
+        pageContent = <GuardianDashboard />
         break
       case 'settings':
         pageContent = <Settings />
@@ -1361,6 +1386,10 @@ function CreativeCollabNetwork() {
               </label>
 
 
+                  {!isUnder18 && dofBirth && <label className="guardian-signup-option">
+                    <input type="checkbox" checked={guardianAccount} onChange={e => setGuardianAccount(e.target.checked)} />
+                    I am creating a parent / guardian account.
+                  </label>}
               {
                 isUnder18
                 &&
@@ -1371,7 +1400,7 @@ function CreativeCollabNetwork() {
 
                     <p>
 
-                      Users under 18 require guardian consent.
+                      Users under 18 require guardian consent. Your guardian grants permission in Settings → Parental Controls.
 
                     </p>
 

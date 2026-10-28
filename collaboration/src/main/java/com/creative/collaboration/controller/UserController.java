@@ -50,6 +50,7 @@ public class UserController {
     // ==========================================
 
     @PutMapping("/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("@guardianOwnership.owns(#id, authentication)")
     public ResponseEntity<UserResponse> updateUser(
             @PathVariable Long id,
             @RequestBody UpdateUserRequest request
@@ -69,6 +70,7 @@ public class UserController {
     // ==========================================
 
     @DeleteMapping("/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("@guardianOwnership.owns(#id, authentication)")
     public ResponseEntity<Void> deleteUser(
             @PathVariable Long id
     ) {
@@ -101,6 +103,7 @@ public class UserController {
     // ==========================================
 
     @PutMapping("/{id}/profile")
+    @org.springframework.security.access.prepost.PreAuthorize("@guardianOwnership.owns(#id, authentication)")
     public ResponseEntity<ProfileResponse> updateProfile(
             @PathVariable Long id,
             @RequestBody UpdateProfileRequest request
@@ -125,6 +128,7 @@ public class UserController {
     // -> MEGA
     // ==========================================
 
+    @org.springframework.security.access.prepost.PreAuthorize("@guardianOwnership.owns(#id, authentication)")
     @PostMapping(
             value = "/{id}/profile/image",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE

@@ -23,6 +23,8 @@ export default function CreativeAppShell({
 }: CreativeAppShellProps) {
   const [user, setUser] = useState<{
     role?: string | null
+    dateOfBirth?: string | null
+    guardianConsentRequired?: boolean
     fullName?: string | null
   } | null>(null)
 
@@ -86,6 +88,7 @@ export default function CreativeAppShell({
       <Sidebar
         activePage={activePage}
         isAdmin={canAccessAdmin}
+        canUseGuardian={!!user.dateOfBirth && !user.guardianConsentRequired}
         onNavigate={onNavigate}
         onLogout={onLogout}
         displayName={user.fullName ?? undefined}

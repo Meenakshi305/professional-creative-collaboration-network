@@ -20,10 +20,12 @@ export type MainPage =
   | 'notifications'
   | 'settings'
   | 'admin'
+  | 'guardian'
 
 type Props = {
   activePage: MainPage
   isAdmin: boolean
+  canUseGuardian?: boolean
   onNavigate: (page: MainPage) => void
   onLogout: () => void
   displayName?: string
@@ -72,13 +74,15 @@ const adminItem: SidebarItem = {
 export default function Sidebar({
   activePage,
   isAdmin,
+  canUseGuardian = false,
   onNavigate,
   onLogout,
   displayName
 }: Props) {
-  const visibleItems = isAdmin
-    ? [...items, adminItem]
+  const guardianItems: SidebarItem[] = canUseGuardian
+    ? [...items, { page: 'guardian', label: 'Parental Controls', icon: ShieldCheck }]
     : items
+  const visibleItems = isAdmin ? [...guardianItems, adminItem] : guardianItems
 
   return (
     <aside

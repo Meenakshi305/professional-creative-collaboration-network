@@ -8,6 +8,9 @@ import java.util.List;
 
 public interface OpportunityApplicationRepository
         extends JpaRepository<OpportunityApplication, Long> {
+    long countByApplicant_Id(Long userId);
+    List<OpportunityApplication> findByApplicant_IdOrderByAppliedAtDesc(Long userId, org.springframework.data.domain.Pageable page);
+
 
     boolean existsByOpportunity_IdAndApplicant_Id(
             Long opportunityId,

@@ -12,6 +12,8 @@ export type SignupRequest = {
   email: string
   password: string
   dateOfBirth: string
+  guardianEmail?: string
+  guardianAccount?: boolean
 }
 
 
@@ -40,6 +42,8 @@ export type CurrentUserResponse = {
   dateOfBirth: string | null
   role: string
   active: boolean
+  guardianConsentRequired: boolean
+  guardianConsentStatus: string
 }
 
 

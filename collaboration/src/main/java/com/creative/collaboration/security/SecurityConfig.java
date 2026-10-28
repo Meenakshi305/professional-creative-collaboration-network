@@ -108,6 +108,13 @@ public class SecurityConfig {
                         )
                         .permitAll()
 
+                        // Browser image elements cannot attach JWT headers. Keep existing public media reads.
+                        .requestMatchers(HttpMethod.GET, "/api/media/*/view", "/api/media/*/download", "/api/users/*/profile/image")
+                        .permitAll()
+
+                        .requestMatchers("/api/guardian/**")
+                        .authenticated()
+
                         // Super Admin only.
                         .requestMatchers(
                                 "/api/super-admin/**",
@@ -140,9 +147,9 @@ public class SecurityConfig {
                         )
                         .authenticated()
 
-                        // Existing temporary rule for other APIs.
+                        // No anonymous bypass of pending/withdrawn guardian consent.
                         .requestMatchers("/api/**")
-                        .permitAll()
+                        .authenticated()
 
                         .anyRequest()
                         .authenticated()

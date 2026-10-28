@@ -16,6 +16,7 @@ import java.util.Set;
 public class NotificationService {
 
     private static final Set<String> ALLOWED_TYPES = Set.of(
+            "guardian",
             "follow",
             "like",
             "comment",

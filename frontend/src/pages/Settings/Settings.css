@@ -365,3 +365,25 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* Parent Settings follows the approved compact preview. */
+.cp-app-shell .settings-parental-preview,
+.settings-parental-preview { background:#f6f7fb; color:#242535; padding:32px 26px; }
+.settings-parental-preview .settings-container { max-width:1000px; }
+.settings-parental-preview .settings-header { margin-bottom:24px; padding-right:60px; }
+.settings-parental-preview .settings-header h1 { font-size:26px; letter-spacing:-.4px; margin:0 0 6px; }
+.settings-parental-preview .settings-header p { color:#687080; margin:0; }
+.settings-parental-preview .settings-layout { grid-template-columns:180px minmax(0,1fr); gap:24px; }
+.settings-parental-preview .settings-sidebar,
+.settings-parental-preview .settings-content { border:0; border-radius:0; padding:0; background:transparent; box-shadow:none; }
+.settings-parental-preview .settings-sidebar { gap:5px; }
+.settings-parental-preview .settings-tab { padding:10px 12px; border-radius:8px; font-size:14px; color:#687080; }
+.settings-parental-preview .settings-tab.active { background:#eee8ff; color:#6c46d9; font-weight:600; }
+.settings-parental-preview .settings-tab:hover { background:#eee8ff; }
+.settings-parental-preview .settings-content h2 { font-size:24px; }
+@media(max-width:700px) {
+  .cp-app-shell .settings-parental-preview,.settings-parental-preview { padding:24px 16px; }
+  .settings-parental-preview .settings-layout { grid-template-columns:1fr; gap:20px; }
+  .settings-parental-preview .settings-sidebar { flex-direction:row; flex-wrap:wrap; }
+  .settings-parental-preview .settings-tab { font-size:12px; padding:8px 10px; }
+}
