@@ -1,0 +1,165 @@
+{
+    "metrics": {
+        "http_req_duration": {
+            "min": 0.731,
+            "med": 3.019,
+            "max": 318.554,
+            "p(90)": 93.55650000000001,
+            "p(95)": 100.31679999999999,
+            "avg": 27.02384917209162,
+            "thresholds": {
+                "p(95)<2000": false
+            }
+        },
+        "http_req_tls_handshaking": {
+            "avg": 0,
+            "min": 0,
+            "med": 0,
+            "max": 0,
+            "p(90)": 0,
+            "p(95)": 0
+        },
+        "http_req_connecting": {
+            "min": 0,
+            "med": 0,
+            "max": 7.352,
+            "p(90)": 0,
+            "p(95)": 0,
+            "avg": 0.002712850268893295
+        },
+        "http_req_waiting": {
+            "med": 2.9604999999999997,
+            "max": 318.499,
+            "p(90)": 93.50070000000001,
+            "p(95)": 100.25524999999999,
+            "avg": 26.971710904330507,
+            "min": 0.72
+        },
+        "http_reqs": {
+            "count": 28264,
+            "rate": 66.86175993323893
+        },
+        "http_req_duration{expected_response:true}": {
+            "avg": 27.02384917209162,
+            "min": 0.731,
+            "med": 3.019,
+            "max": 318.554,
+            "p(90)": 93.55650000000001,
+            "p(95)": 100.31679999999999
+        },
+        "vus": {
+            "value": 1,
+            "min": 1,
+            "max": 100
+        },
+        "data_sent": {
+            "count": 9984209,
+            "rate": 23618.800781251182
+        },
+        "iteration_duration": {
+            "avg": 3110.2155338450425,
+            "min": 3069.61575,
+            "med": 3105.9421875,
+            "max": 3403.031959,
+            "p(90)": 3136.6102085,
+            "p(95)": 3157.2097289999997
+        },
+        "http_req_blocked": {
+            "min": 0,
+            "med": 0.002,
+            "max": 7.424,
+            "p(90)": 0.006,
+            "p(95)": 0.01,
+            "avg": 0.006473959807529148
+        },
+        "iterations": {
+            "count": 7066,
+            "rate": 16.715439983309732
+        },
+        "http_req_failed": {
+            "passes": 0,
+            "fails": 28264,
+            "thresholds": {
+                "rate<0.01": false
+            },
+            "value": 0
+        },
+        "checks": {
+            "passes": 28264,
+            "fails": 0,
+            "thresholds": {
+                "rate>0.99": false
+            },
+            "value": 1
+        },
+        "http_req_receiving": {
+            "max": 6.96,
+            "p(90)": 0.075,
+            "p(95)": 0.10484999999999874,
+            "avg": 0.042096200113216936,
+            "min": 0.004,
+            "med": 0.03
+        },
+        "http_req_sending": {
+            "min": 0.001,
+            "med": 0.008,
+            "max": 1.646,
+            "p(90)": 0.019,
+            "p(95)": 0.028,
+            "avg": 0.010042067647889844
+        },
+        "vus_max": {
+            "value": 100,
+            "min": 100,
+            "max": 100
+        },
+        "data_received": {
+            "count": 16009187,
+            "rate": 37871.582858771915
+        },
+        "workflow_failures": {
+            "passes": 0,
+            "fails": 7066,
+            "thresholds": {
+                "rate<0.01": false
+            },
+            "value": 0
+        }
+    },
+    "root_group": {
+        "name": "",
+        "path": "",
+        "id": "d41d8cd98f00b204e9800998ecf8427e",
+        "groups": {},
+        "checks": {
+                "Login successful with JWT": {
+                    "passes": 7066,
+                    "fails": 0,
+                    "name": "Login successful with JWT",
+                    "path": "::Login successful with JWT",
+                    "id": "33910c7d1457cce241f1b1d732a121db"
+                },
+                "Current user matches login": {
+                    "name": "Current user matches login",
+                    "path": "::Current user matches login",
+                    "id": "1e376bcb8dec2c565ef0879daac3caf4",
+                    "passes": 7066,
+                    "fails": 0
+                },
+                "Authenticated feed returns 200": {
+                    "passes": 7066,
+                    "fails": 0,
+                    "name": "Authenticated feed returns 200",
+                    "path": "::Authenticated feed returns 200",
+                    "id": "fc3ec7a4bda2052fe6ba7066b23b0905"
+                },
+                "User profile returns 200": {
+                    "id": "1d2e2050eb15c87948ca2e19a4084f6e",
+                    "passes": 7066,
+                    "fails": 0,
+                    "name": "User profile returns 200",
+                    "path": "::User profile returns 200"
+                }
+            }
+    }
+}
