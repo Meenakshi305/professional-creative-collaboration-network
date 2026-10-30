@@ -8,8 +8,12 @@ import com.creative.collaboration.repository.EventRepository;
 import com.creative.collaboration.repository.UserRepository;
 
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -25,14 +29,14 @@ public class EventService {
             registrationRepository;
 
     private final UserRepository userRepository;
-    private final EventImageStorageService eventImageStorageService;
+    private final MegaStorageService megaStorageService;
 
 
     public EventService(
             EventRepository eventRepository,
             EventRegistrationRepository registrationRepository,
             UserRepository userRepository,
-            EventImageStorageService eventImageStorageService
+            MegaStorageService megaStorageService
     ) {
 
         this.eventRepository =
@@ -43,8 +47,7 @@ public class EventService {
 
         this.userRepository =
                 userRepository;
-        this.eventImageStorageService =
-        eventImageStorageService;
+        this.megaStorageService = megaStorageService;
     }
 
 
@@ -470,7 +473,8 @@ public class EventService {
     ) {
 
         Event event =
-                findEvent(eventId);
+                eventRepository.lockById(eventId).orElseThrow(() ->
+                    new ResourceNotFoundException("Event not found"));
 
 
         User user =
@@ -693,70 +697,81 @@ public class EventService {
         );
     }
 
-    // =========================================================
-// UPLOAD EVENT IMAGE
-// =========================================================
-
-public EventResponse uploadEventImage(
-        Long eventId,
-        String authenticatedEmail,
-        MultipartFile file
-) {
-    Event event = findEvent(eventId);
-
-    if (authenticatedEmail == null
-            || !event.getCreatedBy().getEmail()
-                    .equalsIgnoreCase(authenticatedEmail)) {
-        throw new org.springframework.security.access.AccessDeniedException(
-                "Only the event organiser can upload an image.");
-    }
-
-    // Save the uploaded image
-    String filename = eventImageStorageService.saveImage(file);
-
-    // Associate the image with the event
-    event.setImageStorageKey(filename);
-
-    Event savedEvent = eventRepository.save(event);
-
-    return convertToEventResponse(savedEvent);
-}
-
-// =========================================================
-// GET EVENT IMAGE
-// =========================================================
-
-@Transactional(readOnly = true)
-public EventImageContent getEventImage(Long eventId) {
-
-    Event event = findEvent(eventId);
-
-    String filename = event.getImageStorageKey();
-
-    if (filename == null || filename.isBlank()) {
-        throw new ResourceNotFoundException(
-                "This event does not have an image."
-        );
-    }
-
-    byte[] imageBytes =
-            eventImageStorageService.loadImage(filename);
-
-    String contentType =
-            eventImageStorageService.getContentType(filename);
-
-    return new EventImageContent(imageBytes, contentType);
-}
-
-// Holds the image data and its content type
-public record EventImageContent(
-        byte[] bytes,
-        String contentType
-) {}
 
     // =========================================================
     // FIND EVENT
     // =========================================================
+
+
+    // Event images use the same configured MEGA root as existing post media.
+    public EventResponse uploadEventImage(
+            Long eventId, String authenticatedEmail, MultipartFile file
+    ) {
+        Event event = findEvent(eventId);
+        if (authenticatedEmail == null || authenticatedEmail.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Please sign in again.");
+        }
+        if (!event.getCreatedBy().getEmail().equalsIgnoreCase(authenticatedEmail)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Only the event organiser can upload an image.");
+        }
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("Please select an event image.");
+        }
+        if (file.getSize() > 5L * 1024 * 1024) {
+            throw new IllegalArgumentException("Event image must be 5 MB or smaller.");
+        }
+        try {
+            EventImageFormat.detect(file.getBytes());
+        } catch (java.io.IOException exception) {
+            throw new IllegalStateException("Unable to read the uploaded image.", exception);
+        }
+        MegaStorageService.StoredFile stored = megaStorageService.upload(file);
+
+        // If the database transaction rolls back, remove the new upload.
+        // Previous images are retained; this avoids deleting a working image
+        // when replacing it fails and avoids touching legacy local filenames.
+        boolean cleanupRegistered = TransactionSynchronizationManager.isSynchronizationActive();
+        if (cleanupRegistered) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCompletion(int status) {
+                    if (status == STATUS_ROLLED_BACK) {
+                        removeFailedUpload(stored.storageKey());
+                    }
+                }
+            });
+        }
+        try {
+            event.setImageStorageKey(stored.storageKey());
+            return convertToEventResponse(eventRepository.saveAndFlush(event));
+        } catch (RuntimeException exception) {
+            if (!cleanupRegistered) removeFailedUpload(stored.storageKey());
+            throw exception;
+        }
+    }
+
+    private void removeFailedUpload(String storageKey) {
+        try {
+            megaStorageService.delete(storageKey);
+        } catch (RuntimeException exception) {
+            org.slf4j.LoggerFactory.getLogger(EventService.class)
+                    .warn("Could not clean up a failed event image upload", exception);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public EventImageContent getEventImage(Long eventId) {
+        Event event = findEvent(eventId);
+        String storageKey = event.getImageStorageKey();
+        if (storageKey == null || storageKey.isBlank()) {
+            throw new ResourceNotFoundException("This event does not have an image.");
+        }
+        byte[] bytes = megaStorageService.retrieve(storageKey);
+        return new EventImageContent(bytes, EventImageFormat.detect(bytes));
+    }
+
+    public record EventImageContent(byte[] bytes, String contentType) {}
 
     private Event findEvent(
             Long eventId
@@ -885,10 +900,8 @@ public record EventImageContent(
                 event.getCreatedAt(),
 
                 event.getUpdatedAt(),
-                event.getImageStorageKey() != null
-        && !event.getImageStorageKey().isBlank()
-        ? "/api/events/" + event.getId() + "/image"
-        : null
+                event.getImageStorageKey() == null || event.getImageStorageKey().isBlank()
+                        ? null : "/api/events/" + event.getId() + "/image"
         );
     }
 
@@ -897,27 +910,17 @@ public record EventImageContent(
     // REGISTRATION -> RESPONSE
     // =========================================================
 
-    private EventRegistrationResponse
-    convertToRegistrationResponse(
+    private EventRegistrationResponse convertToRegistrationResponse(
             EventRegistration registration
     ) {
-
         return new EventRegistrationResponse(
-
                 registration.getId(),
-
                 registration.getEvent().getId(),
-
                 registration.getEvent().getTitle(),
-
                 registration.getUser().getId(),
-
                 registration.getUser().getUsername(),
-
                 registration.getStatus(),
-
                 registration.getRegisteredAt(),
-
                 registration.getCancelledAt()
         );
     }

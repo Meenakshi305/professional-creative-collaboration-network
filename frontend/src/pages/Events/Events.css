@@ -1113,3 +1113,211 @@
   max-width: 100%;
   object-fit: cover;
 }
+/* ============================================
+   EVENT IMAGES
+   ============================================ */
+
+.events-screen .event-card {
+  min-width: 0;
+}
+
+.events-screen .event-card-visual {
+  position: relative;
+  height: 145px;
+  min-height: 145px;
+  max-height: 145px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.events-screen .event-card-visual > .event-card-image {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  object-fit: cover;
+}
+
+.events-screen .event-modal-visual {
+  position: relative;
+  overflow: hidden;
+}
+
+.events-screen .event-modal-image {
+  display: block;
+  flex: 0 0 110px;
+  width: 110px;
+  height: 110px;
+  min-width: 0;
+  border-radius: 14px;
+  object-fit: cover;
+}
+
+.events-screen .event-modal-visual > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.events-screen .event-detail-grid strong {
+  overflow-wrap: anywhere;
+}
+
+/* ============================================
+   DEMO PAYMENT
+   ============================================ */
+
+.events-screen .event-demo-card {
+  margin: 16px 0;
+  padding: 18px;
+  border-radius: 14px;
+  background: #eeebf8;
+  color: #282447;
+}
+
+.events-screen .event-demo-card-number {
+  margin: 12px 0;
+  font-size: 20px;
+  letter-spacing: 2px;
+}
+
+.events-screen .event-demo-card-details {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.events-screen .event-payment-success {
+  padding: 20px 0;
+  text-align: center;
+}
+
+.events-screen .event-payment-success-icon {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 18px;
+  border-radius: 50%;
+  background: #eeebf8;
+  color: #7567df;
+  font-size: 36px;
+}
+
+.events-screen .event-payment-success-amount {
+  color: #7567df;
+  font-size: 26px;
+}
+
+.events-screen .event-payment-success small {
+  display: block;
+  margin-bottom: 18px;
+  color: #77718a;
+  line-height: 1.5;
+}
+
+.events-screen
+  .event-register-button.registered
+  + .checkout-pay-button {
+  margin-top: 10px;
+}
+
+/* ============================================
+   FORM AND MODAL SIZING
+   ============================================ */
+
+.events-screen .event-modal-overlay,
+.events-screen .checkout-overlay,
+.events-screen .event-modal,
+.events-screen .checkout-modal {
+  box-sizing: border-box;
+}
+
+.events-screen .event-form label {
+  min-width: 0;
+}
+
+.events-screen .event-form input,
+.events-screen .event-form select,
+.events-screen .event-form textarea {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.events-screen .event-form small {
+  color: #77718a;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.events-screen .event-modal-close:disabled,
+.events-screen .checkout-close:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* These rules come last to fix the original breakpoint order. */
+
+@media (max-width: 1180px) {
+  .events-screen .events-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .events-screen .events-controls {
+    flex-wrap: wrap;
+  }
+
+  .events-screen .event-filters {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 850px) {
+  .events-screen .events-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .events-screen .events-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .events-screen .events-search {
+    max-width: none;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .events-screen .event-modal-visual {
+    gap: 12px;
+    padding: 24px 18px;
+  }
+
+  .events-screen .event-modal-image {
+    flex-basis: 72px;
+    width: 72px;
+    height: 72px;
+  }
+
+  .events-screen .event-modal-visual h2 {
+    font-size: 20px;
+  }
+
+  .events-screen .checkout-modal {
+    padding: 22px 18px;
+  }
+
+  .events-screen .event-form {
+    grid-template-columns: 1fr;
+  }
+
+  .events-screen .event-demo-card-number {
+    font-size: 16px;
+    letter-spacing: 1px;
+  }
+}

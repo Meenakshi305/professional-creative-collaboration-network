@@ -259,8 +259,66 @@ export async function getRegistration(registrationId: number): Promise<EventRegi
 }
 
 // PATCH /api/event-registrations/{registrationId}/cancel
-export async function cancelRegistration(registrationId: number): Promise<EventRegistrationResponse> {
-  return eventRequest<EventRegistrationResponse>(`/event-registrations/${registrationId}/cancel`, {
-    method: 'PATCH'
-  })
+export async function cancelRegistration(
+  registrationId: number
+): Promise<EventRegistrationResponse> {
+  return eventRequest<EventRegistrationResponse>(
+    `/event-registrations/${registrationId}/cancel`,
+    {
+      method: 'PATCH'
+    }
+  )
 }
+
+// ============================================
+// GET EVENT IMAGE WITH JWT AUTHENTICATION
+// ============================================
+
+export async function getEventImageBlob(
+  eventId: number,
+  signal?: AbortSignal
+): Promise<Blob> {
+  const token = getToken()
+
+  if (!token) {
+    throw new Error('Please log in to view event images.')
+  }
+
+  const response = await fetch(
+    `${API_BASE_URL}/events/${eventId}/image`,
+    {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'image/jpeg,image/png,image/webp'
+      },
+      cache: 'no-store',
+      signal
+    }
+  )
+
+  if (!response.ok) {
+    const data = await readResponse(response)
+
+    throw new Error(
+      getErrorMessage(
+        data,
+        `Unable to load event image (${response.status}).`
+      )
+    )
+  }
+
+  const blob = await response.blob()
+
+  if (
+    blob.size === 0 ||
+    !blob.type.toLowerCase().startsWith('image/')
+  ) {
+    throw new Error('The server did not return a valid image.')
+  }
+
+  return blob
+}
+
+  
+
