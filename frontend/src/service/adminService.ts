@@ -1,6 +1,6 @@
 import { getToken } from './authService'
 
-const BASE = 'http://localhost:8080/api'
+const BASE = '${API_ORIGIN}/api'
 
 export type AdminOverview = {
   totalUsers: number

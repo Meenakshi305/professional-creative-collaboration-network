@@ -183,7 +183,7 @@ function Collaboration({
         const userId = await getCurrentUserId()
         if (cancelled) return
         const response = await fetch(
-          'http://localhost:8080/api/opportunities/my-applications',
+          '${API_ORIGIN}/api/opportunities/my-applications',
           {
             headers: {
               Authorization: `Bearer ${token}`,

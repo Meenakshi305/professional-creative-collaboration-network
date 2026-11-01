@@ -1,5 +1,5 @@
 const API_BASE_URL =
-  'http://localhost:8080/api/auth'
+  '${API_ORIGIN}/api/auth'
 
 
 // ============================================

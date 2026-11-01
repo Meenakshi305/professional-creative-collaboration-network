@@ -4,7 +4,7 @@ import { getToken } from '../../service/authService'
 
 import './FlaggedCommentsPanel.css'
 
-const API = 'http://localhost:8080/api'
+const API = '${API_ORIGIN}/api'
 
 type Status = 'PENDING' | 'UPHELD' | 'DISMISSED'
 type Filter = 'ALL' | Status

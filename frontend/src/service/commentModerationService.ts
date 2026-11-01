@@ -1,6 +1,6 @@
 import { getToken } from './authService'
 
-const API = 'http://localhost:8080/api'
+const API = '${API_ORIGIN}/api'
 export type CommentReport = {
   id: number; postId: number; commentId: number; reporterId: number;
   reason: string; status: string; assignedAdminId: number | null;

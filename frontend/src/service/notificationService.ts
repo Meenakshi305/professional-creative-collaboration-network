@@ -12,7 +12,7 @@ export type NotificationItem = {
   createdAt: string
 }
 
-const API_URL = 'http://localhost:8080/api/notifications'
+const API_URL = '${API_ORIGIN}/api/notifications'
 
 async function checkResponse(response: Response): Promise<void> {
   if (response.ok) return

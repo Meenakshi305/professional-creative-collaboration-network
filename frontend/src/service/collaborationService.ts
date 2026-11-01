@@ -1,7 +1,7 @@
 
 import { getCurrentUser, getToken } from './authService'
 
-const API_URL = 'http://localhost:8080/api/opportunities'
+const API_URL = '${API_ORIGIN}/api/opportunities'
 
 export type Opportunity = {
   id: number

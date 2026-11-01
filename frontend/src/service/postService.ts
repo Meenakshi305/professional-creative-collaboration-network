@@ -5,7 +5,7 @@ import { getToken } from './authService'
 // API CONFIGURATION
 // ============================================
 
-const API_BASE_URL = 'http://localhost:8080'
+const API_BASE_URL = '${API_ORIGIN}'
 const API = `${API_BASE_URL}/api`
 
 // ============================================

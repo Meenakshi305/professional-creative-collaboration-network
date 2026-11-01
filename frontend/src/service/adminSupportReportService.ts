@@ -1,7 +1,7 @@
 
 import { getToken } from './authService'
 
-const BASE = 'http://localhost:8080/api/admin/support-reports'
+const BASE = '${API_ORIGIN}/api/admin/support-reports'
 
 export type ReportStatus = 'PENDING' | 'UPHELD' | 'DISMISSED'
 

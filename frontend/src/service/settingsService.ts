@@ -1,7 +1,7 @@
 
 import { getToken } from './authService'
 
-const API_BASE = 'http://localhost:8080/api/settings'
+const API_BASE = '${API_ORIGIN}/api/settings'
 
 export type Profile = {
   displayName: string

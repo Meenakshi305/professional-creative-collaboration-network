@@ -1765,7 +1765,7 @@ public class UserService {
             Long userId
     ) {
 
-        return "http://localhost:8080/api/users/"
+        return "${API_ORIGIN}/api/users/"
                 +
                 userId
                 +

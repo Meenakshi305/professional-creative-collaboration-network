@@ -11,7 +11,7 @@ export type ChildActivity = { posts: Activity[]; events: Activity[]; application
 async function request<T>(path: string, body?: unknown): Promise<T> {
   const token = getToken()
   if (!token) throw new Error('Please sign in first.')
-  const response = await fetch(`http://localhost:8080/api/guardian${path}`, {
+  const response = await fetch(`${API_ORIGIN}/api/guardian${path}`, {
     method: body === undefined ? 'GET' : 'POST',
     headers: { Authorization: `Bearer ${token}`, ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) },
     ...(body === undefined ? {} : { body: JSON.stringify(body) })

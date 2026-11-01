@@ -3,7 +3,7 @@ import http from 'k6/http';
 import { check, sleep, fail } from 'k6';
 import { Rate } from 'k6/metrics';
 
-const BASE_URL = 'http://localhost:8080';
+const BASE_URL = '${API_ORIGIN}';
 
 // Load test credentials from a local file.
 // Do not commit this file to Git.
