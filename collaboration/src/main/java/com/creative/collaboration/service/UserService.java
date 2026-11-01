@@ -12,6 +12,7 @@ import com.creative.collaboration.repository.UserFollowRepository;
 import com.creative.collaboration.repository.UserProfileRepository;
 import com.creative.collaboration.repository.UserRepository;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +28,9 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 @Transactional
 public class UserService {
+
+    @Value("${APP_PUBLIC_BASE_URL}")
+    private String publicBaseUrl;
 
     private final UserRepository userRepository;
 
@@ -1761,14 +1765,10 @@ public class UserService {
     // BUILD PROFILE IMAGE URL
     // ==========================================
 
-    private String buildProfileImageUrl(
-            Long userId
-    ) {
-
-        return "${API_ORIGIN}/api/users/"
-                +
-                userId
-                +
-                "/profile/image";
+    private String buildProfileImageUrl(Long userId) {
+        return publicBaseUrl.replaceAll("/+$", "")
+                + "/api/users/"
+                + userId
+                + "/profile/image";
     }
 }
