@@ -35,62 +35,55 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOriginPatterns(
-        List.of(
+        configuration.setAllowedOriginPatterns(List.of(
                 "http://localhost:*",
                 "http://127.0.0.1:*",
+                "https://professional-creative-collaboration.onrender.com",
                 "https://professional-creative-collaboration-o9fl.onrender.com"
-        )
-        );
+        ));
 
-        configuration.setAllowedMethods(
-                List.of(
-                        "GET",
-                        "POST",
-                        "PUT",
-                        "PATCH",
-                        "DELETE",
-                        "OPTIONS"
-                )
-        );
+        configuration.setAllowedMethods(List.of(
+                "GET",
+                "POST",
+                "PUT",
+                "PATCH",
+                "DELETE",
+                "OPTIONS"
+        ));
 
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setExposedHeaders(List.of("Authorization"));
         configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source =
                 new UrlBasedCorsConfigurationSource();
 
         source.registerCorsConfiguration("/**", configuration);
-
         return source;
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(
-            HttpSecurity http
+            HttpSecurity http,
+            CorsConfigurationSource corsConfigurationSource
     ) throws Exception {
 
         http
-                .cors(cors -> cors.configurationSource(
-                        corsConfigurationSource()
-                ))
-
+                .cors(cors ->
+                        cors.configurationSource(corsConfigurationSource)
+                )
                 .csrf(csrf -> csrf.disable())
-
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(
                                 SessionCreationPolicy.STATELESS
                         )
                 )
-
                 .authorizeHttpRequests(auth -> auth
 
-                        // Allow CORS preflight requests.
                         .requestMatchers(HttpMethod.OPTIONS, "/**")
                         .permitAll()
 
-                        // Public authentication endpoints.
                         .requestMatchers(
                                 "/api/auth/signup",
                                 "/api/auth/login",
@@ -99,7 +92,7 @@ public class SecurityConfig {
                         )
                         .permitAll()
 
-                        // Public media reads for browser image elements.
+                        // Browser image and media reads.
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/media/*/view",
@@ -108,37 +101,23 @@ public class SecurityConfig {
                         )
                         .permitAll()
 
-                        // Super Admin endpoints.
                         .requestMatchers(
                                 "/api/super-admin/**",
                                 "/api/superadmin/**"
                         )
                         .hasRole("SUPER_ADMIN")
 
-                        // Admin and Super Admin endpoints.
                         .requestMatchers("/api/admin/**")
                         .hasAnyRole("ADMIN", "SUPER_ADMIN")
 
-                        // Guardian endpoints.
-                        .requestMatchers("/api/guardian/**")
-                        .authenticated()
-
-                        // Event image uploads.
-                        .requestMatchers(
-                                HttpMethod.POST,
-                                "/api/events/*/image"
-                        )
-                        .authenticated()
-
-                        // All remaining APIs, including event registration
-                        // and demo payments, require authentication.
+                        // Includes profile updates, follower counts,
+                        // guardian APIs, events and registrations.
                         .requestMatchers("/api/**")
                         .authenticated()
 
                         .anyRequest()
                         .authenticated()
                 )
-
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
