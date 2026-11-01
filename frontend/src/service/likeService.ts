@@ -5,7 +5,9 @@ import { getToken } from './authService'
 // API CONFIGURATION
 // ==========================================
 
-const API_BASE_URL = '${API_ORIGIN}/api'
+import { API_ORIGIN } from '../config/api'
+
+const API_BASE_URL = `${API_ORIGIN}/api`
 
 // ==========================================
 // TYPES

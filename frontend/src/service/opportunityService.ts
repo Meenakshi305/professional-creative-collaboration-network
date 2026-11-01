@@ -3,8 +3,9 @@ import { getCurrentUser, getToken } from './authService'
 // ============================================
 // API CONFIGURATION
 // ============================================
+import { API_ORIGIN } from '../config/api'
 
-const API_BASE_URL = '${API_ORIGIN}/api'
+const API_BASE_URL = `${API_ORIGIN}/api`
 
 // ============================================
 // TYPES (mirror the Spring Boot opportunity DTOs)

@@ -1,7 +1,8 @@
 
+import { API_ORIGIN } from '../config/api'
 import { getToken } from './authService'
 
-const BASE = '${API_ORIGIN}/api/admin/support-reports'
+const BASE = `${API_ORIGIN}/api/admin/support-reports`
 
 export type ReportStatus = 'PENDING' | 'UPHELD' | 'DISMISSED'
 

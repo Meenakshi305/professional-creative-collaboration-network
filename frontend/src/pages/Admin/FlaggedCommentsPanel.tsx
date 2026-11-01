@@ -1,10 +1,10 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { getToken } from '../../service/authService'
-
+import { API_ORIGIN } from '../../config/api'
 import './FlaggedCommentsPanel.css'
 
-const API = '${API_ORIGIN}/api'
+const API = `${API_ORIGIN}/api`
 
 type Status = 'PENDING' | 'UPHELD' | 'DISMISSED'
 type Filter = 'ALL' | Status

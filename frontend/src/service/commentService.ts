@@ -1,7 +1,8 @@
 
+import { API_ORIGIN } from '../config/api'
 import { getToken } from './authService'
 
-const API = '${API_ORIGIN}/api'
+const API = `${API_ORIGIN}/api`
 
 export type PostComment = {
   commentId: number

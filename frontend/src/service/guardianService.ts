@@ -1,6 +1,8 @@
 import { getToken } from './authService'
 import { API_ORIGIN } from '../config/api'
 
+
+const API_BASE_URL = `${API_ORIGIN}/api`
 export type ConsentStatus = {
   required: boolean
   status: string
@@ -53,8 +55,8 @@ async function request<T>(path: string, body?: unknown): Promise<T> {
     throw new Error('Please sign in first.')
   }
 
-  const response = await fetch(`${API_ORIGIN}/api/guardian${path}`, {
-    method: body === undefined ? 'GET' : 'POST',
+const response = await fetch(`${API_BASE_URL}${path}`, {
+      method: body === undefined ? 'GET' : 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
       ...(body === undefined

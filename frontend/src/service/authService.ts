@@ -1,6 +1,7 @@
-const API_BASE_URL =
-  '${API_ORIGIN}/api/auth'
+import { API_ORIGIN } from '../config/api'
 
+const API_BASE_URL = `${API_ORIGIN}/api/auth`
+const TOKEN_KEY = 'creativeCollabToken'
 
 // ============================================
 // TYPES
@@ -16,12 +17,10 @@ export type SignupRequest = {
   guardianAccount?: boolean
 }
 
-
 export type SigninRequest = {
   email: string
   password: string
 }
-
 
 export type AuthResponse = {
   userId: number
@@ -32,7 +31,6 @@ export type AuthResponse = {
   token: string | null
   message: string
 }
-
 
 export type CurrentUserResponse = {
   userId: number
@@ -46,95 +44,69 @@ export type CurrentUserResponse = {
   guardianConsentStatus: string
 }
 
-
-type ErrorResponse = {
-  message?: string
-}
-
-
 // ============================================
-// TOKEN
+// RESPONSE HELPERS
 // ============================================
 
-const TOKEN_KEY =
-  'creativeCollabToken'
+async function readResponse(response: Response): Promise<unknown> {
+  const text = await response.text()
 
-
-// ============================================
-// READ RESPONSE
-// ============================================
-
-async function readResponse(
-  response: Response
-): Promise<unknown> {
-
-  const text =
-    await response.text()
-
-
-  if (!text) {
+  if (!text.trim()) {
     return null
   }
 
-
   try {
-
-    return JSON.parse(
-      text
-    )
-
+    return JSON.parse(text)
   } catch {
-
     return text
   }
 }
 
+function isRecord(data: unknown): data is Record<string, unknown> {
+  return typeof data === 'object' && data !== null && !Array.isArray(data)
+}
 
-// ============================================
-// GET ERROR MESSAGE
-// ============================================
+function getErrorMessage(data: unknown, fallback: string): string {
+  if (isRecord(data)) {
+    for (const key of ['message', 'error']) {
+      const value = data[key]
 
-function getErrorMessage(
-  data: unknown,
-  fallbackMessage: string
-): string {
-
-  if (
-    typeof data === 'object'
-    &&
-    data !== null
-    &&
-    'message' in data
-  ) {
-
-    const errorData =
-      data as ErrorResponse
-
-
-    if (
-      typeof errorData.message === 'string'
-      &&
-      errorData.message.trim() !== ''
-    ) {
-
-      return errorData.message
+      if (typeof value === 'string' && value.trim()) {
+        return value
+      }
     }
   }
 
-
+  // Avoid displaying an HTML error page as a message.
   if (
-    typeof data === 'string'
-    &&
-    data.trim() !== ''
+    typeof data === 'string' &&
+    data.trim() &&
+    !data.trim().startsWith('<')
   ) {
-
     return data
   }
 
-
-  return fallbackMessage
+  return fallback
 }
 
+function parseAuthResponse(data: unknown): AuthResponse {
+  if (
+    !isRecord(data) ||
+    typeof data.userId !== 'number' ||
+    typeof data.fullName !== 'string' ||
+    typeof data.username !== 'string' ||
+    typeof data.email !== 'string' ||
+    typeof data.role !== 'string' ||
+    !(data.token === null || typeof data.token === 'string') ||
+    typeof data.message !== 'string'
+  ) {
+    throw new Error(
+      'Invalid authentication response. Check the backend API URL and server logs.'
+    )
+  }
+
+  return data as AuthResponse
+}
 
 // ============================================
 // SIGNUP
@@ -143,46 +115,28 @@ function getErrorMessage(
 export async function signupUser(
   request: SignupRequest
 ): Promise<AuthResponse> {
+  const response = await fetch(`${API_BASE_URL}/signup`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  })
 
-  const response =
-    await fetch(
-      `${API_BASE_URL}/signup`,
-      {
-        method: 'POST',
-
-        headers: {
-          'Content-Type':
-            'application/json'
-        },
-
-        body:
-          JSON.stringify(
-            request
-          )
-      }
-    )
-
-
-  const data =
-    await readResponse(
-      response
-    )
-
+  const data = await readResponse(response)
 
   if (!response.ok) {
-
     throw new Error(
       getErrorMessage(
         data,
-        'Unable to create account.'
+        `Unable to create account (${response.status}).`
       )
     )
   }
 
-
-  return data as AuthResponse
+  // Signup may return a null token while guardian consent is pending.
+  return parseAuthResponse(data)
 }
-
 
 // ============================================
 // LOGIN
@@ -191,204 +145,120 @@ export async function signupUser(
 export async function loginUser(
   request: SigninRequest
 ): Promise<AuthResponse> {
+  const response = await fetch(`${API_BASE_URL}/login`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  })
 
-  const response =
-    await fetch(
-      `${API_BASE_URL}/login`,
-      {
-        method: 'POST',
-
-        headers: {
-          'Content-Type':
-            'application/json'
-        },
-
-        body:
-          JSON.stringify(
-            request
-          )
-      }
-    )
-
-
-  const data =
-    await readResponse(
-      response
-    )
-
+  const data = await readResponse(response)
 
   if (!response.ok) {
-
     throw new Error(
-      getErrorMessage(
-        data,
-        'Unable to login.'
-      )
+      getErrorMessage(data, `Unable to log in (${response.status}).`)
     )
   }
 
+  const auth = parseAuthResponse(data)
 
-  return data as AuthResponse
+  if (!auth.token?.trim()) {
+    throw new Error(
+      auth.message || 'No authentication token was returned.'
+    )
+  }
+
+  return auth
 }
 
-
 // ============================================
-// SAVE LOGIN SESSION
+// SESSION
 // ============================================
 
 export function saveLoginSession(
-  response: AuthResponse
-) {
-
-  if (!response.token) {
-
-    throw new Error(
-      'No authentication token was returned.'
-    )
+  response: AuthResponse | null | undefined
+): void {
+  if (
+    !response ||
+    typeof response.token !== 'string' ||
+    !response.token.trim()
+  ) {
+    throw new Error('No authentication token was returned.')
   }
 
-
-  sessionStorage.setItem(
-    TOKEN_KEY,
-    response.token
-  )
+  sessionStorage.setItem(TOKEN_KEY, response.token)
 }
 
-
-// ============================================
-// GET TOKEN
-// ============================================
-
-export function getToken():
-  string | null {
-
-  return sessionStorage.getItem(
-    TOKEN_KEY
-  )
+export function getToken(): string | null {
+  return sessionStorage.getItem(TOKEN_KEY)
 }
 
-
-// ============================================
-// CHECK LOGIN SESSION
-// ============================================
-
-export function hasLoginSession():
-  boolean {
-
-  return Boolean(
-    getToken()
-  )
+export function hasLoginSession(): boolean {
+  return Boolean(getToken())
 }
 
-
-// ============================================
-// CLEAR LOGIN SESSION
-// ============================================
-
-export function clearLoginSession() {
-
-  sessionStorage.removeItem(
-    TOKEN_KEY
-  )
+export function clearLoginSession(): void {
+  sessionStorage.removeItem(TOKEN_KEY)
 }
-
 
 // ============================================
 // CURRENT USER
 // ============================================
 
-export async function getCurrentUser():
-  Promise<CurrentUserResponse> {
-
-  const token =
-    getToken()
-
+export async function getCurrentUser(): Promise<CurrentUserResponse> {
+  const token = getToken()
 
   if (!token) {
-
-    throw new Error(
-      'No active login session.'
-    )
+    throw new Error('No active login session.')
   }
 
+  const response = await fetch(`${API_BASE_URL}/me`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
 
-  const response =
-    await fetch(
-      `${API_BASE_URL}/me`,
-      {
-        method: 'GET',
-
-        headers: {
-          Authorization:
-            `Bearer ${token}`
-        }
-      }
-    )
-
-
-  const data =
-    await readResponse(
-      response
-    )
-
+  const data = await readResponse(response)
 
   if (!response.ok) {
+    if (response.status === 401) {
+      clearLoginSession()
+    }
 
     throw new Error(
       getErrorMessage(
         data,
-        'Unable to load current user.'
+        `Unable to load current user (${response.status}).`
       )
     )
   }
 
-
-  if (
-    typeof data !== 'object'
-    ||
-    data === null
-  ) {
-
-    throw new Error(
-      'Invalid current user response from server.'
-    )
+  if (!isRecord(data) || typeof data.userId !== 'number') {
+    throw new Error('Invalid current user response from server.')
   }
-
 
   return data as CurrentUserResponse
 }
-
 
 // ============================================
 // LOGOUT
 // ============================================
 
-export async function logoutUser():
-  Promise<void> {
-
-  const token =
-    getToken()
-
+export async function logoutUser(): Promise<void> {
+  const token = getToken()
 
   try {
-
     if (token) {
-
-      await fetch(
-        `${API_BASE_URL}/signout`,
-        {
-          method: 'POST',
-
-          headers: {
-            Authorization:
-              `Bearer ${token}`
-          }
-        }
-      )
+      await fetch(`${API_BASE_URL}/signout`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
     }
-
   } finally {
-
     clearLoginSession()
   }
 }

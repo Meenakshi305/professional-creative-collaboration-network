@@ -1,10 +1,11 @@
 import { getCurrentUser, getToken } from './authService'
+import { API_ORIGIN } from '../config/api'
 
 // ============================================
 // API CONFIGURATION
 // ============================================
 
-const API_BASE_URL = '${API_ORIGIN}/api'
+const API_BASE_URL = `${API_ORIGIN}/api`
 
 // ============================================
 // TYPES (mirror the Spring Boot event DTOs)

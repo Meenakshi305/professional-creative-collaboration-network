@@ -1,11 +1,11 @@
-
 import { getToken } from './authService'
+import { API_ORIGIN } from '../config/api'
 
 // ============================================
 // API CONFIGURATION
 // ============================================
 
-const API_BASE_URL = '${API_ORIGIN}'
+const API_BASE_URL = API_ORIGIN
 const API = `${API_BASE_URL}/api`
 
 // ============================================
@@ -44,7 +44,7 @@ function getAuthorizationHeaders(): Record<string, string> {
   }
 
   return {
-    Authorization: `Bearer ${token.trim()}`
+    Authorization: `Bearer ${token.trim()}`,
   }
 }
 
@@ -56,18 +56,12 @@ async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-
   const authHeaders = getAuthorizationHeaders()
-
   const headers = new Headers(options.headers)
 
-  headers.set(
-    'Authorization',
-    authHeaders.Authorization
-  )
+  headers.set('Authorization', authHeaders.Authorization)
 
-  // Never set Content-Type for FormData.
-  // The browser generates the multipart boundary.
+  // The browser sets the multipart boundary for file uploads.
   if (options.body instanceof FormData) {
     headers.delete('Content-Type')
   }
@@ -78,11 +72,11 @@ async function apiRequest<T>(
     response = await fetch(`${API}${endpoint}`, {
       ...options,
       headers,
-      credentials: 'omit'
+      credentials: 'omit',
     })
   } catch {
     throw new Error(
-      'Unable to connect to Spring Boot at localhost:8080.'
+      'Unable to connect to the server. Please try again shortly.'
     )
   }
 
@@ -94,7 +88,7 @@ async function apiRequest<T>(
 
   if (response.status === 403) {
     throw new Error(
-      '403 Forbidden: Access denied. Verify your JWT token, Spring Security configuration and CSRF settings.'
+      'Access denied. You do not have permission to perform this action.'
     )
   }
 
@@ -102,8 +96,7 @@ async function apiRequest<T>(
     const message = await response.text()
 
     throw new Error(
-      message ||
-      `Request failed with status ${response.status}`
+      message || `Request failed with status ${response.status}.`
     )
   }
 
@@ -116,12 +109,11 @@ async function apiRequest<T>(
 
 // ============================================
 // GET DASHBOARD FEED
-// My posts + followed users' posts
 // ============================================
 
 export async function getFeedPosts(): Promise<Post[]> {
   return apiRequest<Post[]>('/feed', {
-    method: 'GET'
+    method: 'GET',
   })
 }
 
@@ -131,7 +123,7 @@ export async function getFeedPosts(): Promise<Post[]> {
 
 export async function getMyPosts(): Promise<Post[]> {
   return apiRequest<Post[]>('/posts/me', {
-    method: 'GET'
+    method: 'GET',
   })
 }
 
@@ -139,38 +131,28 @@ export async function getMyPosts(): Promise<Post[]> {
 // GET ANOTHER USER'S POSTS
 // ============================================
 
-export async function getUserPosts(
-  userId: number
-): Promise<Post[]> {
-
+export async function getUserPosts(userId: number): Promise<Post[]> {
   if (!Number.isInteger(userId) || userId <= 0) {
-    throw new Error('Invalid user ID')
+    throw new Error('Invalid user ID.')
   }
 
-  return apiRequest<Post[]>(
-    `/users/${userId}/posts`,
-    {
-      method: 'GET'
-    }
-  )
+  return apiRequest<Post[]>(`/users/${userId}/posts`, {
+    method: 'GET',
+  })
 }
 
 // ============================================
 // CREATE POST
-// Text + image uploads
 // ============================================
 
 export async function createPost(
   caption: string,
   files: File[] = []
 ): Promise<Post> {
-
   const cleanCaption = caption.trim()
 
   if (!cleanCaption && files.length === 0) {
-    throw new Error(
-      'Please enter a caption or select an image.'
-    )
+    throw new Error('Please enter a caption or select an image.')
   }
 
   const formData = new FormData()
@@ -185,7 +167,7 @@ export async function createPost(
 
   return apiRequest<Post>('/posts', {
     method: 'POST',
-    body: formData
+    body: formData,
   })
 }
 
@@ -193,25 +175,17 @@ export async function createPost(
 // DELETE POST
 // ============================================
 
-export async function deletePost(
-  postId: number
-): Promise<void> {
-
-  return apiRequest<void>(
-    `/posts/${postId}`,
-    {
-      method: 'DELETE'
-    }
-  )
+export async function deletePost(postId: number): Promise<void> {
+  return apiRequest<void>(`/posts/${postId}`, {
+    method: 'DELETE',
+  })
 }
 
 // ============================================
 // MEDIA URL
-// Existing MEGA-backed media endpoint
 // ============================================
 
 export function mediaUrl(path: string): string {
-
   if (!path) {
     return ''
   }
@@ -220,7 +194,5 @@ export function mediaUrl(path: string): string {
     return path
   }
 
-  return `${API_BASE_URL}${
-    path.startsWith('/') ? path : `/${path}`
-  }`
+  return `${API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`
 }

@@ -1,6 +1,7 @@
+import { API_ORIGIN } from '../config/api';
 import { getToken } from './authService'
 
-const API = '${API_ORIGIN}/api'
+const API = `${API_ORIGIN}/api`
 export type CommentReport = {
   id: number; postId: number; commentId: number; reporterId: number;
   reason: string; status: string; assignedAdminId: number | null;

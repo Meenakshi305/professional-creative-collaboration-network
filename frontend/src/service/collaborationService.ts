@@ -1,7 +1,7 @@
 
 import { getCurrentUser, getToken } from './authService'
-
-const API_URL = '${API_ORIGIN}/api/opportunities'
+import { API_ORIGIN } from '../config/api'
+const API_URL = `${API_ORIGIN}/api/opportunities`
 
 export type Opportunity = {
   id: number

@@ -1,8 +1,8 @@
 import { getToken } from './authService'
 
+import { API_ORIGIN } from '../config/api'
 
-const API_BASE_URL =
-  '${API_ORIGIN}/api'
+const API_BASE_URL = `${API_ORIGIN}/api`
 
 
 // ============================================

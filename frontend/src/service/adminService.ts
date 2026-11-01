@@ -1,6 +1,7 @@
 import { getToken } from './authService'
+import { API_ORIGIN } from '../config/api'
 
-const BASE = '${API_ORIGIN}/api'
+const BASE = `${API_ORIGIN}/api`
 
 export type AdminOverview = {
   totalUsers: number

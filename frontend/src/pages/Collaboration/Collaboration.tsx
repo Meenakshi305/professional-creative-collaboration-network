@@ -14,6 +14,7 @@ import {
   type OpportunityApplicationResponse,
   type OpportunityResponse
 } from '../../service/opportunityService'
+import { API_ORIGIN } from '../../config/api'
 
 type CollaborationProps = {
   initialOpportunityId?: number | null
@@ -183,7 +184,7 @@ function Collaboration({
         const userId = await getCurrentUserId()
         if (cancelled) return
         const response = await fetch(
-          '${API_ORIGIN}/api/opportunities/my-applications',
+         `${API_ORIGIN}/api/opportunities/my-applications`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

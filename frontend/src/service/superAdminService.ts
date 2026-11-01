@@ -1,6 +1,11 @@
 import { getToken } from './authService'
+import { API_ORIGIN } from '../config/api'
 
-const BASE = '${API_ORIGIN}/api'
+// ============================================
+// API CONFIGURATION
+// ============================================
+
+const BASE = `${API_ORIGIN}/api`
 export type PageData<T> = { content: T[]; totalElements: number; totalPages: number; number: number }
 export type ManagedUser = { id: number; fullName: string | null; username: string; email: string; role: string; active: boolean; createdAt: string }
 export type Report = { id: number; reportedPostId: number; reporterId: number; reason: string; status: string; assignedAdminId: number | null; resolvedById: number | null; resolutionNote: string | null; createdAt: string; resolvedAt: string | null }

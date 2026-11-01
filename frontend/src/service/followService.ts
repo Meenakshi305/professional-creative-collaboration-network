@@ -1,6 +1,9 @@
 import { getCurrentUser, getToken } from './authService'
 
-const API_BASE_URL = '${API_ORIGIN}/api'
+import { API_ORIGIN } from '../config/api'
+
+const API_BASE_URL = `${API_ORIGIN}/api`
+
 
 type CountResponse = { count: number }
 type FollowStatusResponse = { following: boolean }

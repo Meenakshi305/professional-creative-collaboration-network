@@ -11,8 +11,11 @@ export type NotificationItem = {
   type: NotificationType
   createdAt: string
 }
+import { API_ORIGIN } from '../config/api'
 
-const API_URL = '${API_ORIGIN}/api/notifications'
+const API_BASE_URL = `${API_ORIGIN}/api`
+
+const API_URL = `${API_BASE_URL}/notifications`
 
 async function checkResponse(response: Response): Promise<void> {
   if (response.ok) return
