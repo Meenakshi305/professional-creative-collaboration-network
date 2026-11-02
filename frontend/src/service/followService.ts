@@ -60,21 +60,37 @@ function validCount(data: unknown): number {
   return Number.isFinite(n) && n >= 0 ? n : 0
 }
 
-export async function getFollowersCount(userId: number): Promise<number> {
+
+export async function getFollowersCount(
+  userId: number
+): Promise<number> {
   try {
-    const response = await fetch(`${API_BASE_URL}/users/${userId}/followers/count`)
-    if (!response.ok) { console.warn('Followers count HTTP', response.status); return 0 }
-    return validCount(await readResponse(response))
-  } catch (error) { console.warn('Followers count error:', error); return 0 }
+    const data = await requiredRequest(
+      `/users/${userId}/followers/count`
+    );
+
+    return validCount(data);
+  } catch (error) {
+    console.warn('Followers count error:', error);
+    return 0;
+  }
 }
 
-export async function getFollowingCount(userId: number): Promise<number> {
+export async function getFollowingCount(
+  userId: number
+): Promise<number> {
   try {
-    const response = await fetch(`${API_BASE_URL}/users/${userId}/following/count`)
-    if (!response.ok) { console.warn('Following count HTTP', response.status); return 0 }
-    return validCount(await readResponse(response))
-  } catch (error) { console.warn('Following count error:', error); return 0 }
+    const data = await requiredRequest(
+      `/users/${userId}/following/count`
+    );
+
+    return validCount(data);
+  } catch (error) {
+    console.warn('Following count error:', error);
+    return 0;
+  }
 }
+
 
 // Backward-compatible interface used elsewhere in your project.
 export async function getFollowStatus(targetUserId: number): Promise<boolean> {
